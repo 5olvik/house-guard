@@ -1,0 +1,1099 @@
+{
+  "id": "no.husmodus",
+  "version": "0.3.0",
+  "compatibility": ">=12.3.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "no": "House Guard",
+    "en": "House Guard"
+  },
+  "description": {
+    "no": "Hjem, borte og natt med tydelige rutiner",
+    "en": "Home, away and night routines with clear status"
+  },
+  "category": [
+    "tools"
+  ],
+  "brandColor": "#e8441a",
+  "permissions": [
+    "homey:manager:api",
+    "homey:app:com.uc.heimdall"
+  ],
+  "author": {
+    "name": "House Guard"
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "drivers": [
+    {
+      "id": "guest-mode",
+      "name": {
+        "no": "Gjestemodus",
+        "en": "Guest mode"
+      },
+      "class": "other",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [
+        "onoff"
+      ],
+      "capabilitiesOptions": {
+        "onoff": {
+          "title": {
+            "no": "Gjestemodus",
+            "en": "Guest mode"
+          },
+          "preventInsights": true,
+          "zoneActivity": false
+        }
+      },
+      "images": {
+        "small": "/drivers/guest-mode/assets/images/small.png",
+        "large": "/drivers/guest-mode/assets/images/large.png",
+        "xlarge": "/drivers/guest-mode/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
+    }
+  ],
+  "api": {
+    "checkIntegrationAccess": {
+      "method": "POST",
+      "path": "/integration-access"
+    },
+    "getState": {
+      "method": "GET",
+      "path": "/state"
+    },
+    "getCatalog": {
+      "method": "GET",
+      "path": "/catalog"
+    },
+    "saveConfig": {
+      "method": "PUT",
+      "path": "/config"
+    },
+    "validateConfig": {
+      "method": "POST",
+      "path": "/validate"
+    },
+    "command": {
+      "method": "POST",
+      "path": "/command"
+    },
+    "previewRoutine": {
+      "method": "POST",
+      "path": "/preview"
+    },
+    "setupBridges": {
+      "method": "POST",
+      "path": "/bridges"
+    }
+  },
+  "flow": {
+    "actions": [
+      {
+        "id": "report_alarm_details",
+        "title": {
+          "no": "Registrer alarmens sone og årsak",
+          "en": "Record the alarm zone and reason"
+        },
+        "args": [
+          {
+            "name": "zone",
+            "type": "text",
+            "title": {
+              "no": "Sone",
+              "en": "Sone"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "text",
+            "title": {
+              "no": "Årsak",
+              "en": "Årsak"
+            }
+          }
+        ],
+        "titleFormatted": {
+          "no": "Registrer alarmens sone og årsak: [[zone]] · [[reason]]",
+          "en": "Record the alarm zone and reason: [[zone]] · [[reason]]"
+        }
+      },
+      {
+        "id": "report_entry_delay",
+        "title": {
+          "no": "Registrer inngangsforsinkelse",
+          "en": "Record an entry delay"
+        },
+        "args": [
+          {
+            "name": "zone",
+            "type": "text",
+            "title": {
+              "no": "Sone",
+              "en": "Sone"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "text",
+            "title": {
+              "no": "Årsak",
+              "en": "Årsak"
+            }
+          },
+          {
+            "name": "seconds",
+            "type": "number",
+            "title": {
+              "no": "Sekunder",
+              "en": "Sekunder"
+            }
+          }
+        ],
+        "titleFormatted": {
+          "no": "Registrer inngangsforsinkelse: [[zone]] · [[reason]] · [[seconds]]",
+          "en": "Record an entry delay: [[zone]] · [[reason]] · [[seconds]]"
+        }
+      },
+      {
+        "id": "report_sensor_warning",
+        "title": {
+          "no": "Registrer sensoradvarsel",
+          "en": "Record a sensor warning"
+        },
+        "args": [
+          {
+            "name": "reason",
+            "type": "text",
+            "title": {
+              "no": "Advarsel",
+              "en": "Advarsel"
+            }
+          }
+        ],
+        "titleFormatted": {
+          "no": "Registrer sensoradvarsel: [[reason]]",
+          "en": "Record a sensor warning: [[reason]]"
+        }
+      },
+      {
+        "id": "answer_night_question",
+        "title": {
+          "no": "Registrer svar på nattspørsmålet",
+          "en": "Record the answer to the night question"
+        },
+        "hint": {
+          "no": "Bruk taggen Dette spørsmålet fra Når-kortet. Gamle svar ignoreres.",
+          "en": "Use the This question tag from the When card. Expired replies are ignored."
+        },
+        "args": [
+          {
+            "name": "reply",
+            "type": "text",
+            "title": {
+              "no": "Dette spørsmålet",
+              "en": "Dette spørsmålet"
+            }
+          },
+          {
+            "name": "answer",
+            "type": "dropdown",
+            "title": {
+              "no": "Svar",
+              "en": "Svar"
+            },
+            "values": [
+              {
+                "id": "yes",
+                "title": {
+                  "no": "Ja",
+                  "en": "Yes"
+                }
+              },
+              {
+                "id": "no",
+                "title": {
+                  "no": "Nei",
+                  "en": "No"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Registrer svar på nattspørsmålet: [[reply]] · [[answer]]",
+          "en": "Record the answer to the night question: [[reply]] · [[answer]]"
+        }
+      },
+      {
+        "id": "check_integration_access",
+        "deprecated": true,
+        "title": {
+          "no": "Kontroller integrasjonstilgang",
+          "en": "Check integration access"
+        }
+      },
+      {
+        "id": "set_mode",
+        "title": {
+          "no": "Sett modus i House Guard",
+          "en": "Set House Guard mode"
+        },
+        "args": [
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "no": "Modus",
+              "en": "Modus"
+            },
+            "values": [
+              {
+                "id": "home",
+                "title": {
+                  "no": "Hjemme",
+                  "en": "Home"
+                }
+              },
+              {
+                "id": "away",
+                "title": {
+                  "no": "Borte",
+                  "en": "Away"
+                }
+              },
+              {
+                "id": "night",
+                "title": {
+                  "no": "Natt",
+                  "en": "Night"
+                }
+              },
+              {
+                "id": "morning",
+                "title": {
+                  "no": "Morgen",
+                  "en": "Morning"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Sett modus i House Guard: [[mode]]",
+          "en": "Set House Guard mode: [[mode]]"
+        }
+      },
+      {
+        "id": "set_guest",
+        "title": {
+          "no": "Sett gjestemodus",
+          "en": "Set guest mode"
+        },
+        "args": [
+          {
+            "name": "enabled",
+            "type": "dropdown",
+            "title": {
+              "no": "Gjestemodus",
+              "en": "Gjestemodus"
+            },
+            "values": [
+              {
+                "id": "true",
+                "title": {
+                  "no": "På",
+                  "en": "On"
+                }
+              },
+              {
+                "id": "false",
+                "title": {
+                  "no": "Av",
+                  "en": "Off"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Sett gjestemodus: [[enabled]]",
+          "en": "Set guest mode: [[enabled]]"
+        }
+      },
+      {
+        "id": "skip_night",
+        "title": {
+          "no": "Hopp over automatisk nattmodus i natt",
+          "en": "Skip automatic night mode tonight"
+        }
+      },
+      {
+        "id": "start_routine",
+        "title": {
+          "no": "Start navngitt rutine",
+          "en": "Start named routine"
+        },
+        "args": [
+          {
+            "name": "routine",
+            "type": "autocomplete",
+            "title": {
+              "no": "Rutine",
+              "en": "Routine"
+            }
+          }
+        ],
+        "titleFormatted": {
+          "no": "Start navngitt rutine: [[routine]]",
+          "en": "Start named routine: [[routine]]"
+        }
+      },
+      {
+        "id": "integration_event",
+        "title": {
+          "no": "Rapporter integrasjonshendelse",
+          "en": "Report integration event"
+        },
+        "args": [
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "no": "Hendelse",
+              "en": "Hendelse"
+            },
+            "values": [
+              {
+                "id": "alarm",
+                "title": {
+                  "no": "Alarm utløst",
+                  "en": "Alarm utløst"
+                }
+              },
+              {
+                "id": "alarmOff",
+                "title": {
+                  "no": "Alarm avstilt",
+                  "en": "Alarm avstilt"
+                }
+              },
+              {
+                "id": "arming",
+                "title": {
+                  "no": "Tilkoblingsforsinkelse",
+                  "en": "Tilkoblingsforsinkelse"
+                }
+              },
+              {
+                "id": "activeSensor",
+                "title": {
+                  "no": "Aktiv sensor",
+                  "en": "Aktiv sensor"
+                }
+              },
+              {
+                "id": "entryDelay",
+                "title": {
+                  "no": "Inngangsforsinkelse",
+                  "en": "Inngangsforsinkelse"
+                }
+              },
+              {
+                "id": "morning",
+                "title": {
+                  "no": "Morgen",
+                  "en": "Morgen"
+                }
+              }
+            ]
+          },
+          {
+            "name": "zone",
+            "type": "text",
+            "title": {
+              "no": "Sone",
+              "en": "Sone"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "text",
+            "title": {
+              "no": "Årsak",
+              "en": "Årsak"
+            }
+          },
+          {
+            "name": "seconds",
+            "type": "number",
+            "title": {
+              "no": "Sekunder",
+              "en": "Sekunder"
+            }
+          }
+        ],
+        "deprecated": true,
+        "titleFormatted": {
+          "no": "Rapporter integrasjonshendelse: [[type]] · [[zone]] · [[reason]] · [[seconds]]",
+          "en": "Report integration event: [[type]] · [[zone]] · [[reason]] · [[seconds]]"
+        }
+      },
+      {
+        "id": "zone_idle",
+        "title": {
+          "no": "Rapporter inaktiv sone",
+          "en": "Report inactive zone"
+        },
+        "args": [
+          {
+            "name": "zone_id",
+            "type": "text",
+            "title": {
+              "no": "Sone-ID",
+              "en": "Sone-ID"
+            }
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "no": "Inaktiv i minutter",
+              "en": "Inaktiv i minutter"
+            }
+          }
+        ],
+        "deprecated": true,
+        "titleFormatted": {
+          "no": "Rapporter inaktiv sone: [[zone_id]] · [[minutes]]",
+          "en": "Report inactive zone: [[zone_id]] · [[minutes]]"
+        }
+      },
+      {
+        "id": "night_answer",
+        "title": {
+          "no": "Svar på nattspørsmål",
+          "en": "Answer night request"
+        },
+        "args": [
+          {
+            "name": "request_id",
+            "type": "text",
+            "title": {
+              "no": "Forespørsels-ID",
+              "en": "Forespørsels-ID"
+            }
+          },
+          {
+            "name": "person_id",
+            "type": "text",
+            "title": {
+              "no": "Person-ID",
+              "en": "Person-ID"
+            }
+          },
+          {
+            "name": "answer",
+            "type": "dropdown",
+            "title": {
+              "no": "Svar",
+              "en": "Svar"
+            },
+            "values": [
+              {
+                "id": "yes",
+                "title": {
+                  "no": "Ja",
+                  "en": "Yes"
+                }
+              },
+              {
+                "id": "no",
+                "title": {
+                  "no": "Nei",
+                  "en": "No"
+                }
+              },
+              {
+                "id": "error",
+                "title": {
+                  "no": "Teknisk feil",
+                  "en": "Technical error"
+                }
+              }
+            ]
+          }
+        ],
+        "deprecated": true,
+        "titleFormatted": {
+          "no": "Svar på nattspørsmål: [[request_id]] · [[person_id]] · [[answer]]",
+          "en": "Answer night request: [[request_id]] · [[person_id]] · [[answer]]"
+        }
+      },
+      {
+        "id": "delivery_result",
+        "title": {
+          "no": "Registrer leveringsresultat",
+          "en": "Record delivery result"
+        },
+        "args": [
+          {
+            "name": "delivery_id",
+            "type": "text",
+            "title": {
+              "no": "Leverings-ID",
+              "en": "Leverings-ID"
+            }
+          },
+          {
+            "name": "recipient_id",
+            "type": "text",
+            "title": {
+              "no": "Mottaker-ID",
+              "en": "Mottaker-ID"
+            }
+          },
+          {
+            "name": "result",
+            "type": "dropdown",
+            "title": {
+              "no": "Resultat",
+              "en": "Resultat"
+            },
+            "values": [
+              {
+                "id": "accepted",
+                "title": {
+                  "no": "Flow utført",
+                  "en": "Flow utført"
+                }
+              },
+              {
+                "id": "failed",
+                "title": {
+                  "no": "Feil",
+                  "en": "Feil"
+                }
+              }
+            ]
+          },
+          {
+            "name": "detail",
+            "type": "text",
+            "title": {
+              "no": "Detaljer",
+              "en": "Detaljer"
+            }
+          }
+        ],
+        "deprecated": true,
+        "titleFormatted": {
+          "no": "Registrer leveringsresultat: [[delivery_id]] · [[recipient_id]] · [[result]] · [[detail]]",
+          "en": "Record delivery result: [[delivery_id]] · [[recipient_id]] · [[result]] · [[detail]]"
+        }
+      }
+    ],
+    "conditions": [
+      {
+        "id": "delivery_matches",
+        "title": {
+          "no": "Leveringen er gyldig og passer denne koblingen",
+          "en": "The delivery is valid and matches this connection"
+        },
+        "args": [
+          {
+            "name": "delivery_id",
+            "type": "text",
+            "title": {
+              "no": "delivery_id",
+              "en": "delivery_id"
+            }
+          },
+          {
+            "name": "kind",
+            "type": "text",
+            "title": {
+              "no": "kind",
+              "en": "kind"
+            }
+          },
+          {
+            "name": "person_id",
+            "type": "text",
+            "title": {
+              "no": "person_id",
+              "en": "person_id"
+            }
+          },
+          {
+            "name": "target_id",
+            "type": "text",
+            "title": {
+              "no": "target_id",
+              "en": "target_id"
+            }
+          },
+          {
+            "name": "notification_type",
+            "type": "text",
+            "title": {
+              "no": "notification_type",
+              "en": "notification_type"
+            }
+          },
+          {
+            "name": "camera_id",
+            "type": "text",
+            "title": {
+              "no": "camera_id",
+              "en": "camera_id"
+            }
+          },
+          {
+            "name": "text",
+            "type": "text",
+            "title": {
+              "no": "text",
+              "en": "text"
+            }
+          },
+          {
+            "name": "expected_kind",
+            "type": "text",
+            "title": {
+              "no": "expected_kind",
+              "en": "expected_kind"
+            }
+          },
+          {
+            "name": "expected_person",
+            "type": "text",
+            "title": {
+              "no": "expected_person",
+              "en": "expected_person"
+            }
+          },
+          {
+            "name": "expected_target",
+            "type": "text",
+            "title": {
+              "no": "expected_target",
+              "en": "expected_target"
+            }
+          },
+          {
+            "name": "expected_type",
+            "type": "text",
+            "title": {
+              "no": "expected_type",
+              "en": "expected_type"
+            }
+          },
+          {
+            "name": "expected_camera",
+            "type": "text",
+            "title": {
+              "no": "expected_camera",
+              "en": "expected_camera"
+            }
+          },
+          {
+            "name": "expected_text",
+            "type": "text",
+            "title": {
+              "no": "expected_text",
+              "en": "expected_text"
+            }
+          }
+        ],
+        "deprecated": true,
+        "titleFormatted": {
+          "no": "Leveringen er gyldig og passer denne koblingen: [[delivery_id]] · [[kind]] · [[person_id]] · [[target_id]] · [[notification_type]] · [[camera_id]] · [[text]] · [[expected_kind]] · [[expected_person]] · [[expected_target]] · [[expected_type]] · [[expected_camera]] · [[expected_text]]",
+          "en": "The delivery is valid and matches this connection: [[delivery_id]] · [[kind]] · [[person_id]] · [[target_id]] · [[notification_type]] · [[camera_id]] · [[text]] · [[expected_kind]] · [[expected_person]] · [[expected_target]] · [[expected_type]] · [[expected_camera]] · [[expected_text]]"
+        }
+      }
+    ],
+    "triggers": [
+      {
+        "id": "delivery_requested",
+        "title": {
+          "no": "En melding, lyd eller et spørsmål skal leveres",
+          "en": "A message, sound or question needs delivery"
+        },
+        "tokens": [
+          {
+            "name": "delivery_id",
+            "type": "string",
+            "title": {
+              "no": "Leverings-ID",
+              "en": "Leverings-ID"
+            }
+          },
+          {
+            "name": "kind",
+            "type": "string",
+            "title": {
+              "no": "Type",
+              "en": "Type"
+            }
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Tekst",
+              "en": "Tekst"
+            }
+          },
+          {
+            "name": "person_id",
+            "type": "string",
+            "title": {
+              "no": "Person-ID",
+              "en": "Person-ID"
+            }
+          },
+          {
+            "name": "request_id",
+            "type": "string",
+            "title": {
+              "no": "Forespørsels-ID",
+              "en": "Forespørsels-ID"
+            }
+          },
+          {
+            "name": "target_id",
+            "type": "string",
+            "title": {
+              "no": "Målenhet-ID",
+              "en": "Målenhet-ID"
+            }
+          },
+          {
+            "name": "alarm_id",
+            "type": "string",
+            "title": {
+              "no": "Alarm-ID",
+              "en": "Alarm-ID"
+            }
+          },
+          {
+            "name": "zone",
+            "type": "string",
+            "title": {
+              "no": "Sone",
+              "en": "Sone"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "no": "Årsak",
+              "en": "Årsak"
+            }
+          },
+          {
+            "name": "notification_type",
+            "type": "string",
+            "title": {
+              "no": "Varseltype",
+              "en": "Varseltype"
+            }
+          },
+          {
+            "name": "camera_id",
+            "type": "string",
+            "title": {
+              "no": "Kamera-ID",
+              "en": "Kamera-ID"
+            }
+          },
+          {
+            "name": "volume",
+            "type": "number",
+            "title": {
+              "no": "Volum",
+              "en": "Volume"
+            }
+          }
+        ],
+        "deprecated": true
+      },
+      {
+        "id": "notification_requested",
+        "title": {
+          "no": "Et varsel er klart for",
+          "en": "A notification is ready for"
+        },
+        "titleFormatted": {
+          "no": "Et varsel er klart for [[person]]",
+          "en": "A notification is ready for [[person]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "person",
+            "type": "autocomplete",
+            "title": {
+              "no": "Person",
+              "en": "Person"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          }
+        ]
+      },
+      {
+        "id": "critical_notification_requested",
+        "title": {
+          "no": "Et viktig varsel er klart for",
+          "en": "An important notification is ready for"
+        },
+        "titleFormatted": {
+          "no": "Et viktig varsel er klart for [[person]]",
+          "en": "An important notification is ready for [[person]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "person",
+            "type": "autocomplete",
+            "title": {
+              "no": "Person",
+              "en": "Person"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          }
+        ]
+      },
+      {
+        "id": "image_notification_requested",
+        "title": {
+          "no": "Et bildevarsel er klart for",
+          "en": "An image notification is ready for"
+        },
+        "titleFormatted": {
+          "no": "Et bildevarsel er klart for [[person]] fra [[camera]]",
+          "en": "An image notification is ready for [[person]] from [[camera]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "person",
+            "type": "autocomplete",
+            "title": {
+              "no": "Person",
+              "en": "Person"
+            }
+          },
+          {
+            "name": "camera",
+            "type": "autocomplete",
+            "title": {
+              "no": "Kamera",
+              "en": "Camera"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          }
+        ]
+      },
+      {
+        "id": "speech_requested",
+        "title": {
+          "no": "En talebeskjed er klar for",
+          "en": "A spoken message is ready for"
+        },
+        "titleFormatted": {
+          "no": "En talebeskjed er klar for [[speaker]]",
+          "en": "A spoken message is ready for [[speaker]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "speaker",
+            "type": "autocomplete",
+            "title": {
+              "no": "Høyttaler",
+              "en": "Speaker"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          },
+          {
+            "name": "volume",
+            "type": "number",
+            "title": {
+              "no": "Volum",
+              "en": "Volume"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sound_requested",
+        "title": {
+          "no": "En alarmlyd er klar for",
+          "en": "An alarm sound is ready for"
+        },
+        "titleFormatted": {
+          "no": "En alarmlyd er klar for [[speaker]] med [[sound]]",
+          "en": "An alarm sound is ready for [[speaker]] using [[sound]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "speaker",
+            "type": "autocomplete",
+            "title": {
+              "no": "Høyttaler",
+              "en": "Speaker"
+            }
+          },
+          {
+            "name": "sound",
+            "type": "autocomplete",
+            "title": {
+              "no": "Lyd",
+              "en": "Sound"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          },
+          {
+            "name": "volume",
+            "type": "number",
+            "title": {
+              "no": "Volum",
+              "en": "Volume"
+            }
+          }
+        ]
+      },
+      {
+        "id": "question_requested",
+        "title": {
+          "no": "Et nattspørsmål er klart for",
+          "en": "A night question is ready for"
+        },
+        "titleFormatted": {
+          "no": "Et nattspørsmål er klart for [[person]]",
+          "en": "A night question is ready for [[person]]"
+        },
+        "hint": {
+          "no": "Bruk oppskriften under Mer → Koblinger i House Guard.",
+          "en": "Use the recipe under More → Connections in House Guard."
+        },
+        "args": [
+          {
+            "name": "person",
+            "type": "autocomplete",
+            "title": {
+              "no": "Person",
+              "en": "Person"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "no": "Melding",
+              "en": "Message"
+            }
+          },
+          {
+            "name": "reply",
+            "type": "string",
+            "title": {
+              "no": "Dette spørsmålet",
+              "en": "This question"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

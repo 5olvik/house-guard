@@ -1,0 +1,6 @@
+{
+  "guest": {
+    "device_name": "Gjestemodus",
+    "unavailable": "Venter på gjestestatus fra House Guard. Prøver igjen automatisk."
+  }
+}

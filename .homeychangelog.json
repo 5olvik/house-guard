@@ -1,0 +1,22 @@
+{
+  "0.2.1": {
+    "no": "Appen heter nå House Guard på alle brukerflater, i appbilder og integrasjonsflows.",
+    "en": "The app is now named House Guard across the interface, app images and integration flows."
+  },
+  "0.2.0": {
+    "no": "Direkte låsing og soneaktivitet, trygg lagring, rutineforhåndsvisning, oppsettskontroll, værkilde og leveringskvitteringer.",
+    "en": "Direct lock control and zone activity, safe configuration refresh, routine previews, setup checks, weather source and delivery receipts."
+  },
+  "0.1.1": {
+    "no": "Gjestemodus kan legges til som en egen enhet med synkronisert av/på-bryter.",
+    "en": "Guest mode can be added as a device with a synchronized on/off switch."
+  },
+  "0.1.0": {
+    "no": "Første lokale versjon med observasjon og rutiner.",
+    "en": "First local version with observation and routines."
+  },
+  "0.3.0": {
+    "no": "Veiviser for grunnoppsett uten flows, direkte Heimdall-hendelser, enklere meldingskort og kontroll av faktiske Flow-koblinger. Enkle utgangskoblinger har ikke automatisk reservepush eller leveringskvittering.",
+    "en": "A setup wizard for core routines without helper Flows, direct Heimdall events, simpler messaging cards and connected Flow validation. Simple output connections have no automatic fallback push or delivery receipt."
+  }
+}

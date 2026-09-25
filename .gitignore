@@ -1,0 +1,23 @@
+node_modules/
+.npm-cache/
+.reference/
+.homeybuild/
+artifacts/
+*.log
+.DS_Store
+
+# Local configuration, credentials and house-specific migration material
+.env
+.env.*
+*.pem
+*.key
+migration/
+settings/migration.json
+scripts/migration.js
+scripts/*solvik*.js
+docs/SPECIFICATION.md
+docs/MIGRATION.md
+docs/APPSTORE-USABILITY-PLAN.md
+docs/UPGRADE-*.md
+docs/RENAME-*.md
+docs/REVIEW-*.md

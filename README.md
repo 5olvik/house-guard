@@ -1,0 +1,74 @@
+# House Guard
+
+House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og lys i en veiviser, og utvid med Heimdall, dørlås, varsler og lyd etter behov.
+
+**Versjon 0.3.0 er en utviklingsversjon.** Den er ikke publisert i Homey App Store. Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
+
+## Funksjoner
+
+- Grunnoppsett med personer og lys uten hjelpeflows.
+- Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
+- Gjestemodus som egen av/på-enhet i Homey.
+- Direkte integrasjon med Heimdall og kompatible låseenheter, inkludert Yale.
+- Nattspørsmål med svarfrist og nei-veto.
+- Enkle Flow-kort med navnevalg for mobilvarsler, spørsmål og Sonos.
+- Forhåndsvisning, konfigurasjonskontroll, import/eksport og observasjonslogg.
+- Kontroll av bekreftet lås-/porttilstand og avbrudd ved endret oppsett eller tilstedeværelse.
+
+Mobilvarsler, spørsmål og Sonos trenger små Flow-koblinger. Oppskriftene finnes under **Mer → Koblinger**. Enkle utgangskoblinger har ikke automatisk reservepush eller leveringskvittering. Gyldige kort betyr ikke at meldingen er mottatt eller lyden hørt.
+
+## Kom i gang
+
+Krever Homey Pro med programvare **12.3.0 eller nyere**. Homey Cloud støttes ikke. For utviklingsverktøyene brukes **Node.js 24** og Git.
+
+```sh
+git clone https://github.com/5olvik/house-guard.git
+cd house-guard
+npm ci
+npm test
+npm run check
+npm run validate -- --level publish
+```
+
+For installasjon fra kildekoden, logg inn i Homey CLI og velg riktig Homey:
+
+```sh
+npx homey login
+npx homey select
+npx homey app install
+```
+
+Ved oppdatering: installer uten `--clean` for å beholde innstillinger og paringer. Åpne **House Guard → Hjem → Åpne veiviseren** og gjennomgå oppsettet i observasjon før styring aktiveres. Nye brukere velger sine egne personer og enheter.
+
+Gjestebryteren legges til med **Legg til enhet → House Guard → Gjestemodus**.
+
+## Lokal demonstrasjon
+
+```sh
+npm run preview
+```
+
+Åpne http://127.0.0.1:4781/?demo=1. Demoen bruker fiktive personer og enheter, har ingen forbindelse til Homey og lagrer endringer bare i minnet.
+
+## Status og begrensninger
+
+76 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
+
+Grunnoppsettet krever ingen ekstra flows. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
+
+## Dokumentasjon
+
+- [Integrasjoner og nødvendige Flow-koblinger](docs/INTEGRATIONS.md)
+- [Tester og kjente begrensninger](docs/TEST-REPORT.md)
+- [Arkitektur](docs/ARCHITECTURE.md)
+- [Videre arbeid](docs/ROADMAP.md)
+
+Private husoppsett, migreringsskript, logger og sikkerhetskopier inngår ikke i repositoryet. Ikke legg ved innloggingsdata eller komplette personlige konfigurasjoner når du rapporterer feil.
+
+## Kildepakke og lisens
+
+`npm run package` lager en ZIP av den sist committede kildekoden i `artifacts/`. Commit lokale kodeendringer først. Private og ignorerte filer tas ikke med.
+
+Prosjektet bruker **GPL-3.0-only**. Innstillingssidens visuelle utforming bygger delvis på Power Guard. Se [LICENSE](LICENSE) og [NOTICE.md](NOTICE.md) for lisens og opphavsmerking. House Guard er et separat prosjekt uten offisiell tilknytning til Power Guard, Athom, Heimdall eller Yale.
+
+Den tekniske app-ID-en `no.husmodus` beholdes for oppdateringskompatibilitet. Navnet i brukergrensesnittet er House Guard.

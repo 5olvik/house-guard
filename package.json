@@ -1,0 +1,31 @@
+{
+  "name": "no.husmodus",
+  "version": "0.3.0",
+  "description": "House Guard – rutiner for Homey Pro",
+  "main": "app.js",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/5olvik/house-guard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/5olvik/house-guard/issues"
+  },
+  "homepage": "https://github.com/5olvik/house-guard#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/check.js",
+    "preview": "node scripts/preview.js",
+    "validate": "homey app validate",
+    "package": "node scripts/package.js"
+  },
+  "dependencies": {
+    "homey-api": "~3.19.3"
+  },
+  "devDependencies": {
+    "homey": "^4.3.1"
+  }
+}

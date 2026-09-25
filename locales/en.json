@@ -1,0 +1,6 @@
+{
+  "guest": {
+    "device_name": "Guest mode",
+    "unavailable": "Waiting for guest mode from House Guard. Retrying automatically."
+  }
+}

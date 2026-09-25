@@ -1,0 +1,11 @@
+.git/
+.reference/
+.npm-cache/
+test/
+docs/
+scripts/
+artifacts/
+migration/
+settings/migration.json
+node_modules/
+package-lock.json
