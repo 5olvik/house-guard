@@ -2,5 +2,17 @@
   "guest": {
     "device_name": "Gjestemodus",
     "unavailable": "Venter på gjestestatus fra House Guard. Prøver igjen automatisk."
+  },
+  "alarm": {
+    "device_name": "Alarmpanel",
+    "not_selected": "Velg House Guard innebygd alarm under Sikkerhet i appen.",
+    "unavailable": "Venter på alarmstatus fra House Guard.",
+    "observation": "Observasjon",
+    "triggered": "Alarm utløst",
+    "entry": "Inngangsforsinkelse",
+    "exit": "Utgangsforsinkelse",
+    "disarmed": "Frakoblet",
+    "armed": "Bortealarm tilkoblet",
+    "partially_armed": "Nattalarm tilkoblet"
   }
 }

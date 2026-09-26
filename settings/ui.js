@@ -33,7 +33,7 @@
   }
   function deviceItems(filter = 'any') {
     const devices = Object.values(data.catalog.devices || {});
-    return devices.filter(d => filter === 'camera' ? d.class === 'camera' || d.images?.some(i => i.type === 'camera') : Object.entries(d.capabilities).some(([id, c]) => filter === 'any' || (filter === 'writable' ? c.setable : filter === 'boolean' ? c.type === 'boolean' : id === filter || id.startsWith(`${filter}.`))))
+    return devices.filter(d=>!(d.driverId?.endsWith(':alarm-panel') || d.driverId==='alarm-panel')).filter(d => filter === 'camera' ? d.class === 'camera' || d.images?.some(i => i.type === 'camera') : Object.entries(d.capabilities).some(([id, c]) => filter === 'any' || (filter === 'writable' ? c.setable : filter === 'boolean' ? c.type === 'boolean' : id === filter || id.startsWith(`${filter}.`))))
       .map(d => {
         const duplicate = devices.filter(other => other.name === d.name && other.zone === d.zone).length > 1;
         const detail = d.capabilities.locked ? 'lås' : d.capabilities.alarm_contact ? 'kontakt' : d.id.slice(-8);
@@ -67,6 +67,7 @@
         document.querySelector('[data-bind="security.garage.enabled"]').checked = false;
       }
       if (input.dataset.device) fillSelects(); setDirty(event.type === 'change'); renderConnectionRecipes();
+      if(input.dataset.bind==='security.alarmDeviceId')renderIntrusion();
     };
     document.addEventListener('change', changed);
     document.addEventListener('input', event => { if (['text', 'number', 'time'].includes(event.target.type)) changed(event); });
@@ -83,6 +84,7 @@
   }
   function renderStatus() {
     const s = data.status;
+    renderIntrusionStatus();
     $('connection').textContent = demo ? 'DEMO · Kun eksempeldata. Ingen tilkobling til Homey eller huset.' : !s.connected ? 'Homey-data er utilgjengelige. Handlinger krever fersk, bekreftet tilstand.' : s.observation ? 'OBSERVASJON · Beregner og logger. Ingen kommandoer, varsler eller spørsmål sendes.' : 'AKTIV · Valgte rutiner kan styre huset.';
     $('connection').className = `banner ${!s.observation || !s.connected ? 'warning' : ''}`;
     $('mode-title').textContent = modeNames[s.mode] || 'Ukjent'; $('mode-reason').textContent = s.reason;
@@ -98,9 +100,9 @@
     }
     if (!people.children.length) people.append(el('p', 'Velg personer i Personer-fanen for å beregne modus for huset.', 'empty'));
     const cap = (id, key) => s.devices?.[id]?.capabilities?.[key]?.value;
-    const sec = data.config.security, alarmMode = cap(sec.alarmDeviceId, 'homealarm_state'), active = cap(sec.alarmDeviceId, 'alarm_heimdall'), locked = cap(sec.lockDeviceId, 'locked'), port = cap(sec.garage.statusDeviceId, sec.garage.statusCapability);
+    const sec = data.config.security, alarmMode = cap(sec.alarmDeviceId, 'homealarm_state'), active = cap(sec.alarmDeviceId, 'alarm_generic'), locked = cap(sec.lockDeviceId, 'locked'), port = cap(sec.garage.statusDeviceId, sec.garage.statusCapability);
     $('security-status').replaceChildren();
-    for (const [name, value, sub] of [['HEIMDALL', { disarmed: 'Frakoblet', armed: 'Tilkoblet', partially_armed: 'Delvis tilkoblet' }[alarmMode] || 'Ukjent', active === true ? 'Alarm utløst' : active === false ? 'Ingen utløst alarm' : 'Alarmstatus ukjent'], ['YTTERDØR', locked === true ? 'Låst' : locked === false ? 'Ulåst' : 'Ukjent', sec.lockDeviceId ? 'Avlest tilstand' : 'Velg lås i Sikkerhet'], ['GARASJEPORT', typeof port === 'boolean' ? (port === sec.garage.openValue ? 'Åpen' : 'Lukket') : 'Ukjent', sec.garage.validated ? 'Polaritet validert' : 'Krever oppsett']]) {
+    for (const [name, value, sub] of [['ALARM', { disarmed: 'Frakoblet', armed: 'Tilkoblet', partially_armed: 'Delvis tilkoblet' }[alarmMode] || 'Ukjent', active === true ? 'Alarm utløst' : active === false ? 'Ingen utløst alarm' : 'Alarmstatus ukjent'], ['YTTERDØR', locked === true ? 'Låst' : locked === false ? 'Ulåst' : 'Ukjent', sec.lockDeviceId ? 'Avlest tilstand' : 'Velg lås i Sikkerhet'], ['GARASJEPORT', typeof port === 'boolean' ? (port === sec.garage.openValue ? 'Åpen' : 'Lukket') : 'Ukjent', sec.garage.validated ? 'Polaritet validert' : 'Krever oppsett']]) {
       const box = el('div', undefined, 'status-box'); box.append(el('div', name, 'eyebrow'), el('strong', value), el('small', sub)); $('security-status').append(box);
     }
     const changed = data.config.night.markAsleep ? data.config.people.night.filter(id => s.people[id]?.present === true && s.people[id]?.available !== false).map(id => s.people[id]?.name || id) : [];
@@ -159,7 +161,7 @@
       check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode('Rutinen er aktiv'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
       execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap, execution);
-      const builtin = { away: 'Heimdall tilkobles hvis panel er valgt.', home: 'Heimdall frakobles hvis panel er valgt. Opplåsing er et separat sikkerhetsvalg.', night: 'Hjemmeværende i nattutvalget kan settes sovende; valgt alarm tilkobles delvis.', morning: 'Valgt alarm frakobles; hjemmeværende i nattutvalget settes våkne.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const builtin = { away: 'House Guard-alarmen kobles til når alarm er aktivert.', home: 'House Guard-alarmen frakobles når alarm er aktivert. Opplåsing er et separat sikkerhetsvalg.', night: 'Hjemmeværende i nattutvalget kan settes sovende; valgt alarm tilkobles delvis.', morning: 'Valgt alarm frakobles; hjemmeværende i nattutvalget settes våkne.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const builtinList = el('div');
       const showBuiltins = actions => {
@@ -213,7 +215,35 @@
     $('setup-bridges').disabled = !data.status.observation || dirty || demo;
     for (const error of data.catalog.errors || []) container.append(el('p', error, 'error'));
   }
-  function renderConfig() { fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); }
+  function renderConfig() { fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); }
+  function renderIntrusionStatus() {
+    const s=data.intrusion;if(!s)return;
+    const phase=s.active?'ALARM UTLØST':s.entryAt?'Inngangsforsinkelse':s.target?'Utgangsforsinkelse':{disarmed:'Frakoblet',armed:'Bortealarm tilkoblet',partially_armed:'Nattalarm tilkoblet'}[s.mode];
+    const seconds=Math.max(0,Math.ceil(((s.entryAt || s.exitAt || 0)-Date.now())/1000));
+    $('intrusion-status').textContent=`${s.observation?'Observasjon · ':''}${phase}${s.entryAt || s.target?` · ${seconds} s`:''}${s.context && (s.active || s.entryAt)?` · ${s.context.zone} · ${s.context.reason}`:''}${s.faults.length?` · ${s.faults.join(' · ')}`:''}`;
+    document.querySelectorAll('[data-alarm-test]').forEach(button=>{button.disabled=!data.config.observation || !s.selected || s.mode==='disarmed' || !!s.target;});
+  }
+  function renderIntrusion() {
+    $('intrusion-settings').hidden=config.security.alarmDeviceId!=='house-guard-internal-alarm' && !(data.intrusion?.selected && (data.intrusion.mode!=='disarmed' || data.intrusion.target || data.intrusion.active));
+    const wrap=$('intrusion-sensors');wrap.replaceChildren();
+    const sensors=config.security.intrusion.sensors, choices=new Map();
+    for(const d of Object.values(data.catalog.devices))for(const cap of ['alarm_contact','alarm_motion'])if(d.capabilities[cap])choices.set(`${d.id}:${cap}`,{d,cap});
+    for(const sensor of sensors)if(!choices.has(`${sensor.deviceId}:${sensor.capability}`))choices.set(`${sensor.deviceId}:${sensor.capability}`,{d:{id:sensor.deviceId,name:'Mangler valgt sensor',zone:'',available:false,capabilities:{}},cap:sensor.capability});
+    for(const {d,cap} of [...choices.values()].sort((a,b)=>a.d.name.localeCompare(b.d.name,'nb'))) {
+      const row=el('div',undefined,'person-config');row.append(el('strong',`${d.name} · ${d.zone || 'Uten sone'} · ${cap==='alarm_contact'?'Dør/vindu':'Bevegelse'}${d.available===false?' · utilgjengelig':''}`));
+      const selected=sensors.find(s=>s.deviceId===d.id && s.capability===cap),roles=el('div',undefined,'person-roles');
+      for(const [key,title]of [['full','Borte'],['partial','Natt'],['delay','Forsinket']]) {
+        const label=el('label',undefined,'check'),check=el('input');check.type='checkbox';check.checked=!!selected?.[key];check.disabled=key==='delay'&&!selected;
+        check.onchange=()=>{let sensor=sensors.find(s=>s.deviceId===d.id && s.capability===cap);if(!sensor){sensor={deviceId:d.id,capability:cap,full:false,partial:false,delay:false};sensors.push(sensor);}sensor[key]=check.checked;if(!sensor.full&&!sensor.partial)sensors.splice(sensors.indexOf(sensor),1);setDirty(true);renderIntrusion();};
+        label.append(check,document.createTextNode(title));roles.append(label);
+      }
+      row.append(roles);
+      if(selected) {const button=el('button','Prøv sensor i observasjon');button.dataset.alarmTest='true';button.onclick=async()=>{try{await flush();await api('POST','/command',{type:'alarm-test',deviceId:d.id,capability:cap});await load();}catch(error){toast(error.message);}};row.append(button);}
+      wrap.append(row);
+    }
+    if(!choices.size)wrap.append(el('p','Ingen dør- eller bevegelsessensorer funnet. Oppdater enheter under Mer.','hint'));
+    renderIntrusionStatus();
+  }
   function renderConnectionRecipes() {
     const container = $('connection-recipes'); container.replaceChildren();
     $('legacy-delivery').hidden = !Object.values(data.config.delivery || {}).includes('legacy');
@@ -251,21 +281,6 @@
       ]);
     }
     if(!groups.length) container.append(el('p','Ingen meldings- eller lydkoblinger er nødvendige med dette oppsettet.','hint'));
-    if(config.security.alarmDeviceId) {
-      row('details','Valgfritt: sone og årsak ved alarm',[
-        'Når: Heimdall → Alarmen utløses.',
-        'Så: House Guard → Registrer alarmens sone og årsak. Bruk Heimdalls tagger Zone for sone og Reason for årsak.',
-      ]);
-      row('details','Valgfritt: detaljer ved inngangsforsinkelse',[
-        'Når: Heimdall → Alarmforsinkelsen starter.',
-        'Så: House Guard → Registrer inngangsforsinkelse. Bruk Zone for sone, Reason for årsak og Duration for sekunder.',
-      ]);
-      row('details','Valgfritt: sensorvarsel ved tilkobling',[
-        'Når: Heimdall → En sensor er aktiv ved tilkobling.',
-        'Så: House Guard → Registrer sensoradvarsel. Bruk Heimdalls warning-tagg for advarsel.',
-        'Grunnleggende Heimdall-hendelser kommer direkte. Disse valgfrie koblingene legger til teksten fra Heimdall.',
-      ]);
-    }
     const legacy=new Set();
     for(const group of groups) {
       if(config.delivery[group.key]==='legacy') {
@@ -419,6 +434,7 @@
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
       try { await flush(); await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }
     });
+    document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}});
     $('guest-toggle').onchange = async event => { try { await flush(); await api('POST', '/command', { type: 'guest', value: event.target.checked }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } };
     document.querySelectorAll('[data-scenario]').forEach(button => button.onclick = async () => { try { await api('POST', '/scenario', { scenario: button.dataset.scenario }); await load(); } catch (error) { toast(error.message); } });
     $('reload-config').onclick = async () => {

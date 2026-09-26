@@ -1,12 +1,12 @@
-# Tester og begrensninger – 0.3.2
+# Tester og begrensninger – 0.4.0
 
 Kontrollert 26. september 2026 med Node.js 24, Homey CLI 4.5.0 og homey-api 3.19.5.
 
 ## Automatiserte tester
 
-**92 tester består.** Kjør `npm test`. Testene bruker klokke, adaptere og Homey-stubber; de styrer ikke et fysisk hus.
+**111 tester består.** Kjør `npm test`. Testene bruker klokke, adaptere og Homey-stubber; de styrer ikke et fysisk hus.
 
-Dekningen omfatter tilstedeværelse, forsinkelser og avbrudd, nattspørsmål med frist og nei-veto, sen/utdatert respons, omstart, gjestemodus og enhetsdriver, lås- og portregler, observasjon, tilstandsbekreftelse, alarmkontekst, tidsplaner og sommertid, konfigurasjonsendring, rutineforhåndsvisning, enkle Flow-koblinger, Heimdall-håndtering og oppsettsveiviser.
+Dekningen omfatter tilstedeværelse, forsinkelser og avbrudd, nattspørsmål med frist og nei-veto, sen/utdatert respons, omstart, gjestemodus og enhetsdriver, lås- og portregler, observasjon, tilstandsbekreftelse, alarmkontekst, tidsplaner og sommertid, konfigurasjonsendring, rutineforhåndsvisning, enkle Flow-koblinger, egen alarmmotor og alarmpanel og oppsettsveiviser.
 
 Flow-veiviseren er kontrollert for begge Flow-typer, like navn, utilgjengelige eller slettede valg, erstatning av tidligere veiviserlys, gjenbruk av eksisterende handlinger og vern av avhengigheter. Flow-start leser fersk status og kontrollerer autorisasjon igjen før sending. Ingen eksisterende scene-Flow er startet under denne kontrollen.
 
@@ -18,12 +18,15 @@ Autolagringsmodellen er også kjørt mot den lokale demoens HTTP-API: to raske e
 
 `npm run validate -- --level publish` består. Dette er lokal Homey-validering, ikke innsendelse eller godkjenning i App Store.
 
+Alarmtestene dekker full/natt-utvalg, korte sensorpulser, ukjente sensorer, åpne dører, forsinkelser, avstilling, duplikater, omstart, endret oppsett, observasjon og overgang fra eksternt panel. Integrasjonstestene bekrefter at hjemkomst kan avbryte en pågående tilkobling og at avstilling stopper ventende tilkoblingshandlinger.
+
+Demoens HTTP-API er testet med lagring av sensoroppsett, tilkobling, simulert alarm med sone/årsak og avstilling. Frakobling er også testet mens en tilkoblingsforespørsel venter på en treg avlesing; det forsinkede svaret får ikke koble til igjen.
+
 ## Kontroller utført på Homey
 
-- 0.3.2 er installert og kjører. Lagret konfigurasjon er sammenlignet før og etter og er identisk. Observasjon, integrasjonskort og aktivering er bevart; katalogen har ingen feil og valgte leveringskoblinger er fortsatt registrert.
+- 0.4.0 er installert i observasjon. Eget alarmpanel er valgt internt, men ingen fysisk alarmsensor er valgt. Katalogen har ingen feil. Personer, rutiner og øvrige enhetsvalg er bevart. Seks gamle alarmbrokort er fjernet fra appens integrasjonsflow; de 28 gjenværende kortene er kontrollert uten feil. Andre personlige flows er uendret.
 - 0.3.1 viser begge Flow-typer og bevarer Homeys opplysning om hvilke flows som kan startes direkte. Veiviserens utkast ble validert og forhåndsvist gjennom den installerte appen uten lagring eller Flow-start. Lagret konfigurasjon og observasjon var uendret etter installasjonen.
 - Appen installeres og kjører i observasjon uten katalogfeil.
-- Direkte tilkobling til Heimdall 2.11.0 er opprettet.
 - Faktiske kortmetadata og Sonos-lydvalg er lest.
 - Nye Flow-koblinger er kontrollert med Homeys `isBroken()` og appens kontroll av forbindelser, mål og tagger.
 - Nødvendige endringer i et eksisterende oppsett er kontrollert uten å endre de øvrige rutinene.
@@ -35,7 +38,7 @@ Disse kontrollene bekrefter oppsett og tilgang, ikke at meldinger er mottatt, ly
 
 - Faktisk mobilmottak, tale og alarmlyd.
 - Mobilkortets feil, tidsavbrudd og sent svar på reelle telefoner.
-- Faktisk mottak av Heimdall-hendelser og alarmens detaljtekst.
+- Full alarmprøve med valgte fysiske sensorer, avstilling og sanntidsforbindelse.
 - Fysisk virkning av lås og port i et kontrollert oppsett.
 - Visuell kontroll av veiviser og autolagring på innstillingssiden, særlig på mobil. Ingen nettleser var tilgjengelig under den siste kontrollen.
 - En komplett vanlig Flow med de nye kortene i praktisk bruk. Lokale modeller dekker både vanlige flows og Advanced Flow; den kontrollerte installasjonen bruker Advanced Flow.

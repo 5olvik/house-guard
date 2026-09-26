@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [
@@ -19,11 +19,25 @@
   ],
   "brandColor": "#e8441a",
   "permissions": [
-    "homey:manager:api",
-    "homey:app:com.uc.heimdall"
+    "homey:manager:api"
   ],
   "author": {
     "name": "House Guard"
+  },
+  "source": "https://github.com/5olvik/house-guard",
+  "support": "https://github.com/5olvik/house-guard/issues",
+  "capabilities": {
+    "alarm_status": {
+      "type": "string",
+      "title": {
+        "no": "Alarmstatus",
+        "en": "Alarm status"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    }
   },
   "images": {
     "small": "/assets/images/small.png",
@@ -58,6 +72,59 @@
         "small": "/drivers/guest-mode/assets/images/small.png",
         "large": "/drivers/guest-mode/assets/images/large.png",
         "xlarge": "/drivers/guest-mode/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
+    },
+    {
+      "id": "alarm-panel",
+      "name": {
+        "no": "Alarmpanel",
+        "en": "Alarm panel"
+      },
+      "class": "sensor",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [
+        "homealarm_state",
+        "alarm_generic",
+        "alarm_status",
+        "button"
+      ],
+      "capabilitiesOptions": {
+        "button": {
+          "title": {
+            "no": "Frakoble og avstill",
+            "en": "Disarm and silence"
+          }
+        },
+        "alarm_generic": {
+          "title": {
+            "no": "Utløst alarm",
+            "en": "Alarm triggered"
+          },
+          "zoneActivity": false
+        }
+      },
+      "images": {
+        "small": "/drivers/alarm-panel/assets/images/small.png",
+        "large": "/drivers/alarm-panel/assets/images/large.png",
+        "xlarge": "/drivers/alarm-panel/assets/images/xlarge.png"
       },
       "pair": [
         {
@@ -113,93 +180,6 @@
   },
   "flow": {
     "actions": [
-      {
-        "id": "report_alarm_details",
-        "title": {
-          "no": "Registrer alarmens sone og årsak",
-          "en": "Record the alarm zone and reason"
-        },
-        "args": [
-          {
-            "name": "zone",
-            "type": "text",
-            "title": {
-              "no": "Sone",
-              "en": "Sone"
-            }
-          },
-          {
-            "name": "reason",
-            "type": "text",
-            "title": {
-              "no": "Årsak",
-              "en": "Årsak"
-            }
-          }
-        ],
-        "titleFormatted": {
-          "no": "Registrer alarmens sone og årsak: [[zone]] · [[reason]]",
-          "en": "Record the alarm zone and reason: [[zone]] · [[reason]]"
-        }
-      },
-      {
-        "id": "report_entry_delay",
-        "title": {
-          "no": "Registrer inngangsforsinkelse",
-          "en": "Record an entry delay"
-        },
-        "args": [
-          {
-            "name": "zone",
-            "type": "text",
-            "title": {
-              "no": "Sone",
-              "en": "Sone"
-            }
-          },
-          {
-            "name": "reason",
-            "type": "text",
-            "title": {
-              "no": "Årsak",
-              "en": "Årsak"
-            }
-          },
-          {
-            "name": "seconds",
-            "type": "number",
-            "title": {
-              "no": "Sekunder",
-              "en": "Sekunder"
-            }
-          }
-        ],
-        "titleFormatted": {
-          "no": "Registrer inngangsforsinkelse: [[zone]] · [[reason]] · [[seconds]]",
-          "en": "Record an entry delay: [[zone]] · [[reason]] · [[seconds]]"
-        }
-      },
-      {
-        "id": "report_sensor_warning",
-        "title": {
-          "no": "Registrer sensoradvarsel",
-          "en": "Record a sensor warning"
-        },
-        "args": [
-          {
-            "name": "reason",
-            "type": "text",
-            "title": {
-              "no": "Advarsel",
-              "en": "Advarsel"
-            }
-          }
-        ],
-        "titleFormatted": {
-          "no": "Registrer sensoradvarsel: [[reason]]",
-          "en": "Record a sensor warning: [[reason]]"
-        }
-      },
       {
         "id": "answer_night_question",
         "title": {
@@ -371,96 +351,6 @@
         "titleFormatted": {
           "no": "Start navngitt rutine: [[routine]]",
           "en": "Start named routine: [[routine]]"
-        }
-      },
-      {
-        "id": "integration_event",
-        "title": {
-          "no": "Rapporter integrasjonshendelse",
-          "en": "Report integration event"
-        },
-        "args": [
-          {
-            "name": "type",
-            "type": "dropdown",
-            "title": {
-              "no": "Hendelse",
-              "en": "Hendelse"
-            },
-            "values": [
-              {
-                "id": "alarm",
-                "title": {
-                  "no": "Alarm utløst",
-                  "en": "Alarm utløst"
-                }
-              },
-              {
-                "id": "alarmOff",
-                "title": {
-                  "no": "Alarm avstilt",
-                  "en": "Alarm avstilt"
-                }
-              },
-              {
-                "id": "arming",
-                "title": {
-                  "no": "Tilkoblingsforsinkelse",
-                  "en": "Tilkoblingsforsinkelse"
-                }
-              },
-              {
-                "id": "activeSensor",
-                "title": {
-                  "no": "Aktiv sensor",
-                  "en": "Aktiv sensor"
-                }
-              },
-              {
-                "id": "entryDelay",
-                "title": {
-                  "no": "Inngangsforsinkelse",
-                  "en": "Inngangsforsinkelse"
-                }
-              },
-              {
-                "id": "morning",
-                "title": {
-                  "no": "Morgen",
-                  "en": "Morgen"
-                }
-              }
-            ]
-          },
-          {
-            "name": "zone",
-            "type": "text",
-            "title": {
-              "no": "Sone",
-              "en": "Sone"
-            }
-          },
-          {
-            "name": "reason",
-            "type": "text",
-            "title": {
-              "no": "Årsak",
-              "en": "Årsak"
-            }
-          },
-          {
-            "name": "seconds",
-            "type": "number",
-            "title": {
-              "no": "Sekunder",
-              "en": "Sekunder"
-            }
-          }
-        ],
-        "deprecated": true,
-        "titleFormatted": {
-          "no": "Rapporter integrasjonshendelse: [[type]] · [[zone]] · [[reason]] · [[seconds]]",
-          "en": "Report integration event: [[type]] · [[zone]] · [[reason]] · [[seconds]]"
         }
       },
       {

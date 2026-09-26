@@ -76,7 +76,6 @@ function bridgeFixture() {
   const config=defaults();config.delivery={notifications:'legacy',questions:'legacy',audio:'legacy'};config.night.automatic=true;config.people.questions=['a'];config.people.notifications=['a'];add(config,'alarm',[step('sound',{kind:'sound',deviceId:'sonos',text:'alarm3',volume:65}),step('push',{kind:'notify',text:'Alarm'})]);
   const manifest=require('../app.json'),own='homey:app:no.husmodus:';
   const metadata=Object.fromEntries(['triggers','conditions','actions'].map(k=>[k,(manifest.flow[k]||[]).map(c=>({...c,id:own+c.id}))]));
-  for(const [id,tokens] of [['AlarmActivated',['Zone','Reason']],['AlarmDeactivated',['Source']],['ArmDelayActivated',['Duration']],['AlarmDelayActivated',['Zone','Reason','Duration']],['sensorActiveAtArming',['warning']]])metadata.triggers.push({id:'homey:app:com.uc.heimdall:'+id,tokens:tokens.map(id=>({id}))});
   metadata.conditions.push({id:'homey:manager:mobile:push_confirm'});
   metadata.actions.push(...['push_text','push_text_critical'].map(id=>({id:'homey:manager:mobile:'+id})),{id:'homey:device:sonos:cloud_play_sound'});
   return {config,people:{a:{name:'A'}},devices:{},metadata,sounds:{'sonos:alarm3':{id:'alarm3',name:'Alarm 3'}}};

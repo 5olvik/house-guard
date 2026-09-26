@@ -3,7 +3,7 @@ const test=require('node:test'), assert=require('node:assert/strict'), {EventEmi
 const {defaults,validate}=require('../lib/config'), {harness,step,add}=require('./helpers');
 const readiness=require('../lib/readiness'), needs=require('../lib/integration-needs');
 const simple=require('../lib/simple-flows'), {coverage}=require('../lib/bridges');
-const {Heimdall,decode}=require('../lib/heimdall'), {eventTypes,legacyRoutes}=require('../lib/flow-connections');
+const {legacyRoutes}=require('../lib/flow-connections');
 const {HomeyAdapter}=require('../lib/homey-adapter'), setup=require('../settings/setup-model');
 const own='homey:app:no.husmodus:';
 const catalog=()=>({devices:{},people:{},flows:[],integrationFlows:[]});
@@ -83,62 +83,18 @@ test('Ny migreringsplan bruker enkle kort og dekker samme funksjoner på ett ler
   add(c,'alarm',[step('image',{kind:'notify',notificationType:'image',imageDeviceId:'cam'}),step('say',{kind:'speak',deviceId:'speaker',text:'Alarm',volume:50}),step('sound',{kind:'sound',deviceId:'speaker',text:'alarm3',volume:50})]);
   const manifest=require('../app.json');
   const metadata={triggers:manifest.flow.triggers.map(x=>({id:own+x.id})),conditions:[{id:'homey:manager:mobile:push_confirm'}],actions:manifest.flow.actions.map(x=>({id:own+x.id}))};
-  metadata.triggers.push(...['AlarmActivated','AlarmDelayActivated','sensorActiveAtArming'].map(id=>({id:'homey:app:com.uc.heimdall:'+id})));
   metadata.actions.push(...['push_text','push_image'].map(id=>({id:'homey:manager:mobile:'+id})),...['tts','sound'].map(id=>({id:'homey:device:speaker:cloud_play_'+id})));
   const people={a:{id:'a',name:'Person A'}}, devices={cam:{id:'cam',name:'Kamera',images:[{id:'1',type:'camera'}]},speaker:{id:'speaker',name:'Stue'}};
   const plan=build(c,people,devices,metadata,{'speaker:alarm3':{id:'alarm3',name:'Alarm 3'}});
-  assert.equal(plan.flow.enabled,false);assert.equal(plan.routes,8);assert.equal(plan.cards,18);
+  assert.equal(plan.flow.enabled,false);assert.equal(plan.routes,5);assert.equal(plan.cards,12);
   const cat={integrationFlows:collect({},[{...plan.flow,enabled:true}])};
   assert.deepEqual(coverage(c,cat).enabled,{questions:true,notifications:true,audio:true});
-  assert.deepEqual(eventTypes(cat),['alarm','entryDelay','activeSensor']);
+
   assert.equal(Object.values(plan.flow.cards).some(card=>/delivery_requested|delivery_matches|delivery_result|integration_event/.test(card.id)),false);
   const flow=cat.integrationFlows[0], question=Object.values(flow.cards).find(card=>card.id===own+'question_requested');
   const condition=flow.cards[question.outputSuccess[0]], yes=flow.cards[condition.outputTrue[0]];
   yes.args.reply='[[trigger::another-question::reply]]';assert.equal(coverage(c,cat).enabled.questions,false);
   condition.outputFalse=['deleted-card'];assert.doesNotThrow(()=>coverage(c,cat));assert.equal(coverage(c,cat).enabled.questions,false);
-});
-
-test('Heimdall decoder forkaster ukjente og ugyldige hendelser',()=>{
-  assert.deepEqual(decode('Arming Delay',30),{type:'arming',payload:{seconds:30}});
-  assert.equal(decode('Arming Delay','30'),null);assert.equal(decode('Alarm Delay',-1),null);assert.equal(decode('Alarm Status','false'),null);
-  assert.deepEqual(decode('Alarm Status',false),{type:'alarmOff',payload:{}});
-  assert.equal(decode('Arming Delay left',20),null);
-});
-
-test('Heimdall stopper ved avinstallasjon, byttet panel og avslutning',async()=>{
-  const client=new EventEmitter();let selected=true,installed=true,unregistered=false;client.getInstalled=async()=>installed;client.getVersion=async()=>'2.11.0';client.unregister=()=>{unregistered=true;};
-  const events=[],homey={api:{getApiApp:()=>client},app:{error:()=>{}}};
-  const link=new Heimdall(homey,{selected:()=>selected,onEvent:(type,data)=>events.push({type,data})});
-  await link.refresh();assert.equal(link.status.state,'connected');client.emit('realtime','Arming Delay',30);assert.equal(events.length,1);
-  client.emit('uninstall');client.emit('realtime','Arming Delay',30);assert.equal(events.length,1);
-  await link.refresh();selected=false;client.emit('realtime','Arming Delay',30);assert.equal(events.length,1);
-  await link.refresh();assert.equal(link.status.state,'off');link.close();assert.equal(unregistered,true);assert.equal(client.listenerCount('realtime'),0);
-});
-
-test('Appens Heimdall-håndtering tar imot hendelser og stopper duplikater og gamle avlesninger',async()=>{
-  const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),{createRequire}=require('node:module');
-  const filename=path.resolve(__dirname,'../app.js'),localRequire=createRequire(filename),module={exports:{}};
-  class Adapter {constructor(){this.catalogue={devices:{panel:{ownerUri:'homey:app:com.uc.heimdall'}},integrationFlows:[]};}async connect(){}}
-  vm.runInNewContext(fs.readFileSync(filename,'utf8'),{module,require:id=>id==='homey'?{App:EventEmitter}:id==='./lib/homey-adapter'?{HomeyAdapter:Adapter}:localRequire(id)});
-  const config=defaults();config.security.alarmDeviceId='panel';
-  const client=new EventEmitter();client.getInstalled=async()=>true;client.getVersion=async()=>'2.11.0';client.unregister=()=>{};
-  const app=new module.exports(),seen=[];app.log=()=>{};app.error=()=>{};app.registerCards=()=>{};
-  app.homey={clock:{getTimezone:()=>'Europe/Oslo'},settings:{get:key=>key==='husmodus.config.v1'?config:{},set:()=>{}},api:{getApiApp:()=>client},setInterval:()=>1,app};
-  app.refresh=async()=>{app.engine.snapshot={connected:true,devices:{panel:{available:true}}};};
-  await app.onInit();app.engine.event=(...args)=>seen.push(args);
-  await app.heimdall.onEvent('arming',{seconds:30});assert.equal(seen.length,1);assert.equal(seen[0][0],'arming');
-  app.adapter.catalogue.integrationFlows=[{type:'advanced',cards:{source:{id:'homey:app:com.uc.heimdall:ArmDelayActivated',outputSuccess:['target']},target:{id:own+'integration_event',args:{type:'arming'}}}}];
-  await app.heimdall.onEvent('arming',{seconds:30});assert.equal(seen.length,1);
-  app.adapter.catalogue.integrationFlows=[];app.refresh=async()=>{app.engine.state.generation++;};
-  await app.heimdall.onEvent('arming',{seconds:30});assert.equal(seen.length,1);
-  app.refresh=async()=>{app.engine.snapshot.connected=false;};
-  await app.heimdall.onEvent('arming',{seconds:30});assert.equal(seen.length,1);app.heimdall.close();
-});
-
-test('En frakoblet legacy-hendelse teller ikke som dekning',()=>{
-  const flow={type:'advanced',cards:{t:{id:'homey:app:com.uc.heimdall:ArmDelayActivated',outputSuccess:['a']},a:{id:own+'integration_event',args:{type:'arming'}}}};
-  const cat={integrationFlows:[flow]};assert.deepEqual(eventTypes(cat),['arming']);flow.cards.t.outputSuccess=[];assert.deepEqual(eventTypes(cat),[]);
-  assert.deepEqual(legacyRoutes({integrationCards:[{id:own+'delivery_requested'},{id:own+'delivery_matches'},{id:own+'delivery_result'}]}),[]);
 });
 
 test('Veiviseren velger flows med riktig type og bevarer øvrige rutiner i observasjon',()=>{

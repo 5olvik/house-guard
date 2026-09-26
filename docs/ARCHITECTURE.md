@@ -27,3 +27,11 @@ Alle eksterne navn og feilmeldinger gjengis med tekstnoder. Ingen enheter erstat
 `settings/autosave.js` samler tekstendringer med 350 ms skrivepause og serialiserer validering og lagring. Brytere og lister sendes umiddelbart. Nye endringer under en forespørsel beholdes og sendes med revisjonen fra forrige svar. Et mistet svar avstemmes mot lagret oppsett før ny sending. Konfigurasjonskonflikter stopper køen og vises som feil; de overskrives ikke automatisk.
 
 GUI-statusoppdatering erstatter ikke lokale endringer som venter på lagring. Ekstern konfigurasjonsrevisjon lastes bare når det ikke finnes slike endringer; en utdatert lagring avvises på serveren. Veiviseren oppdaterer bare det valget som ble endret og beholder valgt observasjonsmodus. Import lagres automatisk i observasjon etter validering.
+
+## Egen alarmmotor
+
+`lib/intrusion.js` håndterer frakoblet, natt, borte, inn-/utgangsforsinkelse, sensorfeil og lagret alarmkontekst. Ingen tredjeparts alarmkode inngår. Bare den interne alarmen kan velges i oppsettet. Capability-hendelser køes slik at korte sensorutslag ikke forsvinner i sammenslåtte avlesinger; gamle hendelser forkastes ved ny revisjon eller gjenoppkobling. Forsinkelser avstemmes hvert sekund med fersk avlesing. Ukjente sensorer blokkerer tilkobling.
+
+Tilstand lagres under `houseguard.intrusion.v1` og bindes til sensorutvalg, forsinkelser og observasjonsmodus. Omstart bevarer fullført tilkobling og alarmkontekst, men avbryter uferdig utgangsforsinkelse. Avstilling avbryter ventende inngangs- og tilkoblingshandlinger. Et internt panel i adapteren lar de eksisterende rutinene bruke samme motor. `alarmTarget` skiller en pågående tilkobling fra bekreftet frakobling.
+
+Alarmpanelet speiler intern tilstand og sender manuelle kommandoer gjennom appen. Sletting av panelet frakobler ikke motoren. I observasjon kan intern alarmtilstand testes; varsler og andre eksterne handlinger blokkeres.

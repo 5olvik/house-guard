@@ -68,14 +68,14 @@ test('Port sender én puls; timeout gir ingen ny puls', async () => {
 });
 test('Alarmgjentakelse beholder kontekst og stopper ved avstilling', async () => {
   const h = harness(c => { c.security.alarmDeviceId = 'alarm'; add(c, 'alarm', [step('alert', { text: '{zone}: {reason}' })]); });
-  h.device('alarm', 'alarm_heimdall', false); h.ingest(); h.device('alarm', 'alarm_heimdall', true); h.engine.event('alarm', { id: 'alarm1', zone: 'Stue', reason: 'Bevegelse' }); await h.engine.tick(); h.advance(60000); await h.engine.tick();
+  h.device('alarm', 'alarm_generic', false); h.ingest(); h.device('alarm', 'alarm_generic', true); h.engine.event('alarm', { id: 'alarm1', zone: 'Stue', reason: 'Bevegelse' }); await h.engine.tick(); h.advance(60000); await h.engine.tick();
   assert.deepEqual(h.calls, [['timeline', 'Stue: Bevegelse'], ['timeline', 'Stue: Bevegelse']]);
   h.engine.event('alarmOff'); h.advance(60000); await h.engine.tick(); assert.equal(h.calls.length, 2);
 });
 test('Restart under alarm gjenbruker kontekst, ikke gamle ankomster', async () => {
   const customize = c => { c.security.alarmDeviceId = 'alarm'; c.security.autoUnlock = true; c.security.lockDeviceId = 'lock'; add(c, 'alarm', [step('alarm', { text: '{zone}: {reason}' })]); };
-  const h = harness(customize); h.device('alarm', 'alarm_heimdall', false); h.ingest(); h.device('alarm', 'alarm_heimdall', true); h.engine.event('alarm', { id: 'x', zone: 'Gang', reason: 'Dør' }); await h.engine.tick();
-  const other = harness(customize, h.saved()); other.device('alarm', 'alarm_heimdall', true); other.device('alarm', 'homealarm_state', 'disarmed'); other.ingest(); other.advance(60000); await other.engine.tick(); assert.deepEqual(other.calls, [['timeline', 'Gang: Dør']]);
+  const h = harness(customize); h.device('alarm', 'alarm_generic', false); h.ingest(); h.device('alarm', 'alarm_generic', true); h.engine.event('alarm', { id: 'x', zone: 'Gang', reason: 'Dør' }); await h.engine.tick();
+  const other = harness(customize, h.saved()); other.device('alarm', 'alarm_generic', true); other.device('alarm', 'homealarm_state', 'disarmed'); other.ingest(); other.advance(60000); await other.engine.tick(); assert.deepEqual(other.calls, [['timeline', 'Gang: Dør']]);
 });
 test('Restart rekonstruerer kun usendt borterutine etter fersk kontroll', async () => {
   const customize = c => add(c, 'away', [step('away')]); const h = harness(customize); h.ingest(); h.person('a', false); h.person('b', false); h.ingest();
@@ -109,7 +109,7 @@ test('Manuell natt i observasjon overlever uendret fysisk personstatus', async (
 });
 test('Alarmdetaljer beriker planlagt varsel uten doble kjøringer', async () => {
   const h = harness(c => { c.security.alarmDeviceId = 'alarm'; add(c, 'alarm', [step('alert', { text: '{zone}: {reason}' })]); });
-  h.device('alarm', 'alarm_heimdall', false); h.ingest(); h.device('alarm', 'alarm_heimdall', true); h.ingest();
+  h.device('alarm', 'alarm_generic', false); h.ingest(); h.device('alarm', 'alarm_generic', true); h.ingest();
   h.engine.event('alarm', { id: 'actual-id', zone: 'Stue', reason: 'Vindu' }); await h.engine.tick();
   assert.deepEqual(h.calls, [['timeline', 'Stue: Vindu']]); assert.equal(h.engine.state.alarm.id, 'actual-id');
 });

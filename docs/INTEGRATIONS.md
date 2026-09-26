@@ -1,4 +1,4 @@
-# Integrasjoner i House Guard 0.3.2
+# Integrasjoner i House Guard 0.4.0
 
 Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til ønskede integrasjoner etterpå.
 
@@ -9,9 +9,7 @@ Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til øns
 | Gjestemodus | Appbryter og egen Homey-enhet | Ingen |
 | Dørlås, inkludert Yale | Valgt enhets låsestatus og kommandoer | Ingen |
 | Soneaktivitet og temperatur | Direkte Homey-avlesing med tidsstempel | Ingen |
-| Heimdall-modus og alarmstatus | Direkte panelavlesing og tilstandsbekreftelse | Ingen |
-| Grunnleggende Heimdall-hendelser | App-til-app-abonnement | Ingen |
-| Heimdall-detaljer | Spesifikke kort for sone/årsak, inngangsforsinkelse og sensoradvarsel | Opptil tre valgfrie koblinger à to kort |
+| House Guard-alarm: modus, sensorer, sone/årsak og forsinkelser | Egen alarmmotor med direkte sensorabonnement | Ingen |
 | Mobilvarsler | House Guard-trigger og Homeys mobilkort | To kort per person og varseltype/kamera |
 | Tale og alarmlyd | Navnevalg og Sonos-kort med Melding/Volum | To kort per høyttaler og funksjon/lyd |
 | Nattspørsmål | Trigger, mobilbetingelse, ja og nei med Dette spørsmålet | Fire kort per mottaker, inkludert Ellers |
@@ -47,17 +45,15 @@ Oppsettskontrollen leser sammenhengende kort, mottakere, mål og tagger. Ikke va
 
 En korrekt Flow beviser ikke faktisk mottak eller hørbar lyd. Enkle utgangskoblinger har **ingen automatisk reservepush eller eksplisitt leveringskvittering**. Test valgt varseltype og hver høyttaler separat. Mobilkortets feil og tidsavbrudd må prøves på telefonene.
 
-## Direkte Heimdall
+## Innebygd alarm
 
-Appen abonnerer på grunnleggende hendelser fra Heimdall 2.x. Forbindelse til 2.11.0 er kontrollert i utvikling. Abonnementet stopper når Heimdall er utilgjengelig eller ikke lenger valgt; eldre timere gjenspilles ikke ved oppstart.
-
-Detaljerte Flow-koblinger kan legge til sone, årsak og sensoradvarsel. En slik kobling brukes fremfor å starte samme hendelsestype på nytt fra det direkte abonnementet. Fysisk alarmtest og sanntidsmottak må fortsatt kontrolleres i hvert oppsett.
+House Guard eier alarmtilstanden og leser valgte sensorer direkte. Heimdall-integrasjonen og de gamle alarmbrokortene er fjernet. Se [oppsett og test](NATIVE-ALARM.md). Varsling og Sonos bruker fortsatt leveringskoblingene ovenfor.
 
 ## Homeys tillatelser
 
 En ufarlig prøve fra den installerte appen avviste kjøring av handlings- og betingelseskort med «Missing Scopes». Derfor kan mobilkort og Sonos-kort ikke kjøres direkte gjennom det aktuelle Flow-API-et med appens tillatelser. Sluttbrukeren skal ikke opprette eller lime inn en eiertoken.
 
-Homey Pro og API-tillatelsen er nødvendig for den direkte avlesingen. App-til-app-kommunikasjon og API-tillatelsen gjør at Homey Cloud ikke støttes. Publish-validering er ikke en App Store-godkjenning.
+Homey Pro og API-tillatelsen er nødvendig for den direkte avlesingen. API-tillatelsen gjør at Homey Cloud ikke støttes. Publish-validering er ikke en App Store-godkjenning.
 
 ## Primærkilder
 

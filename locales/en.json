@@ -2,5 +2,17 @@
   "guest": {
     "device_name": "Guest mode",
     "unavailable": "Waiting for guest mode from House Guard. Retrying automatically."
+  },
+  "alarm": {
+    "device_name": "Alarm panel",
+    "not_selected": "Select House Guard built-in alarm in the app Security settings.",
+    "unavailable": "Waiting for House Guard alarm status.",
+    "observation": "Observation",
+    "triggered": "Alarm triggered",
+    "entry": "Entry delay",
+    "exit": "Exit delay",
+    "disarmed": "Disarmed",
+    "armed": "Away alarm armed",
+    "partially_armed": "Night alarm armed"
   }
 }
