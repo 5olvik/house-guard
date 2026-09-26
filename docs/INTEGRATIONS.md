@@ -1,4 +1,4 @@
-# Integrasjoner i House Guard 0.3.1
+# Integrasjoner i House Guard 0.3.2
 
 Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til ønskede integrasjoner etterpå.
 
@@ -23,7 +23,7 @@ Lag en Flow i Homey, for eksempel «Slå av alle lys», med handlingene du vil u
 
 Listen viser alle vanlige flows og Advanced Flows alfabetisk. Deaktiverte flows, flows med feil og flows som ikke kan startes direkte, vises med en forklaring og kan ikke velges. Advanced Flow må ha et [Start-kort](https://homey.app/en-us/features/advanced-flow/). Bruk **Oppdater Flow-listen** hvis du lager eller endrer en Flow mens veiviseren er åpen.
 
-Valgene legges i et utkast i observasjon. Tidligere enkeltlys fra veiviseren erstattes når utkastet lagres. Egne handlinger under Rutiner beholdes; en allerede valgt Flow legges ikke til to ganger. En startet ekstern Flow kjører sine egne handlinger og kan ikke trekkes tilbake av House Guard.
+Valgene lagres automatisk med en gang. Tekstfelt lagres etter en kort skrivepause. Veiviseren beholder valgt observasjonsmodus. Tidligere enkeltlys fra veiviseren erstattes først når du endrer Flow-valget for samme rutine. Egne handlinger under Rutiner beholdes; en allerede valgt Flow legges ikke til to ganger. En startet ekstern Flow kjører sine egne handlinger og kan ikke trekkes tilbake av House Guard.
 
 ## Eksempel: vanlig varsel
 
@@ -39,7 +39,7 @@ Valgene legges i et utkast i observasjon. Tidligere enkeltlys fra veiviseren ers
 
 Bruk taggene fra det samme Når-kortet. Ikke lag et ekstra mobilspørsmål i en egen Flow. Appen knytter svaret til personen, spørsmålet og fristen; gamle svar ignoreres. Et uteblitt svar blir ikke et ja.
 
-Alle oppskrifter for de valgte tilleggene finnes under **Mer → Koblinger**. Vanlige flows kan brukes; Advanced Flow er valgfritt. Unngå ekstra betingelser og forsinkelser i disse koblingene. Lagre oppsettet og velg **Kontroller integrasjonsflows** etter endringer.
+Alle oppskrifter for de valgte tilleggene finnes under **Mer → Koblinger**. Vanlige flows kan brukes; Advanced Flow er valgfritt. Unngå ekstra betingelser og forsinkelser i disse koblingene. Oppsettet lagres automatisk. Velg **Kontroller integrasjonsflows** etter endringer.
 
 ## Hva som kontrolleres
 

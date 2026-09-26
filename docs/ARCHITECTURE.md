@@ -24,4 +24,6 @@ Observasjon beregner og skriver kun appens egen historikk/runtime. Både motor o
 
 Alle eksterne navn og feilmeldinger gjengis med tekstnoder. Ingen enheter erstattes med samme navn. GUI følger Power Guards lyse CSS-tokens og mørke header. Det bruker ingen antatt Homey-mørkemodusdeteksjon; faktisk Homey-klientrendering er et gjenstående live-sjekkpunkt.
 
-GUI-statusoppdatering bytter ikke ut et åpent utkast. Ekstern konfigurasjonsrevisjon lastes bare når det ikke finnes lokale endringer; en utdatert lagring avvises på serveren.
+`settings/autosave.js` samler tekstendringer med 350 ms skrivepause og serialiserer validering og lagring. Brytere og lister sendes umiddelbart. Nye endringer under en forespørsel beholdes og sendes med revisjonen fra forrige svar. Et mistet svar avstemmes mot lagret oppsett før ny sending. Konfigurasjonskonflikter stopper køen og vises som feil; de overskrives ikke automatisk.
+
+GUI-statusoppdatering erstatter ikke lokale endringer som venter på lagring. Ekstern konfigurasjonsrevisjon lastes bare når det ikke finnes slike endringer; en utdatert lagring avvises på serveren. Veiviseren oppdaterer bare det valget som ble endret og beholder valgt observasjonsmodus. Import lagres automatisk i observasjon etter validering.

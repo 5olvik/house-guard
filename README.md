@@ -2,10 +2,11 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og Homey-flows i en veiviser, og utvid med Heimdall, dørlås, varsler og lyd etter behov.
 
-**Versjon 0.3.1 er en utviklingsversjon.** Den er ikke publisert i Homey App Store. Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.3.2 er en utviklingsversjon.** Den er ikke publisert i Homey App Store. Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
 ## Funksjoner
 
+- Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
 - Veiviser med personvalg og valg av én Flow for avreise, hjemkomst og natt.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
 - Gjestemodus som egen av/på-enhet i Homey.
@@ -42,6 +43,8 @@ Ved oppdatering: installer uten `--clean` for å beholde innstillinger og paring
 
 Gjestebryteren legges til med **Legg til enhet → House Guard → Gjestemodus**.
 
+Endringer i innstillinger, handlinger og veiviseren lagres automatisk. Tekstfelt lagres etter en kort skrivepause; brytere og lister lagres med en gang. Statusfeltet viser om lagringen er ferdig. Ved ugyldige felt eller forbindelsesfeil vises «Ikke lagret», og det sist lagrede oppsettet gjelder. Rett feilen før du lukker siden. Ved konflikt med en annen visning kan du forkaste lokale endringer og laste inn det lagrede oppsettet. Ventende rutiner avbrytes når oppsettet endres.
+
 ## Lokal demonstrasjon
 
 ```sh
@@ -52,12 +55,13 @@ npm run preview
 
 ## Status og begrensninger
 
-80 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
+92 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
 
 Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
 
 ## Dokumentasjon
 
+- [Vurdering av færre Flow-koblinger](docs/FLOW-SIMPLIFICATION.md)
 - [Integrasjoner og nødvendige Flow-koblinger](docs/INTEGRATIONS.md)
 - [Tester og kjente begrensninger](docs/TEST-REPORT.md)
 - [Arkitektur](docs/ARCHITECTURE.md)

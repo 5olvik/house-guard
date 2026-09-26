@@ -22,5 +22,9 @@
   "0.3.1": {
     "no": "Veiviseren lar deg velge Homey-flows for avreise, hjemkomst og natt i stedet for enkeltlys. Alle flows vises med type og tilgjengelighet. Oppdater listen uten å lukke veiviseren.",
     "en": "Choose Homey Flows for leaving, arriving and night mode instead of individual lights. The wizard lists all Flows with their type and availability and can refresh the list."
+  },
+  "0.3.2": {
+    "no": "Automatisk lagring av innstillinger, rutiner og veiviservalg. Lagreknapp og ekstra bekreftelsesdialog er fjernet. Lagringsstatus og tydelige feil uten å overskrive nyere endringer.",
+    "en": "Settings, routines and wizard choices save automatically. Removed the save button and extra confirmation dialog. Visible save status and errors protect newer edits."
   }
 }

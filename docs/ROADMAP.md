@@ -2,10 +2,10 @@
 
 Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå interne ID-er, ruting eller tekniske migreringsverktøy.
 
-## Implementert i 0.3.1
+## Implementert i 0.3.2
 
 - Veiviser med personvalg og egne Flow-valg for avreise, hjemkomst og natt.
-- Veiviser som lager et gjennomgåbart utkast i observasjon.
+- Automatisk lagring av felt, handlinger og veiviservalg med synlig status og revisjonskontroll.
 - Direkte grunnleggende Heimdall-hendelser og direkte låsstyring.
 - Enkle Flow-kort med navnevalg og få tagger.
 - Oppsettskontroll av reelle kortforbindelser, mål og tagger.
@@ -17,7 +17,7 @@ Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå int
 2. Gjennomfør visuell kontroll på mobil og i Homeys innstillinger.
 3. Gjør alarm, lås, nattspørsmål og valgfrie varsler enklere å sette opp.
 4. Test mobilspørsmål, feil og tidsavbrudd på reelle telefoner.
-5. Undersøk støttede måter å redusere antall koblinger for store varslings-/lydoppsett.
+5. Utvikle mottakergrupper for varsler og undersøk direkte alarmdetaljer, som beskrevet i [Flow-gjennomgangen](FLOW-SIMPLIFICATION.md).
 6. Fullfør engelsk innstillingsside og publiseringsdokumentasjon.
 
 Brukeren kan velge egne scene-flows i veiviseren eller legge direkte enhetshandlinger til under Rutiner. En full pakke med flere varseltyper, mottakere og høyttalere krever foreløpig flere små koblinger.

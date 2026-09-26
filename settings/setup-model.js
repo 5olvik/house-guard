@@ -50,5 +50,12 @@
     next.observation = true;
     return next;
   }
-  return {draft,flowChoices,selections};
+  function change(config, patch, catalog) {
+    // Apply only the choice that was edited, leaving other wizard choices alone.
+    const next = draft(config, { people: config.people.presence, ...patch }, catalog);
+    if (patch.useNightPeople === false) next.people.night = [];
+    next.observation = config.observation;
+    return next;
+  }
+  return {draft,change,flowChoices,selections};
 });

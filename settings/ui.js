@@ -5,12 +5,21 @@
   const kinds = { set: 'Sett enhet', flow: 'Start Flow', notify: 'Varsel', speak: 'Si tekst', sound: 'Spill lyd', timeline: 'Tidslinje', person: 'Sovestatus', garage: 'Lukk port', verify: 'Bekreft tilstand' };
   const resultNames = { planned:'Ville utført', info:'Informasjon', pending: 'Venter', checking: 'Kontrollerer', dispatching: 'Klargjør sending', sent: 'Sendt', waiting: 'Venter på tilstand', accepted: 'Akseptert', confirmed: 'Bekreftet', observed: 'Observasjon', skipped: 'Hoppet over', cancelled: 'Avbrutt', failed: 'Feil', unknown: 'Ukjent utfall' };
   const modeNames = { home: 'Hjemme', away: 'Borte', night: 'Natt', unknown: 'Ukjent' };
-  let data, config, dirty = false, homey, demo = false, actionRoutine, editedAction, toastTimer;
+  let data, config, dirty = false, homey, demo = false, actionRoutine, editedAction, toastTimer, autosave, actionChanged = false;
   let setupStep = 0, setupOptions;
   function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
   function get(object, path) { return path.split('.').reduce((v, key) => v?.[key], object); }
   function put(object, path, value) { const parts = path.split('.'); const key = parts.pop(); get(object, parts.join('.'))[key] = value; }
-  function setDirty() { dirty = true; $('save-bar').hidden = false; if(data && config) renderConnectionRecipes(); }
+  function setDirty(immediate = false) { autosave.change(config, immediate); if(data && config) renderConnectionRecipes(); }
+  function savingState(state) {
+    dirty = state.pending;
+    $('autosave-status').dataset.state = state.phase;
+    const message = state.phase === 'error' ? `Ikke lagret: ${state.error?.message || 'Last inn lagret oppsett.'}` : state.phase === 'saving' ? 'Lagrer …' : 'Alle endringer er lagret automatisk';
+    document.querySelectorAll('[data-autosave-message]').forEach(node => { node.textContent = message; node.classList.toggle('error', state.phase === 'error'); });
+    $('reload-config').hidden = state.phase !== 'error';
+    if (data) renderIntegrations();
+  }
+  async function flush() { if (autosave) await autosave.flush(); }
   function toast(message) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 6500); }
   function api(method, path, body) {
     if (demo) return fetch(`/api${path}`, { method, headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) }).then(async r => { const value = await r.json(); if (!r.ok) throw new Error(value.error || 'API-feil'); return value; });
@@ -57,7 +66,7 @@
         document.querySelector('[data-bind="security.garage.validated"]').checked = false;
         document.querySelector('[data-bind="security.garage.enabled"]').checked = false;
       }
-      if (input.dataset.device) fillSelects(); setDirty(); renderConnectionRecipes();
+      if (input.dataset.device) fillSelects(); setDirty(event.type === 'change'); renderConnectionRecipes();
     };
     document.addEventListener('change', changed);
     document.addEventListener('input', event => { if (['text', 'number', 'time'].includes(event.target.type)) changed(event); });
@@ -123,7 +132,12 @@
       const roles = el('div', undefined, 'person-roles');
       for (const [role, label] of [['presence', 'Teller som hjemme'], ['night', 'Nattutvalg'], ['questions', 'Nattspørsmål'], ['notifications', 'Varsler']]) {
         const wrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = config.people[role].includes(id);
-        check.addEventListener('change', () => { config.people[role] = check.checked ? [...config.people[role], id] : config.people[role].filter(v => v !== id); setDirty(); });
+        check.addEventListener('change', () => {
+          config.people[role] = check.checked ? [...config.people[role], id] : config.people[role].filter(v => v !== id);
+          if (role === 'presence' && !check.checked) config.people.night = config.people.night.filter(v => v !== id);
+          if (role === 'night' && check.checked && !config.people.presence.includes(id)) config.people.presence.push(id);
+          setDirty(true); renderPeople();
+        });
         wrap.append(check, document.createTextNode(label)); roles.append(wrap);
       }
       row.append(roles); $('people-selection').append(row);
@@ -142,9 +156,9 @@
       const nameLabel = el('label', 'Rutinenavn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;
       nameInput.oninput = () => { routine.name = nameInput.value; heading.textContent = routine.name; setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel);
       const enabledWrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = routine.enabled;
-      check.onchange = () => { routine.enabled = check.checked; setDirty(); }; enabledWrap.append(check, document.createTextNode('Rutinen er aktiv'));
+      check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode('Rutinen er aktiv'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
-      execution.onchange = () => { routine.execution = execution.value; setDirty(); }; body.append(enabledWrap, execution);
+      execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap, execution);
       const builtin = { away: 'Heimdall tilkobles hvis panel er valgt.', home: 'Heimdall frakobles hvis panel er valgt. Opplåsing er et separat sikkerhetsvalg.', night: 'Hjemmeværende i nattutvalget kan settes sovende; valgt alarm tilkobles delvis.', morning: 'Valgt alarm frakobles; hjemmeværende i nattutvalget settes våkne.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const builtinList = el('div');
@@ -160,7 +174,7 @@
         copy.append(el('small', `${a.delaySeconds} s · ${labels[a.category]} · ${a.when || 'Rutinens vilkår'}${a.condition ? ' · med enhetsvilkår' : ''}${a.requireConfirmed ? ' · krever bekreftet avhengighet' : ''}`));
         const remove = el('button', '×', 'icon-button'); remove.setAttribute('aria-label', `Fjern ${describeAction(a)}`); remove.onclick = () => {
           if (routine.actions.some(other => other.dependsOn === a.id)) { toast('Fjern avhengige handlinger først.'); return; }
-          routine.actions.splice(index, 1); setDirty(); renderRoutines();
+          routine.actions.splice(index, 1); setDirty(true); renderRoutines();
         };
         const edit = el('button', 'Rediger', 'small-button'); edit.onclick = () => openAction(routine, a);
         row.append(el('span', index + 1, 'action-number'), copy, edit, remove); body.append(row);
@@ -170,7 +184,7 @@
         preview.disabled = true;
         try {
           const p = await api('POST','/preview',{ id:routine.id, config });
-          $('preview-title').textContent = p.name; $('preview-note').textContent = `${p.note}${dirty ? ' Viser ulagret utkast.' : ''}`;
+          $('preview-title').textContent = p.name; $('preview-note').textContent = `${p.note}${dirty ? ' Noen endringer er ennå ikke lagret.' : ''}`;
           const container = $('preview-actions'); container.replaceChildren();
           if (!p.actions.length) container.append(el('p','Ingen handlinger i denne rutinen med det valgte oppsettet.','empty'));
           for (const a of p.actions) { const row = el('div',undefined,'action-row'), copy = el('div',describeAction(a),'action-copy'); copy.append(el('small',`${a.builtin ? 'Innebygd' : 'Ekstra handling'} · ${a.delaySeconds} s · ${a.reason}`)); row.append(copy,el('span',resultNames[a.result] || a.result,`badge ${a.result === 'skipped' ? 'warn' : 'ok'}`)); container.append(row); }
@@ -178,7 +192,7 @@
         } catch (error) { toast(error.message); } finally { preview.disabled = false; }
       }; body.append(preview);
       if (routine.id.startsWith('custom-')) {
-        const run = el('button', 'Start lagret rutine'); run.onclick = async () => { try { if (dirty) throw new Error('Lagre utkastet først.'); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
+        const run = el('button', 'Start rutine'); run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
       }
       card.append(heading, body); list.append(card);
     }
@@ -261,26 +275,34 @@
       const box=el('details',undefined,'recipe');box.append(el('summary',group.title));
       for(const line of group.steps)box.append(el('p',line,'summary-line'));container.append(box);
     }
-    if(groups.some(g=>config.delivery[g.key]==='simple')) container.append(el('p','Lag vanlige flows uten ekstra betingelser eller forsinkelser. Bruk taggene fra Når-kortet. Lagre oppsettet og velg Kontroller integrasjonsflows. Enkle utgangsflows bekrefter ikke mottak og har ikke automatisk reservepush.','hint'));
+    if(groups.some(g=>config.delivery[g.key]==='simple')) container.append(el('p','Lag vanlige flows uten ekstra betingelser eller forsinkelser. Bruk taggene fra Når-kortet. Oppsettet lagres automatisk. Velg Kontroller integrasjonsflows når koblingene er klare. Enkle utgangsflows bekrefter ikke mottak og har ikke automatisk reservepush.','hint'));
   }
   async function openSetup() {
     $('open-setup').disabled=true;
     try {
       data.catalog=await api('GET','/catalog');
-      setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:false,flows:HouseGuardSetup.selections(config)};
+      setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:config.people.presence.length > 0 && config.people.presence.every(id=>config.people.night.includes(id)),flows:HouseGuardSetup.selections(config)};
       renderSetup();$('setup-dialog').showModal();
     } catch(error) { toast(`Kunne ikke oppdatere Flow-listen: ${error.message}`); }
     finally { $('open-setup').disabled=false; }
   }
+  function setupChange(patch) {
+    try {
+      config = HouseGuardSetup.change(config, patch, data.catalog);
+      setupOptions.people = [...config.people.presence]; setupOptions.flows = HouseGuardSetup.selections(config);
+      setupOptions.useNightPeople = config.people.presence.length > 0 && config.people.presence.every(id=>config.people.night.includes(id));
+      setDirty(true); renderConfig(); $('setup-error').textContent = '';
+    } catch(error) { renderSetup(); $('setup-error').textContent = error.message; }
+  }
   function renderSetup() {
     const titles=['Hvem bor her?','Hvilke flows skal huset starte?','Velg det du trenger','Se over grunnoppsettet'];
     $('setup-title').textContent=titles[setupStep];$('setup-progress').textContent=`Steg ${setupStep+1} av 4`;
-    $('setup-back').hidden=setupStep===0;$('setup-next').textContent=setupStep===3?'Legg i utkast':'Neste';$('setup-error').textContent='';
+    $('setup-back').hidden=setupStep===0;$('setup-next').textContent=setupStep===3?'Ferdig':'Neste';$('setup-error').textContent='';
     const body=$('setup-body');body.replaceChildren();
     function choice(parent,text,checked,change) {const label=el('label',undefined,'check'),input=el('input');input.type='checkbox';input.checked=checked;input.onchange=()=>change(input.checked);label.append(input,document.createTextNode(text));parent.append(label);}
     if(setupStep===0) {
       body.append(el('p','Velg personene som teller som hjemme. Tilstedeværelsen hentes fra Homey.','hint'));
-      for(const p of Object.values(data.catalog.people).filter(p=>p.available!==false)) choice(body,p.name,setupOptions.people.includes(p.id),checked=>{setupOptions.people=checked?[...setupOptions.people,p.id]:setupOptions.people.filter(id=>id!==p.id);});
+      for(const p of Object.values(data.catalog.people).filter(p=>p.available!==false)) choice(body,p.name,setupOptions.people.includes(p.id),checked=>setupChange({people:checked?[...setupOptions.people,p.id]:setupOptions.people.filter(id=>id!==p.id)}));
       if(!Object.keys(data.catalog.people).length)body.append(el('p','Ingen personer er tilgjengelige. Oppdater personer og enheter under Mer.','error'));
     } else if(setupStep===1) {
       body.append(el('p','Lag for eksempel en Flow i Homey som heter «Slå av alle lys», og velg den under «Når alle drar». Du velger selv hvilke handlinger Flow-en utfører.','hint'));
@@ -296,11 +318,11 @@
         if(selected && !flows.some(flow=>flow.key===selected)) {
           const missing=new Option('Tidligere valgt Flow finnes ikke – velg på nytt',selected);missing.disabled=true;select.add(missing);
         }
-        select.value=selected;select.onchange=()=>{setupOptions.flows[id]=select.value;};
+        select.value=selected;select.onchange=()=>setupChange({flows:{[id]:select.value}});
         label.append(select);body.append(label);
         const routine=config.routines.find(r=>r.id===id);
         const oldLights=routine?.actions.filter(a=>a.setupManaged===true && a.kind==='set').length;
-        if(oldLights)body.append(el('p',`${oldLights} tidligere lysvalg fra veiviseren erstattes av dette valget i utkastet.`,'hint'));
+        if(oldLights)body.append(el('p',`${oldLights} tidligere lysvalg fra veiviseren erstattes når du endrer dette valget.`,'hint'));
       }
       if(!flows.length)body.append(el('p','Ingen flows funnet. Lag en Flow i Homey og oppdater listen. Du kan også fortsette med Ingen Flow.','hint'));
       body.append(el('p','Alle flows vises. Deaktiverte flows og flows med feil kan ikke velges. Advanced Flow trenger et Start-kort. Flows som krever en tagg, kan ikke startes her.','hint'));
@@ -309,7 +331,7 @@
       refresh.onclick=async()=>{refresh.disabled=true;try{data.catalog=await api('GET','/catalog');renderSetup();}catch(error){$('setup-error').textContent=error.message;}finally{refresh.disabled=false;}};
       body.append(refresh);
     } else if(setupStep===2) {
-      choice(body,'La nattmodus sette hjemmeværende i personutvalget som sovende',setupOptions.useNightPeople,checked=>{setupOptions.useNightPeople=checked;});
+      choice(body,'Ta med alle valgte personer i nattutvalget',setupOptions.useNightPeople,checked=>setupChange({useNightPeople:checked}));
       body.append(el('p','Nattmodus kan startes fra Hjem. Mobilspørsmål velges separat under Rutiner.','hint'));
       body.append(el('h3','Gjestemodus uten Flow'),el('p','I Homey: Legg til enhet → House Guard → Gjestemodus. Bryteren følger samme gjestemodus som appen.','hint'));
       body.append(el('h3','Utvid senere'),el('p','Alarm og dørlås velges under Sikkerhet. Varsler, tale og mobilspørsmål trenger egne koblinger. Veiviseren slår ikke på disse funksjonene.','hint'));
@@ -321,13 +343,19 @@
         body.append(el('p',`${label}: ${selected ? (flow ? `${flow.name}${flow.reason?` (${flow.reason})`:''}` : 'Flow mangler – velg på nytt') : 'Ingen Flow fra veiviseren'}.`,'summary-line'));
       }
       body.append(el('p',setupOptions.useNightPeople?'Hjemmeværende valgte personer tas med i nattutvalget.':'Nattutvalget beholdes for dem som fortsatt teller som hjemme.','summary-line'));
-      body.append(el('p','Utkastet bruker observasjonsmodus. Dine øvrige handlinger og sikkerhetsvalg beholdes. Se over hele oppsettet før du lagrer.','hint'));
+      body.append(el('p',`Valgene lagres automatisk. ${config.observation ? 'Observasjonsmodus er på.' : 'Aktiv styring er på.'} Dine øvrige handlinger og sikkerhetsvalg beholdes.`,'hint'));
     }
   }
   async function load(initial = false) {
     try {
       data = await api('GET', '/state');
-      if (initial || !config || (!dirty && config.revision !== data.config.revision)) { config = structuredClone(data.config); renderConfig(); }
+      if (!autosave) {
+        config = structuredClone(data.config);
+        autosave = HouseGuardAutosave.create({ initial:config, write:body=>api('PUT','/config',body), read:async()=>(await api('GET','/state')).config, validate:body=>api('POST','/validate',body), onState:savingState,
+          onSaved:saved=>{ data.config = saved; config.revision = saved.revision; config.bridges = structuredClone(saved.bridges); config.timeZone = saved.timeZone; } });
+        renderConfig(); savingState({phase:'saved',pending:false});
+      } else if (autosave.observe(data.config)) { config = structuredClone(data.config); renderConfig(); }
+      autosave.recover();
       renderStatus();
     } catch (error) { $('connection').textContent = `Kunne ikke lese Homey: ${error.message}`; $('connection').className = 'banner error'; }
   }
@@ -352,7 +380,8 @@
     options($('condition-capability'), Object.entries(d?.capabilities || {}).filter(([, c]) => c.getable !== false).map(([id, c]) => ({ id, label: `${c.title || id} (${id})` })), value);
   }
   function openAction(routine, existing = null) {
-    actionRoutine = routine; editedAction = existing; $('action-form').reset(); $('action-error-message').textContent = '';
+    actionRoutine = routine; editedAction = existing; actionChanged = false; $('action-form').reset(); $('action-error-message').textContent = '';
+    $('action-title').textContent = existing ? 'Rediger handling' : 'Legg til handling';
     options($('action-category'), Object.entries(labels).map(([id, label]) => ({ id, label })), 'lights', null);
     options($('action-flow'), data.catalog.flows.map(f => ({ id: `${f.type}:${f.id}`, label: `${f.name}${f.broken ? ' · brutt' : ''}` })), '');
     options($('action-person'), Object.values(data.catalog.people).map(p => ({ id: p.id, label: p.name })), '');
@@ -372,13 +401,6 @@
   function download(filename, value) {
     const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
-  function showSummary() {
-    const wrap = $('save-summary'); wrap.replaceChildren();
-    const values = [config.observation ? 'Observasjon: ingen eksterne handlinger blir utført.' : 'AKTIV STYRING: lagret oppsett kan styre huset når vilkårene oppfylles.', `Personer: ${config.people.presence.length} for tilstedeværelse, ${config.people.night.length} for natt og ${config.people.questions.length} spørsmålsmottakere.`, `Borteforsinkelse ${config.delays.away} s. Hjemkomst ${config.delays.home} s.`, `Automatisk opplåsing: ${config.security.autoUnlock ? 'PÅ' : 'av'}. Gjesteopplåsing: ${config.guest.unlockOnEnable ? 'PÅ' : 'av'}. Portstyring: ${config.security.garage.enabled ? 'PÅ' : 'av'}.`, 'Ventende rutiner avbrytes når innstillingene lagres.'];
-    for (const value of values) wrap.append(el('p', value, 'summary-line'));
-    for (const routine of config.routines.filter(r => r.enabled && r.actions.length)) wrap.append(el('p', `${routine.name}: ${routine.actions.map(describeAction).join('; ')}`, 'summary-line'));
-    $('save-error').textContent = ''; $('save-dialog').showModal();
-  }
   async function initialize() {
     for (const [category, label] of Object.entries(labels)) { const wrap = el('label', undefined, 'check'), input = el('input'); input.type = 'checkbox'; input.dataset.bind = `guest.allow.${category}`; wrap.append(input, document.createTextNode(label)); $('guest-options').append(wrap); }
     bindEvents(); await load(true); if (homey) homey.ready();
@@ -388,31 +410,29 @@
       $('setup-next').disabled=true;
       try {
         if(setupStep===0 && !setupOptions.people.length)throw new Error('Velg minst én person.');
+        await flush();
         if(setupStep<3){setupStep++;renderSetup();return;}
-        const draft=HouseGuardSetup.draft(config,setupOptions,data.catalog);
-        config=await api('POST','/validate',draft);setDirty();renderConfig();$('setup-dialog').close();showSummary();
+        $('setup-dialog').close();
       }catch(error){$('setup-error').textContent=error.message;}finally{$('setup-next').disabled=false;}
     };
     document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
-      try { await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }
+      try { await flush(); await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }
     });
-    $('guest-toggle').onchange = async event => { try { await api('POST', '/command', { type: 'guest', value: event.target.checked }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } };
+    $('guest-toggle').onchange = async event => { try { await flush(); await api('POST', '/command', { type: 'guest', value: event.target.checked }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } };
     document.querySelectorAll('[data-scenario]').forEach(button => button.onclick = async () => { try { await api('POST', '/scenario', { scenario: button.dataset.scenario }); await load(); } catch (error) { toast(error.message); } });
-    $('review-save').onclick = showSummary;
-    $('confirm-save').onclick = async () => {
-      $('confirm-save').disabled = true;
-      try { const saved = await api('PUT', '/config', config); config = saved; dirty = false; $('save-bar').hidden = true; $('save-dialog').close(); await load(true); toast('Oppsett lagret.'); }
-      catch (error) { $('save-error').textContent = error.message; } finally { $('confirm-save').disabled = false; }
+    $('reload-config').onclick = async () => {
+      try { const latest = await api('GET','/state'); autosave.reset(latest.config); data = latest; config = structuredClone(latest.config); renderConfig(); renderStatus(); }
+      catch(error) { toast(error.message); }
     };
-    $('discard').onclick = async () => { dirty = false; $('save-bar').hidden = true; await load(true); };
-    $('new-routine').onclick = () => { config.routines.push({ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] }); setDirty(); renderRoutines(); };
+    $('new-routine').onclick = () => { config.routines.push({ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] }); setDirty(true); renderRoutines(); };
     $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('close-action').onclick = () => $('action-dialog').close();
     $('condition-device').onchange = () => updateConditionCapabilities();
-    $('action-form').onsubmit = event => {
-      event.preventDefault();
+    function saveAction(immediate = false) {
       try {
         const kind = $('action-kind').value, a = { id: editedAction?.id || `action-${crypto.randomUUID()}`, kind, category: $('action-category').value, delaySeconds: Number($('action-delay').value), onError: $('action-error').value };
+        if ([...$('action-form').elements].some(input => !input.closest('[hidden]') && !input.checkValidity())) throw new Error('Fullfør feltene med gyldige verdier.');
+        if (editedAction?.setupManaged === true) a.setupManaged = true;
         if (['set', 'verify', 'speak', 'sound'].includes(kind)) a.deviceId = $('action-device').value;
         if (['set', 'verify'].includes(kind)) { a.capability = $('action-capability').value; if (!a.deviceId || !a.capability) throw new Error('Velg enhet og funksjon.'); }
         if (['set', 'verify', 'person'].includes(kind)) { a.value = scalar($('action-value').value); a.confirmSeconds = Number($('action-confirm').value); if ($('action-value').value === '') throw new Error('Skriv ønsket verdi.'); }
@@ -420,32 +440,39 @@
         if (kind === 'flow') { const selected = $('action-flow').value; if (!selected) throw new Error('Velg en Flow.'); [a.flowType, a.flowId] = selected.split(':'); }
         if (['notify', 'timeline', 'speak', 'sound'].includes(kind)) { a.text = $('action-text').value; if (!a.text.trim()) throw new Error('Skriv tekst eller lydnavn.'); }
         if (kind === 'notify') { a.notificationType = $('action-notification').value; a.imageDeviceId = $('action-camera').value; if (a.notificationType === 'image' && !a.imageDeviceId) throw new Error('Velg kamera for bildevarsel.'); }
-        if (['speak', 'sound'].includes(kind)) a.volume = Number($('action-volume').value);
+        if (['speak', 'sound'].includes(kind)) { a.volume = Number($('action-volume').value); if (!a.deviceId || !a.volume) throw new Error('Velg lydenhet og et volum fra 1 til 100.'); }
         if ($('action-when').value) a.when = $('action-when').value;
         if ($('condition-device').value) {
           if (!$('condition-capability').value || $('condition-value').value === '') throw new Error('Fullfør det ekstra enhetsvilkåret.');
           a.condition = { deviceId: $('condition-device').value, capability: $('condition-capability').value, operator: $('condition-operator').value, value: scalar($('condition-value').value), maxAgeSeconds: Number($('condition-age').value) };
         }
         if ($('action-dependency').value) { a.dependsOn = $('action-dependency').value; a.requireConfirmed = true; }
-        if (editedAction) actionRoutine.actions[actionRoutine.actions.indexOf(editedAction)] = a; else actionRoutine.actions.push(a);
-        setDirty(); renderRoutines(); $('action-dialog').close();
-      } catch (error) { $('action-error-message').textContent = error.message; }
-    };
+        actionRoutine = config.routines.find(r=>r.id===actionRoutine.id);
+        const index = actionRoutine.actions.findIndex(item=>item.id===a.id);
+        if (index >= 0) actionRoutine.actions[index] = a; else actionRoutine.actions.push(a);
+        editedAction = a;
+        $('action-error-message').textContent = ''; setDirty(immediate); renderRoutines(); return true;
+      } catch (error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; return false; }
+    }
+    $('action-form').addEventListener('input', event => { if (!['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName) || ['checkbox','select-one'].includes(event.target.type)) return; actionChanged = true; saveAction(); });
+    $('action-form').addEventListener('change', () => { actionChanged = true; saveAction(true); });
+    $('action-form').onsubmit = async event => { event.preventDefault(); if (actionChanged && !saveAction(true)) return; try { await flush(); $('action-dialog').close(); } catch(error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; } };
     $('log-filter').onchange = renderStatus;
     $('refresh-catalog').onclick = async () => { try { data.catalog = await api('GET', '/catalog'); renderConfig(); toast('Personer og enheter oppdatert.'); } catch (error) { toast(error.message); } };
     $('setup-bridges').onclick = async () => {
-      if (dirty) { toast('Lagre oppsettet først.'); return; }
       $('setup-bridges').disabled = true;
-      try { const result = await api('POST','/bridges',{}); await load(true); toast(`Integrasjonsflows kontrollert: ${result.routes} leveringskoblinger. Ingen prøvemeldinger sendt.`); }
+      try { await flush(); const result = await api('POST','/bridges',{}); await load(); toast(`Integrasjonsflows kontrollert: ${result.routes} leveringskoblinger. Ingen prøvemeldinger sendt.`); }
       catch (error) { toast(error.message); } finally { $('setup-bridges').disabled = !data.status.observation || dirty || demo; }
     };
     $('export-config').onclick = () => download('house-guard-oppsett.json', config);
     $('export-log').onclick = () => download('house-guard-logg.json', data.status.history);
     $('import-config').onchange = async event => {
-      try { const file = event.target.files[0]; if (!file || file.size > 1000000) throw new Error('Velg en JSON-fil under 1 MB.'); const imported = JSON.parse(await file.text()); config = await api('POST', '/validate', { ...imported, observation: true, revision: data.config.revision }); setDirty(); renderConfig(); toast('Importert som utkast i observasjon. Se over før lagring.'); }
+      try { const file = event.target.files[0]; if (!file || file.size > 1000000) throw new Error('Velg en JSON-fil under 1 MB.'); await flush(); const imported = JSON.parse(await file.text()); config = await api('POST', '/validate', { ...imported, observation: true, revision: config.revision }); setDirty(true); renderConfig(); await flush(); toast('Oppsett importert og lagret i observasjon.'); }
       catch (error) { toast(`Import feilet: ${error.message}`); }
     };
-    setInterval(() => { if (!document.hidden && !$('save-dialog').open && !$('action-dialog').open) load(); }, 5000);
+    window.addEventListener('online', () => { flush().catch(()=>{}); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flush().catch(()=>{}); });
+    setInterval(() => { if (!document.hidden && !$('action-dialog').open && !$('setup-dialog').open) load(); }, 5000);
   }
   window.onHomeyReady = h => { homey = h; initialize().catch(e => { $('connection').textContent = e.message; homey.ready(); }); };
   if (new URLSearchParams(location.search).get('demo') === '1') { demo = true; initialize().catch(e => { $('connection').textContent = e.message; }); }
