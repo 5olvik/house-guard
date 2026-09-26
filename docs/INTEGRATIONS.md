@@ -1,11 +1,11 @@
-# Integrasjoner i House Guard 0.3.0
+# Integrasjoner i House Guard 0.3.1
 
-Grunnoppsettet kan fullføres uten hjelpeflows. Velg personer og lys med **Hjem → Åpne veiviseren**, og legg til ønskede integrasjoner etterpå.
+Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til ønskede integrasjoner etterpå.
 
 | Funksjon | Løsning | Ekstra Flow |
 | --- | --- | --- |
 | Hjem/borte og personstatus | Direkte avlesing og rutinemotor | Ingen |
-| Lys | Direkte av/på eller valgfrie scener | Ingen for direkte styring |
+| Lys og scener | Velg en Homey Flow i veiviseren; direkte enhetshandlinger finnes under Rutiner | Bruk ønsket scene-Flow |
 | Gjestemodus | Appbryter og egen Homey-enhet | Ingen |
 | Dørlås, inkludert Yale | Valgt enhets låsestatus og kommandoer | Ingen |
 | Soneaktivitet og temperatur | Direkte Homey-avlesing med tidsstempel | Ingen |
@@ -16,6 +16,14 @@ Grunnoppsettet kan fullføres uten hjelpeflows. Velg personer og lys med **Hjem 
 | Tale og alarmlyd | Navnevalg og Sonos-kort med Melding/Volum | To kort per høyttaler og funksjon/lyd |
 | Nattspørsmål | Trigger, mobilbetingelse, ja og nei med Dette spørsmålet | Fire kort per mottaker, inkludert Ellers |
 | Port | Separat status, kommando, temperatur og sikkerhetsvalg | Ingen for styringen; bildevarsel kobles separat |
+
+## Velg en scene-Flow i veiviseren
+
+Lag en Flow i Homey, for eksempel «Slå av alle lys», med handlingene du vil utføre. Åpne deretter **Hjem → Åpne veiviseren** og velg den under **Når alle drar**. Hjemkomst og natt har hvert sitt valg. «Ingen Flow» er også et gyldig valg.
+
+Listen viser alle vanlige flows og Advanced Flows alfabetisk. Deaktiverte flows, flows med feil og flows som ikke kan startes direkte, vises med en forklaring og kan ikke velges. Advanced Flow må ha et [Start-kort](https://homey.app/en-us/features/advanced-flow/). Bruk **Oppdater Flow-listen** hvis du lager eller endrer en Flow mens veiviseren er åpen.
+
+Valgene legges i et utkast i observasjon. Tidligere enkeltlys fra veiviseren erstattes når utkastet lagres. Egne handlinger under Rutiner beholdes; en allerede valgt Flow legges ikke til to ganger. En startet ekstern Flow kjører sine egne handlinger og kan ikke trekkes tilbake av House Guard.
 
 ## Eksempel: vanlig varsel
 

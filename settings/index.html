@@ -13,7 +13,7 @@
   <header class="header-top">
     <div class="header-title"><div class="eyebrow">ET HJEM SOM FØLGER DAGEN DIN</div><h1>House <span>Guard</span></h1><p class="subtitle">Dine personer. Dine rutiner. Full oversikt.</p></div>
     <div class="header-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M12 47 50 14l38 33M22 39v44h20V61h16v22h20V39"/></svg></div>
-    <span class="version">0.3.0</span>
+    <span class="version">0.3.1</span>
   </header>
   <div id="connection" class="banner" role="status">Kobler til Homey …</div>
   <nav class="tab-bar" aria-label="Hovedmeny">
@@ -25,7 +25,7 @@
   </nav>
   <main>
     <section id="home" class="panel">
-      <div class="card setup-intro"><div class="section-heading"><h2>Kom i gang med House Guard</h2><span class="badge ok">Grunnoppsett uten flows</span></div><p>Velg hvem som bor her og hvilke lys huset skal styre. Alarm, lås, varsler og lyd kan legges til etterpå.</p><div class="button-row"><button id="open-setup" class="primary">Åpne veiviseren</button></div><p class="hint">Har du allerede et oppsett? Veiviseren bevarer dine tilpassede handlinger og lager et utkast i observasjon.</p></div>
+      <div class="card setup-intro"><div class="section-heading"><h2>Kom i gang med House Guard</h2><span class="badge ok">Velg dine Homey-flows</span></div><p>Velg hvem som bor her og hvilken Flow som skal starte når alle drar, noen kommer hjem eller nattmodus starter. Lag for eksempel «Slå av alle lys» i Homey og velg den i veiviseren.</p><div class="button-row"><button id="open-setup" class="primary">Åpne veiviseren</button></div><p class="hint">Veiviseren viser både Flow og Advanced Flow. Dine egne handlinger beholdes, og oppsettet legges i et utkast i observasjon.</p></div>
       <div class="card hero"><div class="section-heading"><span class="eyebrow">HUSET AKKURAT NÅ</span><span id="mode-badge" class="badge">Venter</span></div><div class="mode-line"><span id="mode-icon" aria-hidden="true">⌂</span><h2 id="mode-title">Ukjent</h2></div><p id="mode-reason">Venter på bekreftet tilstedeværelse.</p><div class="divider"></div><div class="row"><div><strong>Gjestemodus</strong><p class="hint">Ta hensyn til dem som ikke er med i personutvalget.</p></div><label class="switch"><input id="guest-toggle" type="checkbox" aria-label="Gjestemodus"><span></span></label></div></div>
       <div id="home-people" class="person-strip"></div>
       <div class="status-grid" id="security-status"></div>
@@ -93,7 +93,7 @@
       <div class="card"><h2>Integrasjoner</h2><div id="integration-list"></div><div class="button-row"><button id="refresh-catalog">Oppdater personer og enheter</button><button id="setup-bridges">Kontroller integrasjonsflows</button></div><p class="hint">Lagre oppsettet først. Kontrollen oppdaterer leveringsvalgene ut fra koblingene som finnes, uten prøvemeldinger. Etter endring av mottakere, kamera eller Sonos må koblingene oppdateres. Manglende koblinger vises over.</p><div id="delivery-status"></div></div>
       <div class="card"><h2>Import og eksport</h2><p class="hint">Eksport inneholder enhets- og person-ID-er, men ingen pålogging. Import blir et utkast i observasjonsmodus.</p><div class="button-row"><button id="export-config">Eksporter oppsett</button><label class="file-button">Importer oppsett<input id="import-config" type="file" accept="application/json,.json"></label></div></div>
       <div class="card"><div class="section-heading"><h2>Hendelseslogg</h2><select id="log-filter" aria-label="Filtrer logg"><option value="all">Alle hendelser</option><option value="failed">Feil / ukjent utfall</option><option value="observed">Observasjon</option><option value="skipped">Hoppet over</option><option value="info">Modus og oppsett</option></select></div><div id="full-log"></div><button id="export-log">Eksporter logg</button></div>
-      <p class="footnote">House Guard 0.3.0 · GUI basert på Power Guard · GPL-3.0<br>Fysisk styring og mottak av meldinger må prøves ved overtakelse.</p>
+      <p class="footnote">House Guard 0.3.1 · GUI basert på Power Guard · GPL-3.0<br>Fysisk styring og mottak av meldinger må prøves ved overtakelse.</p>
     </section>
   </main>
   <div id="save-bar" class="save-bar" hidden><span id="dirty-message">Du har ulagrede endringer</span><button id="discard">Forkast</button><button id="review-save" class="primary">Se over og lagre</button></div>

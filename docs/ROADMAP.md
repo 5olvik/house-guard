@@ -2,9 +2,9 @@
 
 Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå interne ID-er, ruting eller tekniske migreringsverktøy.
 
-## Implementert i 0.3.0
+## Implementert i 0.3.1
 
-- Grunnoppsett med personer og lys uten hjelpeflows.
+- Veiviser med personvalg og egne Flow-valg for avreise, hjemkomst og natt.
 - Veiviser som lager et gjennomgåbart utkast i observasjon.
 - Direkte grunnleggende Heimdall-hendelser og direkte låsstyring.
 - Enkle Flow-kort med navnevalg og få tagger.
@@ -20,6 +20,6 @@ Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå int
 5. Undersøk støttede måter å redusere antall koblinger for store varslings-/lydoppsett.
 6. Fullfør engelsk innstillingsside og publiseringsdokumentasjon.
 
-Grunnoppsettet skal fortsatt kunne brukes uten ekstra flows. En full pakke med flere varseltyper, mottakere og høyttalere krever foreløpig flere små koblinger.
+Brukeren kan velge egne scene-flows i veiviseren eller legge direkte enhetshandlinger til under Rutiner. En full pakke med flere varseltyper, mottakere og høyttalere krever foreløpig flere små koblinger.
 
 Direkte kjøring av mobil-/Sonos-kort med appens nåværende Homey-tillatelser er avvist i en teknisk prøve. Ingen løsning skal kreve en eiertoken fra sluttbrukeren eller fremstille en utløst Flow som bekreftet levering. Lås-/portkontroller, nei-veto, avbrudd og observasjon skal beholdes ved videre forenkling.

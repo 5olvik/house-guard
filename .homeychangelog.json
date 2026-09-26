@@ -18,5 +18,9 @@
   "0.3.0": {
     "no": "Veiviser for grunnoppsett uten flows, direkte Heimdall-hendelser, enklere meldingskort og kontroll av faktiske Flow-koblinger. Enkle utgangskoblinger har ikke automatisk reservepush eller leveringskvittering.",
     "en": "A setup wizard for core routines without helper Flows, direct Heimdall events, simpler messaging cards and connected Flow validation. Simple output connections have no automatic fallback push or delivery receipt."
+  },
+  "0.3.1": {
+    "no": "Veiviseren lar deg velge Homey-flows for avreise, hjemkomst og natt i stedet for enkeltlys. Alle flows vises med type og tilgjengelighet. Oppdater listen uten å lukke veiviseren.",
+    "en": "Choose Homey Flows for leaving, arriving and night mode instead of individual lights. The wizard lists all Flows with their type and availability and can refresh the list."
   }
 }

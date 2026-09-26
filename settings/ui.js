@@ -263,12 +263,17 @@
     }
     if(groups.some(g=>config.delivery[g.key]==='simple')) container.append(el('p','Lag vanlige flows uten ekstra betingelser eller forsinkelser. Bruk taggene fra Når-kortet. Lagre oppsettet og velg Kontroller integrasjonsflows. Enkle utgangsflows bekrefter ikke mottak og har ikke automatisk reservepush.','hint'));
   }
-  function openSetup() {
-    setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:false,lights:Object.fromEntries(['away','home','night'].map(id=>[id,config.routines.find(r=>r.id===id)?.actions.filter(a=>a.setupManaged===true).map(a=>a.deviceId)||[]]))};
-    renderSetup();$('setup-dialog').showModal();
+  async function openSetup() {
+    $('open-setup').disabled=true;
+    try {
+      data.catalog=await api('GET','/catalog');
+      setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:false,flows:HouseGuardSetup.selections(config)};
+      renderSetup();$('setup-dialog').showModal();
+    } catch(error) { toast(`Kunne ikke oppdatere Flow-listen: ${error.message}`); }
+    finally { $('open-setup').disabled=false; }
   }
   function renderSetup() {
-    const titles=['Hvem bor her?','Hvilke lys skal huset styre?','Velg det du trenger','Se over grunnoppsettet'];
+    const titles=['Hvem bor her?','Hvilke flows skal huset starte?','Velg det du trenger','Se over grunnoppsettet'];
     $('setup-title').textContent=titles[setupStep];$('setup-progress').textContent=`Steg ${setupStep+1} av 4`;
     $('setup-back').hidden=setupStep===0;$('setup-next').textContent=setupStep===3?'Legg i utkast':'Neste';$('setup-error').textContent='';
     const body=$('setup-body');body.replaceChildren();
@@ -278,18 +283,31 @@
       for(const p of Object.values(data.catalog.people).filter(p=>p.available!==false)) choice(body,p.name,setupOptions.people.includes(p.id),checked=>{setupOptions.people=checked?[...setupOptions.people,p.id]:setupOptions.people.filter(id=>id!==p.id);});
       if(!Object.keys(data.catalog.people).length)body.append(el('p','Ingen personer er tilgjengelige. Oppdater personer og enheter under Mer.','error'));
     } else if(setupStep===1) {
-      body.append(el('p','Velg bare lys du vil automatisere. Tilpassede handlinger og scener beholdes.','hint'));
-      const lights=HouseGuardSetup.lightChoices(config,data.catalog);
-      for(const [id,label] of [['away','Når siste person drar: slå av'],['home','Når første person kommer hjem: slå på'],['night','Når nattmodus starter: slå av']]) {
-        body.append(el('h3',label));
-        const routine=config.routines.find(r=>r.id===id);
-        for(const light of lights) {
-          const existing=routine?.actions.some(a=>!a.setupManaged && a.kind==='set' && a.deviceId===light.id && a.capability==='onoff');
-          if(existing){body.append(el('p',`${light.name}: styres allerede av en tilpasset handling.`,'hint'));continue;}
-          choice(body,`${light.name} · ${light.zone || 'Uten sone'}`,setupOptions.lights[id].includes(light.id),checked=>{setupOptions.lights[id]=checked?[...setupOptions.lights[id],light.id]:setupOptions.lights[id].filter(value=>value!==light.id);});
+      body.append(el('p','Lag for eksempel en Flow i Homey som heter «Slå av alle lys», og velg den under «Når alle drar». Du velger selv hvilke handlinger Flow-en utfører.','hint'));
+      const flows=HouseGuardSetup.flowChoices(data.catalog);
+      for(const [id,title] of [['away','Når alle drar'],['home','Når første person kommer hjem'],['night','Når nattmodus starter']]) {
+        const label=el('label',title,'setup-flow'),select=el('select');
+        select.id=`setup-flow-${id}`;select.add(new Option('Ingen Flow', ''));
+        for(const flow of flows) {
+          const option=new Option(`${flow.name} · ${flow.type==='advanced'?'Advanced Flow':'Flow'}${flow.reason?` · ${flow.reason}`:''}`,flow.key);
+          option.disabled=!flow.selectable;select.add(option);
         }
-        if(!lights.length)body.append(el('p','Ingen kompatible lys funnet. Du kan legge til andre enhetshandlinger under Rutiner.','hint'));
+        const selected=setupOptions.flows[id];
+        if(selected && !flows.some(flow=>flow.key===selected)) {
+          const missing=new Option('Tidligere valgt Flow finnes ikke – velg på nytt',selected);missing.disabled=true;select.add(missing);
+        }
+        select.value=selected;select.onchange=()=>{setupOptions.flows[id]=select.value;};
+        label.append(select);body.append(label);
+        const routine=config.routines.find(r=>r.id===id);
+        const oldLights=routine?.actions.filter(a=>a.setupManaged===true && a.kind==='set').length;
+        if(oldLights)body.append(el('p',`${oldLights} tidligere lysvalg fra veiviseren erstattes av dette valget i utkastet.`,'hint'));
       }
+      if(!flows.length)body.append(el('p','Ingen flows funnet. Lag en Flow i Homey og oppdater listen. Du kan også fortsette med Ingen Flow.','hint'));
+      body.append(el('p','Alle flows vises. Deaktiverte flows og flows med feil kan ikke velges. Advanced Flow trenger et Start-kort. Flows som krever en tagg, kan ikke startes her.','hint'));
+      body.append(el('p','Egne handlinger under Rutiner beholdes. Velger du en Flow som allerede er lagt til, opprettes den ikke en gang til.','hint'));
+      const refresh=el('button','Oppdater Flow-listen');refresh.type='button';
+      refresh.onclick=async()=>{refresh.disabled=true;try{data.catalog=await api('GET','/catalog');renderSetup();}catch(error){$('setup-error').textContent=error.message;}finally{refresh.disabled=false;}};
+      body.append(refresh);
     } else if(setupStep===2) {
       choice(body,'La nattmodus sette hjemmeværende i personutvalget som sovende',setupOptions.useNightPeople,checked=>{setupOptions.useNightPeople=checked;});
       body.append(el('p','Nattmodus kan startes fra Hjem. Mobilspørsmål velges separat under Rutiner.','hint'));
@@ -297,7 +315,11 @@
       body.append(el('h3','Utvid senere'),el('p','Alarm og dørlås velges under Sikkerhet. Varsler, tale og mobilspørsmål trenger egne koblinger. Veiviseren slår ikke på disse funksjonene.','hint'));
     } else {
       body.append(el('p',`Personer: ${setupOptions.people.map(id=>data.catalog.people[id]?.name || 'Utilgjengelig').join(', ')}.`,'summary-line'));
-      for(const [id,label] of [['away','Slå av når alle drar'],['home','Slå på ved hjemkomst'],['night','Slå av ved nattmodus']])body.append(el('p',`${label}: ${setupOptions.lights[id].map(id=>data.catalog.devices[id]?.name || 'Utilgjengelig').join(', ') || 'Ingen nye lysvalg'}.`,'summary-line'));
+      const flows=HouseGuardSetup.flowChoices(data.catalog);
+      for(const [id,label] of [['away','Når alle drar'],['home','Ved hjemkomst'],['night','Ved nattmodus']]) {
+        const selected=setupOptions.flows[id],flow=flows.find(f=>f.key===selected);
+        body.append(el('p',`${label}: ${selected ? (flow ? `${flow.name}${flow.reason?` (${flow.reason})`:''}` : 'Flow mangler – velg på nytt') : 'Ingen Flow fra veiviseren'}.`,'summary-line'));
+      }
       body.append(el('p',setupOptions.useNightPeople?'Hjemmeværende valgte personer tas med i nattutvalget.':'Nattutvalget beholdes for dem som fortsatt teller som hjemme.','summary-line'));
       body.append(el('p','Utkastet bruker observasjonsmodus. Dine øvrige handlinger og sikkerhetsvalg beholdes. Se over hele oppsettet før du lagrer.','hint'));
     }

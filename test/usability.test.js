@@ -141,21 +141,58 @@ test('En frakoblet legacy-hendelse teller ikke som dekning',()=>{
   assert.deepEqual(legacyRoutes({integrationCards:[{id:own+'delivery_requested'},{id:own+'delivery_matches'},{id:own+'delivery_result'}]}),[]);
 });
 
-test('Veiviseren lager bare valgte lysvalg, bevarer rutiner og blokkerer vernet utstyr',()=>{
+test('Veiviseren velger flows med riktig type og bevarer øvrige rutiner i observasjon',()=>{
   const c=defaults();c.people.presence=['a'];add(c,'away',[step('custom')]);
-  const cat={people:{a:{id:'a',name:'A'}},devices:{lamp:{id:'lamp',name:'Lampe',class:'light',capabilities:{onoff:{type:'boolean',setable:true}}},lock:{id:'lock',class:'light',capabilities:{onoff:{type:'boolean',setable:true},locked:{}}}}};
-  const opts={people:['a'],useNightPeople:true,lights:{away:['lamp'],home:[],night:[]}};
+  const cat={people:{a:{id:'a',name:'A'}},flows:[{id:'off',name:'Lys av',type:'normal',enabled:true,triggerable:true},{id:'welcome',name:'Velkomst',type:'advanced',enabled:true,triggerable:true}]};
+  const opts={people:['a'],useNightPeople:true,flows:{away:'normal:off',home:'advanced:welcome',night:''}};
   const next=setup.draft(c,opts,cat);assert.equal(next.observation,true);assert.equal(c.routines.find(r=>r.id==='away').actions.length,1);
-  assert.deepEqual(next.people.night,['a']);assert.deepEqual(next.routines.find(r=>r.id==='away').actions.map(a=>a.id),['custom','setup-away-lamp']);
-  assert.equal(validate(next).routines.find(r=>r.id==='away').actions[1].value,false);
+  assert.deepEqual(next.people.night,['a']);assert.deepEqual(next.routines.find(r=>r.id==='away').actions.map(a=>a.id),['custom','setup-away-flow-off']);
+  const checked=validate(next);assert.equal(checked.routines.find(r=>r.id==='away').actions[1].flowId,'off');assert.equal(checked.routines.find(r=>r.id==='home').actions[0].flowType,'advanced');
+  assert.deepEqual(setup.selections(next),opts.flows);
   assert.deepEqual(setup.draft(next,opts,cat),next);
-  opts.lights.away=['lock'];assert.throws(()=>setup.draft(c,opts,cat),/utilgjengelig/);
+  opts.flows.away='normal:missing';assert.throws(()=>setup.draft(c,opts,cat),/Valgt Flow/);
 });
 
-test('Veiviseren nekter å fjerne lysvalg som andre handlinger avhenger av',()=>{
-  const c=defaults(),cat={people:{a:{id:'a',name:'A'}},devices:{}};
+test('Veiviseren nekter å fjerne tidligere valg som andre handlinger avhenger av',()=>{
+  const c=defaults(),cat={people:{a:{id:'a',name:'A'}},flows:[]};
   add(c,'away',[step('managed',{setupManaged:true}),step('dependent',{dependsOn:'managed',requireConfirmed:true})]);
-  assert.throws(()=>setup.draft(c,{people:['a'],lights:{away:[]}},cat),/avansert/);
+  assert.throws(()=>setup.draft(c,{people:['a'],flows:{away:''}},cat),/avansert/);
+});
+
+test('Flow-listen viser alle flows, men ugyldige valg kan ikke legges i utkastet',()=>{
+  const c=defaults(),cat={people:{a:{id:'a',name:'A'}},flows:[
+    {id:'normal',name:'Samme navn',type:'normal',triggerable:true},
+    {id:'advanced',name:'Samme navn',type:'advanced',triggerable:true},
+    {id:'disabled',name:'Av',type:'normal',triggerable:true,enabled:false},
+    {id:'broken',name:'Brutt',type:'normal',triggerable:true,broken:true},
+    {id:'no-start',name:'Hendelse',type:'advanced',triggerable:false},
+    {id:'tag',name:'Med tagg',type:'normal',triggerable:false},
+    {id:'unknown',name:'Ukjent',type:'normal'},
+  ]};
+  const choices=setup.flowChoices(cat);assert.equal(choices.length,cat.flows.length);
+  assert.equal(new Set(choices.map(f=>f.key)).size,cat.flows.length);
+  assert.equal(choices.filter(f=>f.selectable).length,2);
+  assert.equal(choices.find(f=>f.id==='no-start').reason,'Mangler Start-kort');
+  for(const flow of choices.filter(f=>!f.selectable))assert.throws(()=>setup.draft(c,{people:['a'],flows:{away:flow.key}},cat),/Valgt Flow/);
+});
+
+test('Et nytt Flow-valg erstatter tidligere veiviserlys uten å duplisere en valgt eksisterende Flow',()=>{
+  const c=defaults(),cat={people:{a:{id:'a',name:'A'}},flows:[{id:'off',name:'Lys av',type:'normal',triggerable:true}]};
+  const custom=step('custom-flow',{kind:'flow',category:'lights',flowId:'off',flowType:'normal',delaySeconds:10});
+  const oldLight=step('old-light',{kind:'set',category:'lights',deviceId:'lamp',capability:'onoff',value:false,setupManaged:true});
+  add(c,'away',[custom,oldLight]);assert.equal(setup.selections(c).away,'');
+  const next=setup.draft(c,{people:['a'],flows:{away:'normal:off'}},cat);
+  assert.deepEqual(next.routines.find(r=>r.id==='away').actions,[custom]);
+  assert.equal(c.routines.find(r=>r.id==='away').actions.length,2);
+  assert.equal(setup.selections(next).away,'normal:off');
+  assert.deepEqual(setup.draft(next,{people:['a'],flows:{away:''}},cat).routines.find(r=>r.id==='away').actions,[custom]);
+});
+
+test('Et uendret Flow-valg beholder handlingens avhengigheter; bytte og fjerning avvises ved avhengighet',()=>{
+  const c=defaults(),cat={people:{a:{id:'a',name:'A'}},flows:[{id:'off',name:'Lys av',type:'normal',triggerable:true},{id:'other',name:'Annen',type:'normal',triggerable:true}]};
+  add(c,'away',[step('managed',{kind:'flow',category:'lights',flowId:'off',flowType:'normal',setupManaged:true}),step('dependent',{dependsOn:'managed'})]);
+  assert.deepEqual(setup.draft(c,{people:['a'],flows:{away:'normal:off'}},cat).routines,c.routines);
+  for(const key of ['','normal:other'])assert.throws(()=>setup.draft(c,{people:['a'],flows:{away:key}},cat),/avansert/);
 });
 
 test('Tilgangskontrollen bruker bare appens egne ufarlige kort',async()=>{

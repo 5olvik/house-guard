@@ -27,7 +27,7 @@ const devices = Object.fromEntries([
 ].map(([id, name, zone, capabilities]) => [id, { id, name, zone, available: true, capabilities }]));
 devices['demo-lights'].class = 'light';
 devices['demo-extra-light'] = { ...structuredClone(devices['demo-lights']), id:'demo-extra-light', name:'Leselampe' };
-const catalogue = { people, devices, zones: { 'demo-living': { id: 'demo-living', name: 'Stue' } }, flows: [{ id: 'demo-scene', name: 'Ettermiddag · demoscene', type: 'normal' }], errors: [] };
+const catalogue = { people, devices, zones: { 'demo-living': { id: 'demo-living', name: 'Stue' } }, flows: [{ id:'demo-scene', name:'Velkomstlys', type:'normal', enabled:true, triggerable:true }, { id:'demo-lights-off', name:'Slå av alle lys', type:'normal', enabled:true, triggerable:true }, { id:'demo-night', name:'God natt', type:'advanced', enabled:true, triggerable:true }, { id:'demo-no-start', name:'Bevegelseslys', type:'advanced', enabled:true, triggerable:false }], errors: [] };
 const snapshot = async () => { for (const p of Object.values(people)) p.observedAt = clock(); return structuredClone({ connected: true, people, devices }); };
 const reject = async () => { throw new Error('Demomodus har ingen sideeffekter'); };
 const engine = new Engine({ config, clock, adapter: { snapshot, set: reject, setAsleep: reject, emit: reject, timeline: reject, startFlow: reject } });

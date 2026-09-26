@@ -1,12 +1,12 @@
 # House Guard
 
-House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og lys i en veiviser, og utvid med Heimdall, dørlås, varsler og lyd etter behov.
+House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og Homey-flows i en veiviser, og utvid med Heimdall, dørlås, varsler og lyd etter behov.
 
-**Versjon 0.3.0 er en utviklingsversjon.** Den er ikke publisert i Homey App Store. Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.3.1 er en utviklingsversjon.** Den er ikke publisert i Homey App Store. Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
 ## Funksjoner
 
-- Grunnoppsett med personer og lys uten hjelpeflows.
+- Veiviser med personvalg og valg av én Flow for avreise, hjemkomst og natt.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
 - Gjestemodus som egen av/på-enhet i Homey.
 - Direkte integrasjon med Heimdall og kompatible låseenheter, inkludert Yale.
@@ -52,9 +52,9 @@ npm run preview
 
 ## Status og begrensninger
 
-76 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
+80 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
 
-Grunnoppsettet krever ingen ekstra flows. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
+Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
 
 ## Dokumentasjon
 
