@@ -1,6 +1,6 @@
 {
   "name": "no.husmodus",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "House Guard – rutiner for Homey Pro",
   "main": "app.js",
   "license": "GPL-3.0-only",

@@ -2,7 +2,7 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og Homey-flows i en veiviser, og utvid med innebygd alarm, dørlås, varsler og lyd etter behov.
 
-**Versjon 0.4.0 er en testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.1 er en testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
 ## Funksjoner
 
@@ -17,6 +17,8 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg 
 - Enkle Flow-kort med navnevalg for mobilvarsler, spørsmål og Sonos.
 - Forhåndsvisning, konfigurasjonskontroll, import/eksport og observasjonslogg.
 - Kontroll av bekreftet lås-/porttilstand og avbrudd ved endret oppsett eller tilstedeværelse.
+
+Alle som har «Motta pushvarsler» under Personer, er mottakere for alle appens pushvarsler. Vanlig push, kritisk push og bildevarsel beholdes. Hver varselhandling kan i tillegg velge «Vis også i Homeys tidslinje». Dette er en valgfri kopi, ikke erstatning for alarmvarsling.
 
 Mobilvarsler, spørsmål og Sonos trenger små Flow-koblinger. Oppskriftene finnes under **Mer → Koblinger**. Enkle utgangskoblinger har ikke automatisk reservepush eller leveringskvittering. Gyldige kort betyr ikke at meldingen er mottatt eller lyden hørt.
 
@@ -59,7 +61,7 @@ npm run preview
 
 ## Status og begrensninger
 
-111 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
+118 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
 
 Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
 

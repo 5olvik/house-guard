@@ -35,3 +35,7 @@ GUI-statusoppdatering erstatter ikke lokale endringer som venter på lagring. Ek
 Tilstand lagres under `houseguard.intrusion.v1` og bindes til sensorutvalg, forsinkelser og observasjonsmodus. Omstart bevarer fullført tilkobling og alarmkontekst, men avbryter uferdig utgangsforsinkelse. Avstilling avbryter ventende inngangs- og tilkoblingshandlinger. Et internt panel i adapteren lar de eksisterende rutinene bruke samme motor. `alarmTarget` skiller en pågående tilkobling fra bekreftet frakobling.
 
 Alarmpanelet speiler intern tilstand og sender manuelle kommandoer gjennom appen. Sletting av panelet frakobler ikke motoren. I observasjon kan intern alarmtilstand testes; varsler og andre eksterne handlinger blokkeres.
+
+## Push med tidslinjekopi
+
+Push-varsler beholder mottakerutvalget i `people.notifications` og de tre varseltypene. Feltet `alsoTimeline` på en varselhandling legger til en SDK-tidslinjemelding etter at push-koblingene er utløst. Kopien bruker samme generasjons- og observasjonsvern, sendes én gang og gir ingen retry av push ved feil. Feltet er valgfritt og er av for eldre oppsett. Alarmvarsling konverteres aldri automatisk til tidslinje.

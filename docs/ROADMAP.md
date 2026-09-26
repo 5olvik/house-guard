@@ -2,7 +2,7 @@
 
 Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå interne ID-er, ruting eller tekniske migreringsverktøy.
 
-## Implementert i 0.4.0
+## Implementert i 0.4.1
 
 - Veiviser med personvalg og egne Flow-valg for avreise, hjemkomst og natt.
 - Automatisk lagring av felt, handlinger og veiviservalg med synlig status og revisjonskontroll.
@@ -10,6 +10,7 @@ Målet er at nye brukere kan sette opp ønsket husoppførsel uten å forstå int
 - Enkle Flow-kort med navnevalg og få tagger.
 - Oppsettskontroll av reelle kortforbindelser, mål og tagger.
 - Gjestemodus som Homey-enhet.
+- Felles mottakerutvalg for alle pushvarsler, med vanlig/kritisk/bildepush og valgfri tidslinjekopi.
 
 ## Neste arbeid
 

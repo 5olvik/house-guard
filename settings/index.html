@@ -14,7 +14,7 @@
   <header class="header-top">
     <div class="header-title"><div class="eyebrow">ET HJEM SOM FØLGER DAGEN DIN</div><h1>House <span>Guard</span></h1><p class="subtitle">Dine personer. Dine rutiner. Full oversikt.</p></div>
     <div class="header-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M12 47 50 14l38 33M22 39v44h20V61h16v22h20V39"/></svg></div>
-    <span class="version">0.4.0</span>
+    <span class="version">0.4.1</span>
   </header>
   <div id="connection" class="banner" role="status">Kobler til Homey …</div>
   <nav class="tab-bar" aria-label="Hovedmeny">
@@ -87,7 +87,7 @@
     </section>
     <section id="people" class="panel" hidden>
       <div class="intro"><div><h2>Hvem skal huset følge?</h2><p>Egne personvalg for tilstedeværelse, natt og mottakere.</p></div></div>
-      <div class="card"><h2>Velg roller</h2><p class="hint">Barn kan telle som hjemme uten å motta spørsmål. Ingen er valgt som standard. Manglende personer beholdes med ID.</p><div id="people-selection"></div></div>
+      <div class="card"><h2>Velg roller</h2><p class="hint">Kryss av «Motta pushvarsler» for dem som skal få alle appens pushvarsler. Dette gjelder vanlig push, kritisk push og bildevarsler, uavhengig av om personen er hjemme. Leveringskoblinger vises under Mer → Koblinger. Barn kan telle som hjemme uten å motta spørsmål eller push. Ingen er valgt som standard.</p><div id="people-selection"></div></div>
     </section>
     <section id="more" class="panel" hidden>
       <div class="card"><h2>Koblinger</h2><p>Hjem/borte, gjestemodus og direkte enhetsstyring krever ingen hjelpeflows. Her vises oppskrifter for tilleggene du har valgt.</p><div id="connection-recipes"></div><details id="legacy-delivery" hidden><summary>Bytt fra eldre leveringsmetode</summary><div class="details-body form-grid"><label>Mobilvarsler<select data-bind="delivery.notifications"><option value="simple">Enkle flows</option><option value="legacy">Eldre integrasjonsflow</option></select></label><label>Nattspørsmål<select data-bind="delivery.questions"><option value="simple">Enkle flows</option><option value="legacy">Eldre integrasjonsflow</option></select></label><label>Tale og lyd<select data-bind="delivery.audio"><option value="simple">Enkle flows</option><option value="legacy">Eldre integrasjonsflow</option></select></label><p class="hint full">Valget lagres automatisk. Lag koblingene som vises over. Enkle utgangsflows har ikke automatisk reservepush eller leveringskvittering.</p></div></details></div>
@@ -95,7 +95,7 @@
       <div class="card"><h2>Integrasjoner</h2><div id="integration-list"></div><div class="button-row"><button id="refresh-catalog">Oppdater personer og enheter</button><button id="setup-bridges">Kontroller integrasjonsflows</button></div><p class="hint">Endringer lagres automatisk. Kontrollen oppdaterer leveringsvalgene ut fra koblingene som finnes, uten prøvemeldinger. Etter endring av mottakere, kamera eller Sonos må koblingene oppdateres. Manglende koblinger vises over.</p><div id="delivery-status"></div></div>
       <div class="card"><h2>Import og eksport</h2><p class="hint">Eksport inneholder enhets- og person-ID-er, men ingen pålogging. Import erstatter oppsettet og lagres automatisk i observasjonsmodus.</p><div class="button-row"><button id="export-config">Eksporter oppsett</button><label class="file-button">Importer oppsett<input id="import-config" type="file" accept="application/json,.json"></label></div></div>
       <div class="card"><div class="section-heading"><h2>Hendelseslogg</h2><select id="log-filter" aria-label="Filtrer logg"><option value="all">Alle hendelser</option><option value="failed">Feil / ukjent utfall</option><option value="observed">Observasjon</option><option value="skipped">Hoppet over</option><option value="info">Modus og oppsett</option></select></div><div id="full-log"></div><button id="export-log">Eksporter logg</button></div>
-      <p class="footnote">House Guard 0.4.0 · GUI basert på Power Guard · GPL-3.0<br>Fysisk styring og mottak av meldinger må prøves ved overtakelse.</p>
+      <p class="footnote">House Guard 0.4.1 · GUI basert på Power Guard · GPL-3.0<br>Fysisk styring og mottak av meldinger må prøves ved overtakelse.</p>
     </section>
   </main>
   <div id="autosave-status" class="autosave-status" data-state="saved"><span id="autosave-message" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</span><button id="reload-config" hidden>Forkast lokale endringer og last inn lagret oppsett</button></div>
@@ -112,6 +112,8 @@
   <label class="action-text full" hidden>Tekst / lydnavn<textarea id="action-text" rows="2" placeholder="Bruk {zone}, {reason} eller {personId} ved behov"></textarea></label>
   <label class="action-notification" hidden>Varseltype<select id="action-notification"><option value="normal">Vanlig push</option><option value="critical">Kritisk push</option><option value="image">Push med kamerabilde</option></select></label>
   <label class="action-notification" hidden>Kamera for bildevarsel<select id="action-camera"></select></label>
+  <label class="action-notification check full" hidden><input id="action-also-timeline" type="checkbox">Vis også i Homeys tidslinje</label>
+  <p class="action-notification hint full" hidden>Push sendes til alle som har «Motta pushvarsler» under Personer. Kritisk push og bildevarsel bruker de valgte Flow-koblingene. Tidslinjekopi er valgfritt og erstatter ikke push. Push fra tidslinjen kan gi et ekstra varsel hvis brukeren har aktivert det i Homey.</p>
   <label class="action-volume" hidden>Volum<input id="action-volume" type="number" min="1" max="100" value="35"></label>
   <label>Forsinkelse fra rutinen starter (sekunder)<input id="action-delay" type="number" min="0" max="86400" value="0" required></label>
   <label>Vilkår<select id="action-when"><option value="">Rutinens vilkår</option><option value="home">Noen er hjemme</option><option value="away">Alle er bekreftet borte</option><option value="asleep">Noen hjemme sover</option><option value="awake">Ingen hjemme sover</option><option value="night">Nattmodus</option></select></label>

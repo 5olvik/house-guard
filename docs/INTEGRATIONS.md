@@ -1,4 +1,4 @@
-# Integrasjoner i House Guard 0.4.0
+# Integrasjoner i House Guard 0.4.1
 
 Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til ønskede integrasjoner etterpå.
 
@@ -22,6 +22,14 @@ Lag en Flow i Homey, for eksempel «Slå av alle lys», med handlingene du vil u
 Listen viser alle vanlige flows og Advanced Flows alfabetisk. Deaktiverte flows, flows med feil og flows som ikke kan startes direkte, vises med en forklaring og kan ikke velges. Advanced Flow må ha et [Start-kort](https://homey.app/en-us/features/advanced-flow/). Bruk **Oppdater Flow-listen** hvis du lager eller endrer en Flow mens veiviseren er åpen.
 
 Valgene lagres automatisk med en gang. Tekstfelt lagres etter en kort skrivepause. Veiviseren beholder valgt observasjonsmodus. Tidligere enkeltlys fra veiviseren erstattes først når du endrer Flow-valget for samme rutine. Egne handlinger under Rutiner beholdes; en allerede valgt Flow legges ikke til to ganger. En startet ekstern Flow kjører sine egne handlinger og kan ikke trekkes tilbake av House Guard.
+
+## Push og valgfri tidslinjekopi
+
+Velg **Motta pushvarsler** for hver ønsket person. Alle valgte brukes for vanlig push, kritisk push og bildevarsler fra alle rutiner, også når de er borte. Endring av mottaker kan kreve ny leveringskobling under Mer → Koblinger.
+
+En varselhandling kan velge **Vis også i Homeys tidslinje**. Kopien er av som standard og sendes én gang etter at push-koblingen er utløst. Feil i tidslinjen logges uten å sende push på nytt. Tidslinjen har ikke samme mottakerutvalg; Homey-brukere med tilgang til tidslinjen kan se teksten. Dersom en bruker også har aktivert push fra appens tidslinje i Homey, kan kopien gi et ekstra telefonvarsel.
+
+Tidslinjevarsler er ikke kritiske varsler eller bildevarsler. De erstatter ikke push for alarm. Homeys [SDK for tidslinjevarsler](https://apps-sdk-v3.developer.homey.app/ManagerNotifications.html) tilbyr tekst uten mottakervalg. En ny kontroll fra House Guard på Homey avviste direkte kjøring av mobilkort med «Missing Scopes». Eksisterende push-Flows beholdes derfor.
 
 ## Eksempel: vanlig varsel
 

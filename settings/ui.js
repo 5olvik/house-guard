@@ -132,7 +132,7 @@
       const p = data.catalog.people[id], row = el('div', undefined, 'person-config');
       row.append(el('strong', p?.name || `Mangler: ${id}`, !p ? 'missing' : ''));
       const roles = el('div', undefined, 'person-roles');
-      for (const [role, label] of [['presence', 'Teller som hjemme'], ['night', 'Nattutvalg'], ['questions', 'Nattspørsmål'], ['notifications', 'Varsler']]) {
+      for (const [role, label] of [['presence', 'Teller som hjemme'], ['night', 'Nattutvalg'], ['questions', 'Nattspørsmål'], ['notifications', 'Motta pushvarsler']]) {
         const wrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = config.people[role].includes(id);
         check.addEventListener('change', () => {
           config.people[role] = check.checked ? [...config.people[role], id] : config.people[role].filter(v => v !== id);
@@ -396,6 +396,7 @@
   }
   function openAction(routine, existing = null) {
     actionRoutine = routine; editedAction = existing; actionChanged = false; $('action-form').reset(); $('action-error-message').textContent = '';
+    $('action-also-timeline').checked=!!existing?.alsoTimeline;
     $('action-title').textContent = existing ? 'Rediger handling' : 'Legg til handling';
     options($('action-category'), Object.entries(labels).map(([id, label]) => ({ id, label })), 'lights', null);
     options($('action-flow'), data.catalog.flows.map(f => ({ id: `${f.type}:${f.id}`, label: `${f.name}${f.broken ? ' · brutt' : ''}` })), '');
@@ -455,7 +456,7 @@
         if (kind === 'person') { a.personId = $('action-person').value; if (!a.personId || typeof a.value !== 'boolean') throw new Error('Velg person og bruk true (sover) eller false (våken).'); }
         if (kind === 'flow') { const selected = $('action-flow').value; if (!selected) throw new Error('Velg en Flow.'); [a.flowType, a.flowId] = selected.split(':'); }
         if (['notify', 'timeline', 'speak', 'sound'].includes(kind)) { a.text = $('action-text').value; if (!a.text.trim()) throw new Error('Skriv tekst eller lydnavn.'); }
-        if (kind === 'notify') { a.notificationType = $('action-notification').value; a.imageDeviceId = $('action-camera').value; if (a.notificationType === 'image' && !a.imageDeviceId) throw new Error('Velg kamera for bildevarsel.'); }
+        if (kind === 'notify') { a.alsoTimeline=$('action-also-timeline').checked; a.notificationType = $('action-notification').value; a.imageDeviceId = $('action-camera').value; if (a.notificationType === 'image' && !a.imageDeviceId) throw new Error('Velg kamera for bildevarsel.'); }
         if (['speak', 'sound'].includes(kind)) { a.volume = Number($('action-volume').value); if (!a.deviceId || !a.volume) throw new Error('Velg lydenhet og et volum fra 1 til 100.'); }
         if ($('action-when').value) a.when = $('action-when').value;
         if ($('condition-device').value) {

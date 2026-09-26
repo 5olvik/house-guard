@@ -30,5 +30,9 @@
   "0.4.0": {
     "no": "Egen House Guard-alarm med direkte sensorvalg for borte og natt, inn- og utgangsforsinkelse, observasjonsprøver og alarmpanel som Homey-enhet. Heimdall-integrasjon og alarmbrokort er fjernet. Gamle alarmoppsett flyttes til observasjon og trenger nytt sensorvalg.",
     "en": "Native House Guard alarm with direct away/night sensor selection, entry and exit delays, observation tests and a Homey alarm panel device. Removed the Heimdall integration and alarm bridge cards. Existing external alarm configurations move to observation and require sensor setup."
+  },
+  "0.4.1": {
+    "no": "Tydelig mottakervalg «Motta pushvarsler» og valgfri tidslinjekopi per varsel. Vanlig, kritisk og bildepush samt eksisterende Flow-koblinger beholdes. Tidslinjen erstatter ikke alarmvarsling.",
+    "en": "Clear Receive push notifications selection and an optional timeline copy per notification. Normal, critical and image push notifications and existing Flow connections are preserved. Timeline copies do not replace alarm notifications."
   }
 }

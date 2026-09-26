@@ -1,10 +1,10 @@
-# Tester og begrensninger – 0.4.0
+# Tester og begrensninger – 0.4.1
 
 Kontrollert 26. september 2026 med Node.js 24, Homey CLI 4.5.0 og homey-api 3.19.5.
 
 ## Automatiserte tester
 
-**111 tester består.** Kjør `npm test`. Testene bruker klokke, adaptere og Homey-stubber; de styrer ikke et fysisk hus.
+**118 tester består.** Kjør `npm test`. Testene bruker klokke, adaptere og Homey-stubber; de styrer ikke et fysisk hus.
 
 Dekningen omfatter tilstedeværelse, forsinkelser og avbrudd, nattspørsmål med frist og nei-veto, sen/utdatert respons, omstart, gjestemodus og enhetsdriver, lås- og portregler, observasjon, tilstandsbekreftelse, alarmkontekst, tidsplaner og sommertid, konfigurasjonsendring, rutineforhåndsvisning, enkle Flow-koblinger, egen alarmmotor og alarmpanel og oppsettsveiviser.
 
@@ -22,7 +22,11 @@ Alarmtestene dekker full/natt-utvalg, korte sensorpulser, ukjente sensorer, åpn
 
 Demoens HTTP-API er testet med lagring av sensoroppsett, tilkobling, simulert alarm med sone/årsak og avstilling. Frakobling er også testet mens en tilkoblingsforespørsel venter på en treg avlesing; det forsinkede svaret får ikke koble til igjen.
 
+Push-testene bekrefter at vanlig, kritisk og bildepush beholder alle valgte mottakere og eventuelt kamera. Tidslinjekopi er valgfri og sendes én gang etter push, ikke per mottaker. Observasjon blokkerer begge deler, endret konfigurasjon stopper kopien, og feil i tidslinjen fører ikke til ny push. Dette er SDK-/adaptertester; ingen testmelding er sendt til reelle telefoner.
+
 ## Kontroller utført på Homey
+
+- 0.4.1 er installert og kjører uten krasj eller katalogfeil. Konfigurasjonen og alle Advanced Flows er identiske med sikkerhetskopien tatt rett før installasjon. Alle tre push-kort er tilgjengelige. Observasjon er fortsatt aktiv, og ingen reelle prøvevarsler er sendt.
 
 - 0.4.0 er installert i observasjon. Eget alarmpanel er valgt internt, men ingen fysisk alarmsensor er valgt. Katalogen har ingen feil. Personer, rutiner og øvrige enhetsvalg er bevart. Seks gamle alarmbrokort er fjernet fra appens integrasjonsflow; de 28 gjenværende kortene er kontrollert uten feil. Andre personlige flows er uendret.
 - 0.3.1 viser begge Flow-typer og bevarer Homeys opplysning om hvilke flows som kan startes direkte. Veiviserens utkast ble validert og forhåndsvist gjennom den installerte appen uten lagring eller Flow-start. Lagret konfigurasjon og observasjon var uendret etter installasjonen.
