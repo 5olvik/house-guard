@@ -4,7 +4,7 @@
 
 Nettleserdemo bekrefter lesbare lys- og personvalg, sammenfoldede avanserte valg, bevarte vilkår ved redigering, avkrysning etter ny innlasting, oppretting og sletting av egen rutine og ingen sletteknapp på faste rutiner. Eksisterende handlinger beholdes når avkrysningen fjernes. Ingen fysiske enheter eller personstatuser er endret under testingen.
 
-Installert lokalt på Solviks Homey. Etterkontroll bekrefter uendret revisjon og bevarte handlinger, avkrysninger, morgeninnstillinger og Flow-IDer. Direkte forbindelse er klar. GitHub og App Stores testkanal er ikke oppdatert med denne versjonen.
+Installert lokalt på Solviks Homey. Etterkontroll bekrefter uendret revisjon og bevarte handlinger, avkrysninger, morgeninnstillinger og Flow-IDer. Direkte forbindelse er klar. Versjon 0.4.18 er også publisert på GitHub og i App Stores testkanal (bygg 7).
 
 # Lokal testversjon 0.4.17 – morgen ved bevegelse
 
