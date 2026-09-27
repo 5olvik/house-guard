@@ -53,3 +53,43 @@ test('Leaving guest mode honours the automatic away and night switches',()=>{
 test('Changing an automation switch does not immediately arm or disarm the system',async()=>{
   const h=harness(c=>{c.security.alarmDeviceId=ID;});h.device(ID,'homealarm_state','armed');h.person('a',false);h.person('b',false);h.ingest();const next=structuredClone(h.config);next.security.automation.away=false;h.engine.updateConfig(next);await h.engine.tick();assert.equal(h.calls.length,0);
 });
+
+test('Night arrival disarms immediately, wakes only the arrival and allows later rearming',async()=>{
+ const h=harness(c=>{c.security.alarmDeviceId=ID;c.night.wakeArrival=true;c.delays.home=300;c.routines.find(r=>r.id==='nightArrival').enabled=false;});
+ h.person('a',false,true);h.person('b',true,true);h.device(ID,'homealarm_state','partially_armed');h.device(ID,'alarm_generic',false);h.ingest();h.engine.state.manualNight=true;
+ const pending=h.engine.start('night',{},30);h.person('a',true,true);h.ingest();assert(pending.cancelled);assert.equal(h.engine.state.manualNight,false);
+ await h.engine.tick();assert.deepEqual(h.calls,[['set',ID,'homealarm_state','disarmed']]);
+ h.device(ID,'homealarm_state','disarmed');await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','a',false]);assert(!h.calls.some(c=>c[0]==='person'&&c[1]==='b'));
+ h.person('a',true,false);h.ingest();await h.engine.tick();assert(!h.engine.runs.some(r=>r.routineId==='morning'));assert.equal(h.engine.state.mode,'home');
+ h.person('a',true,true);h.ingest();await h.engine.tick();assert(h.calls.some(c=>c[0]==='set'&&c[3]==='partially_armed'));
+});
+test('Night-arrival switches, departed arrivals and observation prevent unwanted disarming',async()=>{
+ for(const scenario of ['home-off','wake-off','left','observation','reconnect']){
+  const h=harness(c=>{c.security.alarmDeviceId=ID;c.night.wakeArrival=scenario!=='wake-off';c.security.automation.home=scenario!=='home-off';c.observation=scenario==='observation';});
+  h.person('a',false,true);h.person('b',true,true);h.device(ID,'homealarm_state','partially_armed');h.ingest();h.person('a',true,true);h.ingest({reconnect:scenario==='reconnect'});if(scenario==='left')h.person('a',false,true);await h.engine.tick();
+  assert(!h.calls.some(c=>c[0]==='set'&&c[3]==='disarmed'),scenario);
+ }
+});
+test('Scheduled and Flow-started mornings wake home residents only; external individual waking only disarms',async()=>{
+ for(const scheduled of [true,false]){
+  const h=harness(c=>{c.morning.scheduled=scheduled;c.morning.time='07:00';}, {},'2026-09-22T04:59:59Z');h.person('a',true,true);h.person('b',false,true);h.ingest();
+  if(scheduled)h.advance(1000);else await h.engine.manual('morning');await h.engine.tick();assert.deepEqual(h.calls,[['person','a',false]]);
+ }
+ const h=harness(c=>{c.security.alarmDeviceId=ID;});h.person('a',true,true);h.person('b',true,true);h.device(ID,'homealarm_state','partially_armed');h.ingest();h.person('a',true,false);h.ingest();await h.engine.tick();assert.deepEqual(h.calls,[['set',ID,'homealarm_state','disarmed']]);
+});
+
+test('Manual morning works again after a new night on the same date, without duplicate runs',async()=>{
+ const h=harness(c=>{c.security.alarmDeviceId=ID;add(c,'morning',[step('extra')]);}, {morningKey:'morning-2026-09-21'});
+ h.person('a',true,true);h.person('b',false,true);h.device(ID,'homealarm_state','partially_armed');h.ingest();
+ h.engine.state.manualNight=true;const night=h.engine.start('night',{},30);
+ assert.equal(h.engine.morning('schedule'),false);
+ await h.engine.manual('morning');await h.engine.manual('morning');assert(night.cancelled);
+ assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
+ await h.engine.tick();assert.deepEqual(h.calls,[['set',ID,'homealarm_state','disarmed']]);
+ h.device(ID,'homealarm_state','disarmed');await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','a',false]);
+ h.person('a',true,false);h.ingest();await h.engine.tick();assert.equal(h.engine.state.mode,'home');
+ assert.equal(h.calls.filter(c=>c[0]==='timeline').length,1);assert(!h.calls.some(c=>c[0]==='person'&&c[1]==='b'));
+ await h.engine.manual('morning');assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
+ h.person('a',true,true);h.ingest();assert.equal(h.engine.morning('external'),true);
+ h.advance(31000);await h.engine.tick();assert(!h.calls.some(c=>c[0]==='set'&&c[3]==='partially_armed'));
+});

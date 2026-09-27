@@ -4,7 +4,7 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg 
 
 **Versjon 0.4.10 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.10**, med flere alarmkameraer, rettet lysutvalg og enklere innstillinger. Versjon **0.4.10** er publisert i Homey App Stores testkanal. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
+Kildekoden her er versjon **0.4.16**, med manuelle hjemme-/borteknapper, forbedret natt og morgen, alarmpanel med status og avstilling og temperaturuavhengig portstyring. Versjon **0.4.10** er publisert i Homey App Stores testkanal. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
 
 ## Funksjoner
 
@@ -13,16 +13,17 @@ Kildekoden her er versjon **0.4.10**, med flere alarmkameraer, rettet lysutvalg 
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
 - Gjestemodus som egen av/på-enhet i Homey.
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
-- Alarmpanel som egen Homey-enhet. Ingen separat alarmapp eller alarmbroflows.
+- Alarmpanel som egen Homey-enhet med status og avstilling. Ingen separat alarmapp eller alarmbroflows.
 - Direkte styring av kompatible låseenheter, inkludert Yale.
 - Nattspørsmål med svarfrist og nei-veto.
-- Enkle Flow-kort med navnevalg for mobilvarsler, spørsmål og Sonos.
+- Direkte mobilvarsler, nattspørsmål og Sonos med Homey API-nøkkel, uten hjelpeflows.
+- Manuelle knapper som setter alle valgte brukere hjemme eller borte, også uten GPS.
 - Forhåndsvisning, konfigurasjonskontroll, import/eksport og observasjonslogg.
 - Kontroll av bekreftet lås-/porttilstand og avbrudd ved endret oppsett eller tilstedeværelse.
 
 Alle som har «Motta pushvarsler» under Personer, er mottakere for alle appens pushvarsler. Vanlig push, kritisk push og bildevarsel beholdes. Hver varselhandling kan i tillegg velge «Vis også i Homeys tidslinje». Dette er en valgfri kopi, ikke erstatning for alarmvarsling.
 
-Mobilvarsler, spørsmål og Sonos trenger små Flow-koblinger. Oppskriftene finnes under **Mer → Koblinger**. Enkle utgangskoblinger har ikke automatisk reservepush eller leveringskvittering. Gyldige kort betyr ikke at meldingen er mottatt eller lyden hørt.
+Mobilvarsler, spørsmål, Sonos og Flow-start kjøres direkte med en Homey API-nøkkel. Se [API-oppsettet](docs/API-KEY.md). Kontroller faktisk mottak på telefonen og hørbar lyd ved testing.
 
 ## Kom i gang
 

@@ -179,7 +179,7 @@
       check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode(alarmEvent ? 'Ekstra handlinger er aktive' : 'Rutinen er aktiv'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
       execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap, execution);
-      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const builtinList = el('div');
       const showBuiltins = actions => {
@@ -464,7 +464,11 @@
     $('show-system-status').onclick=()=>{document.querySelector('[data-tab=more]').click();$('system-status').open=true;$('system-status-heading').focus();$('system-status').scrollIntoView({block:'start'});};
     document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { if(button.dataset.tab==='security')renderAlarmResponses(); document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
-      try { await flush(); await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }
+      const buttons=[...document.querySelectorAll('[data-command]')],mode=button.dataset.command;
+      buttons.forEach(b=>b.disabled=true);
+      try { await flush(); await api('POST', '/command', ['home','away'].includes(mode) ? {type:'presence',present:mode==='home'} : mode === 'skip' ? { type: 'skip' } : { type: 'mode', mode }); await load(); toast('Kommando behandlet. Se status og logg.'); }
+      catch (error) { toast(error.message);await load().catch(()=>{}); }
+      finally {buttons.forEach(b=>b.disabled=false);}
     });
     document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}});
     document.querySelectorAll('[data-control]').forEach(button=>button.onclick=async()=>{

@@ -13,7 +13,7 @@ Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til øns
 | Mobilvarsler | House Guard-trigger og Homeys mobilkort | To kort per person og varseltype/kamera |
 | Tale og alarmlyd | Navnevalg og Sonos-kort med Melding/Volum | To kort per høyttaler og funksjon/lyd |
 | Nattspørsmål | Trigger, mobilbetingelse, ja og nei med Dette spørsmålet | Fire kort per mottaker, inkludert Ellers |
-| Port | Separat status, kommando, temperatur og sikkerhetsvalg | Ingen for styringen; bildevarsel kobles separat |
+| Port | Separat status, kommando og sikkerhetsvalg | Ingen for styringen; bildevarsel kobles separat |
 
 ## Kommende endring: startkobling for scene-Flows
 

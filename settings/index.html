@@ -36,7 +36,7 @@
         <section class="status-box"><div class="eyebrow">GARASJEPORT</div><strong id="home-garage-state" role="status">Ukjent</strong><div class="button-row"><button data-control="garage" data-control-value="true">Åpne</button><button data-control="garage" data-control-value="false">Lukk</button></div><p id="garage-control-note" class="hint"></p></section>
       </div>
       <div id="home-attention" class="card row" hidden><strong id="home-attention-text"></strong><button id="show-system-status">Se status</button></div>
-      <div class="card"><h2>Gjør det nå</h2><p class="hint" id="manual-explanation"></p><div class="button-row"><button class="primary" data-command="night">☾ Start nattmodus</button><button data-command="morning">☀ Start morgen</button><button data-command="skip">Hopp over natt i natt</button></div><p id="skip-status" class="hint"></p></div>
+      <div class="card"><h2>Gjør det nå</h2><p class="hint">Borte og hjemme endrer tilstedeværelsen i Homey for alle brukerne valgt under Personer. Alarm og rutiner følger innstillingene dine. Sovestatus styres separat med natt og morgen. GPS kan oppdatere tilstedeværelsen igjen senere.</p><div class="button-row"><button data-command="away">Start bortemodus</button><button data-command="home">Sett alle hjemme</button></div><p class="hint" id="manual-explanation"></p><div class="button-row"><button class="primary" data-command="night">☾ Start nattmodus</button><button data-command="morning">☀ Start morgen</button><button data-command="skip">Hopp over natt i natt</button></div><p id="skip-status" class="hint"></p></div>
       <div id="question-card" class="card" hidden></div>
       <div class="card"><div class="section-heading"><h2>Det som skjer videre</h2><span class="badge" id="pending-count">0</span></div><div id="pending-list" class="empty">Ingen handlinger venter.</div></div>
       <div class="card"><h2>Siste hendelser</h2><div id="recent-log"></div></div>
@@ -45,7 +45,7 @@
     <section id="routines" class="panel" hidden>
       <div class="intro"><div><h2>Rutiner som passer huset</h2><p>Velg hva som skal skje, og når. Alarm, lås og garasje settes opp under Alarm.</p></div><button id="new-routine">+ Egen rutine</button></div>
       <p class="hint">Tilkobling, frakobling og ventetid ved borte/hjemkomst velges under Alarm → Oversikt. Rutinevalgene nedenfor gjelder ekstra handlinger.</p>
-      <details class="card" open><summary>Natt og morgen</summary><div class="details-body form-grid">
+      <details class="card"><summary>Natt og morgen</summary><div class="details-body form-grid">
         <label class="check"><input type="checkbox" data-bind="night.automatic">Tilby automatisk nattmodus</label>
         <label>Sone som må være inaktiv<select data-bind="night.zoneId" data-source="zones"></select></label>
         <label>Inaktiv i minutter<input type="number" min="1" max="240" data-bind="night.idleMinutes"></label>
@@ -58,6 +58,8 @@
         <label>Morgentid / utløp for «hopp over»<input type="time" data-bind="morning.time"></label>
         <label class="check"><input type="checkbox" data-bind="morning.requireHome">Morgen krever at noen er hjemme</label>
         <p class="hint full">Soneaktivitet leses direkte fra Homey. Mobilspørsmål krever frakoblet alarm og bekreftet våkent hus. Nattspørsmål og sovestatus bruker API-forbindelsen under Mer.</p>
+        <p class="hint full">Fast morgentid setter hjemmeværende i nattutvalget våkne i Homey og starter morgenrutinen. Nattalarm kobles til når alle hjemme i nattutvalget sover, hvis skallsikring er valgt under Alarm.</p>
+        <details class="full"><summary>Bruk egne Flows for vekking</summary><p class="hint">For hele huset: Bruk House Guard → Sett modus i House Guard → Morgen i en Flow eller Advanced Flow. For individuell vekking: Bruk Homeys tilstedeværelseskort til å sette én person våken. House Guard følger sovestatusen og kan frakoble ved første oppvåkning, slik du velger under Alarm. Slå av fast morgentid her hvis dine egne Flows skal bestemme tidspunktet. Du kan også legge handlingen «Start eksisterende Flow» i morgenrutinen for lys, musikk og andre vekkehandlinger.</p></details>
       </div></details>
       <div id="routine-list"></div>
       <details class="card"><summary>Velkomstlys ved døren</summary><div class="details-body form-grid">
@@ -87,13 +89,13 @@
         <div class="form-grid">
           <label class="check"><input type="checkbox" data-bind="security.automation.away">Aktiver bortealarm når alle valgte personer er borte</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.night">Aktiver skallsikring når nattmodus starter</label>
-          <label class="check"><input type="checkbox" data-bind="security.automation.home">Frakoble når første person kommer hjem til et tomt hus</label>
+          <label class="check"><input type="checkbox" data-bind="security.automation.home">Frakoble ved hjemkomst, også ved nattankomst</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.firstWake">Frakoble når første hjemmeværende våkner</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.morning">Frakoble når morgenmodus starter</label>
           <label>Alle borte – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.away"></label>
           <label>Første hjemkomst – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.home"></label>
         </div>
-        <p class="hint">Personene velges under Personer. Skallsikring bruker sensorene merket «Natt» under Sensorer. Bekreftelsestiden gjelder også borte- og hjemkomsthandlingene. Alarmens inn-/utgangsforsinkelse velges under Sensorer. Hjemkomst mens andre allerede er hjemme frakobler ikke nattalarmen.</p>
+        <p class="hint">Personene velges under Personer. Skallsikring bruker sensorene merket «Natt» under Sensorer. Bekreftelsestiden gjelder også borte- og hjemkomsthandlingene. Alarmens inn-/utgangsforsinkelse velges under Sensorer. Ved nattankomst frakobles alarmen uten hjemkomstforsinkelse når «Sett bare den ankomne våken» er valgt. Andre personer beholder sovestatusen.</p>
         <p class="hint">Endrede valg lagres automatisk og gjelder fra neste hendelse. De endrer ikke alarmmodus umiddelbart. Gjestemodus og observasjonsmodus gjelder fortsatt.</p>
       </div></details>
       <details class="card"><summary>Alarmpanel i Homey</summary><p class="hint">Valgfritt: Legg til enheten med Legg til enhet → House Guard → Alarmpanel for å se status og slå alarmen av og på fra Homey. Alarmen fungerer også uten denne enheten. Prøveknappene under sensorene er bare tilgjengelige i observasjon og simulerer en aktiv sensor.</p></details>
@@ -115,12 +117,10 @@
         <label>Relé / portmotor<select data-bind="security.garage.commandDeviceId" data-device="writable"></select></label><label>Kommandofunksjon<select data-bind="security.garage.commandCapability" data-capabilities="security.garage.commandDeviceId" data-write="true"></select></label>
         <label>Kommandotype<select data-bind="security.garage.commandType"><option value="pulse">Én puls / toggle</option><option value="close">Entydig lukk-kommando</option></select></label>
         <label>Kommandoverdi (true/false eller tekst)<input data-bind="security.garage.commandValue" data-value-type="scalar" type="text"></label>
-        <label>Utetemperatur<select data-bind="security.garage.temperatureDeviceId" data-device="measure_temperature"></select></label>
         <label>Kamera ved portvarsel<select data-bind="security.garage.imageDeviceId" data-device="camera"></select></label>
-        <label>Maks alder på temperatur (sekunder)<input type="number" min="10" data-bind="security.garage.maxAgeSeconds"></label>
         <label class="check full"><input type="checkbox" data-bind="security.garage.validated">Jeg har kontrollert polaritet og hva én kommando faktisk gjør</label>
         <label class="check full"><input type="checkbox" data-bind="security.garage.enabled">Tillat automatisk lukking ved tilkoblingsforsinkelse</label>
-        <p class="hint full">Krever kjent åpen port, temperatur over 5 °C og bekreftet at ingen hjemme sover. Én kommando. Ingen blind gjentakelse. Tilstanden kontrolleres etterpå.</p>
+        <p class="hint full">Krever kjent åpen port og bekreftet at ingen hjemme sover. Én kommando. Ingen blind gjentakelse. Tilstanden kontrolleres etterpå. Slå av automatisk lukking over når du ikke ønsker den, for eksempel om vinteren.</p>
       </div></details>
 
       </div>

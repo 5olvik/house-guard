@@ -8,13 +8,13 @@ House Guard har sin egen alarmmotor. Heimdall-integrasjonen, app-til-app-tillate
 2. Velg sensorer for **Borte** og **Natt**. Bare dør/vindu (`alarm_contact`) og bevegelse (`alarm_motion`) støttes. Velg eksempelvis skallsensorer for natt; unngå bevegelsessensorer i rom som brukes om natten.
 3. Merk inngangssensorer som **Forsinket**. Andre sensorer utløser alarm umiddelbart. Angi inn- og utgangsforsinkelse (0–240 sekunder).
 4. Velg reaksjoner under **Rutiner → Utløst alarm**. Sensorens navn, sone og årsak følger alarmen. Mobilvarsler og Sonos trenger fortsatt sine egne leveringskoblinger under **Mer → Koblinger**.
-5. Legg til **Homey → Legg til enhet → House Guard → Alarmpanel** for styring fra en enhet. Gjestemodus er en separat enhet.
+5. Legg til **Homey → Legg til enhet → House Guard → Alarmpanel** for status og avstilling fra en enhet. Gjestemodus er en separat enhet.
 
 Alle valg lagres automatisk. Frakoble alarmen før sensorutvalg, forsinkelser eller observasjonsmodus endres. En modus må ha minst én valgt sensor før den kan kobles til.
 
 ## Prøv i observasjon
 
-Behold observasjon på. Sørg for at sensorene er tilgjengelige og rolige. Koble til Borte eller Natt fra Sikkerhet eller alarmpanelet. Vent ut eventuell utgangsforsinkelse, og bruk **Prøv sensor i observasjon** eller utløs en valgt fysisk sensor. Kontroller status, sone/årsak og logg. Frakoble og kontroller at gjentakelse og ventende forsinkelseshandlinger stopper.
+Behold observasjon på. Sørg for at sensorene er tilgjengelige og rolige. Koble til Borte eller Natt fra Alarm i appen. Vent ut eventuell utgangsforsinkelse, og bruk **Prøv sensor i observasjon** eller utløs en valgt fysisk sensor. Kontroller status, sone/årsak og logg. Frakoble og kontroller at gjentakelse og ventende forsinkelseshandlinger stopper.
 
 Observasjon endrer intern testtilstand, men sender ikke mobilvarsler, lyd, låskommandoer eller andre eksterne handlinger. En vellykket observasjonsprøve bekrefter derfor ikke fysisk levering. Frakoble før observasjon slås av, og prøv deretter ønskede reaksjoner kontrollert.
 

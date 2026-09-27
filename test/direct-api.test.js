@@ -97,3 +97,14 @@ test('Each camera push identifies its camera and triggering sensor for every rec
  for(const camera of ['one','two'])await h.adapter.emit({kind:'notify',notificationType:'image',imageDeviceId:camera,text:'Alarm i Entré',context:{sensorName:'Ytterdør'},recipients:['a','b']},()=>true);
  assert.equal(h.calls.length,4);for(const [,call] of h.calls){assert.match(call.args.text,/Sensor: Ytterdør/);assert.match(call.args.text,call.droptoken.includes(':one|')?/Kamera: Garasje/:/Kamera: Inngang/);}
 });
+
+test('Direct presence uses the real Homey cards and preflights every recipient before writing',async()=>{
+ const h=await fixture();const write=await h.adapter.preparePresence(['a','b'],false,()=>true);assert.equal(h.calls.length,0);await write('a');assert.equal(h.calls[0][1].id,'homey:manager:presence:set_away');assert.equal(h.calls[0][1].args.user.id,'a');
+ h.person('a',false);const home=await h.adapter.preparePresence(['a'],true,()=>true);await home('a');assert.equal(h.calls.at(-1)[1].id,'homey:manager:presence:set_home');
+ await assert.rejects(()=>h.adapter.preparePresence(['missing'],false,()=>true),/mangler/);assert.equal(h.calls.length,2);
+});
+test('Prepared presence commands recheck cancellation, current status, observation and API access',async()=>{
+ const h=await fixture();let allowed=true;const write=await h.adapter.preparePresence(['a'],false,()=>allowed);allowed=false;await assert.rejects(()=>write('a'),/avbrutt/);assert.equal(h.calls.length,0);
+ allowed=true;h.person('a',false);await write('a');assert.equal(h.calls.length,0);h.person('a',true);h.config.observation=true;await assert.rejects(()=>write('a'),/Observasjon/);
+ h.config.observation=false;await h.direct.configure('');await assert.rejects(()=>h.adapter.preparePresence(['a'],false,()=>true),/klar/);assert.equal(h.calls.length,0);
+});

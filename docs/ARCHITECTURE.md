@@ -34,7 +34,7 @@ GUI-statusoppdatering erstatter ikke lokale endringer som venter på lagring. Ek
 
 Tilstand lagres under `houseguard.intrusion.v1` og bindes til sensorutvalg, forsinkelser og observasjonsmodus. Omstart bevarer fullført tilkobling og alarmkontekst, men avbryter uferdig utgangsforsinkelse. Avstilling avbryter ventende inngangs- og tilkoblingshandlinger. Et internt panel i adapteren lar de eksisterende rutinene bruke samme motor. `alarmTarget` skiller en pågående tilkobling fra bekreftet frakobling.
 
-Alarmpanelet speiler intern tilstand og sender manuelle kommandoer gjennom appen. Sletting av panelet frakobler ikke motoren. I observasjon kan intern alarmtilstand testes; varsler og andre eksterne handlinger blokkeres.
+Alarmpanelet speiler intern tilstand med skrivebeskyttet alarmstatus. Eneste betjening er Avstill alarm, som bruker appens frakobling og avstilling. Den tidligere homealarm_state-modusvelgeren fjernes også fra eksisterende enheter; motorens interne alarmkapabilitet beholdes. Sletting av panelet frakobler ikke motoren. I observasjon kan intern alarmtilstand testes; varsler og andre eksterne handlinger blokkeres.
 
 ## Push med tidslinjekopi
 

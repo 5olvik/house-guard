@@ -5,6 +5,9 @@ const {defaults}=require('../lib/config'),{Intrusion,ID}=require('../lib/intrusi
 const {harness,add,step}=require('./helpers');
 class FakeDevice {
   constructor(){this.values={};this.listeners={};}
+  hasCapability(){return false;}
+  getCapabilityOptions(){return {};}
+  async setCapabilityOptions(){}
   registerCapabilityListener(id,fn){this.listeners[id]=fn;}
   getCapabilityValue(id){return this.values[id];}
   async setCapabilityValue(id,value){await this.beforeWrite?.(id,value);this.values[id]=value;}
@@ -80,10 +83,10 @@ test('Zero exit delay arms with an active delayed door excluded and queues the w
 test('Alarm panel shows latest state and cleans up without disarming when deleted',async()=>{
   const {app}=setup(),Device=load('drivers/alarm-panel/device.js'),d=new Device(),timers=new Map();
   d.homey={app,__:key=>key,setInterval:fn=>{timers.set(1,fn);return 1;},clearInterval:id=>timers.delete(id)};
-  await app.refresh({initial:true});await d.onInit();assert.equal(d.values.homealarm_state,'disarmed');
-  await d.listeners.homealarm_state('armed');assert.equal(d.values.homealarm_state,'armed');
-  await d.listeners.button();assert.equal(d.values.homealarm_state,'disarmed');
-  await d.listeners.homealarm_state('partially_armed');d.onDeleted();assert.equal(app.intrusion.state.mode,'partially_armed');assert.equal(app.listenerCount('intrusion_changed'),0);assert.equal(timers.size,0);
+  await app.refresh({initial:true});await d.onInit();assert.equal(d.values.alarm_status,'alarm.disarmed');assert.equal(d.listeners.homealarm_state,undefined);
+  await app.setAlarmMode('armed');await d.sync();assert.equal(d.values.alarm_status,'alarm.armed');
+  await d.listeners.button();assert.equal(d.values.alarm_status,'alarm.disarmed');assert.equal(app.intrusion.state.mode,'disarmed');
+  await app.setAlarmMode('partially_armed');await d.sync();d.onDeleted();assert.equal(app.intrusion.state.mode,'partially_armed');assert.equal(app.listenerCount('intrusion_changed'),0);assert.equal(timers.size,0);
 });
 test('Disarm responds immediately during a blocked arm read, and the late result cannot re-arm',async()=>{
   const {h,app}=setup();await app.refresh({initial:true});let release,started;

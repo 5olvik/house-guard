@@ -17,7 +17,7 @@ Lyslisten følger enhetstypen du har valgt i Homey. Fra 0.4.9 vises også dimmer
 
 ## Automatisk alarm
 
-Under **Oversikt → Automatisk tilkobling og frakobling** velges bortealarm når alle valgte personer er borte, skallsikring ved nattmodus, og frakobling ved første hjemkomst til et tomt hus, første oppvåkning eller morgenmodus. Disse valgene gjelder også når tilhørende rutine er deaktivert eller fjernet. Hjemkomst mens andre allerede er hjemme frakobler ikke nattalarmen.
+Under **Oversikt → Automatisk tilkobling og frakobling** velges bortealarm når alle valgte personer er borte, skallsikring ved nattmodus, og frakobling ved første hjemkomst til et tomt hus, første oppvåkning eller morgenmodus. Disse valgene gjelder også når tilhørende rutine er deaktivert eller fjernet. Ved nattankomst frakobles alarmen uten hjemkomstforsinkelse når hjemkomstfrakobling og «Sett bare den ankomne våken ved nattankomst» er valgt. Bare den ankomne settes våken. Hjemkomst må registreres i Homey før en alarmsensor utløses. Ventende nattaktivering avbrytes; når alle hjemme senere sover igjen, kan skallsikring aktiveres på nytt.
 
 Personene velges under Personer. Skallsikring bruker sensorer merket Natt. Bekreftelsestiden for borte/hjemkomst gjelder også ekstra rutinehandlinger; alarmens inn-/utgangsforsinkelse velges separat under Sensorer. Endrede automatikkvalg gjelder neste hendelse og endrer ikke alarmmodus umiddelbart.
 
@@ -38,3 +38,23 @@ Legg inn en [API-nøkkel](API-KEY.md) under Mer → Direkte forbindelse. Testkna
 En kjent aktiv sensor ved tilkobling holdes midlertidig utenfor, mens øvrige sensorer overvåkes. House Guard sender vanlig push om dette til valgte mottakere. Sensoren tas automatisk med når den blir inaktiv. Ukjente eller utilgjengelige sensorer hindrer tilkobling.
 
 Observasjonsmodus sender ikke varsler eller fysiske kommandoer. Prøv først sensoroppsettet i observasjon og test deretter fysisk levering og alarmforløpet under oppsyn. Se [teststatus og begrensninger](TEST-REPORT.md).
+
+## Automatisk lukking av garasjeport
+
+Under **Alarm → Lås og port → Garasjeport** kan «Tillat automatisk lukking ved tilkoblingsforsinkelse» slås av, for eksempel om vinteren. Fra 0.4.11 bruker portstyringen ingen temperaturmåling eller temperaturgrense. Den krever fortsatt kjent åpen port, kontrollert polaritet/kommando og bekreftet at ingen hjemme sover. Bare én kommando sendes, og portstatus kontrolleres etterpå.
+
+## Morgen og egne Flows
+
+Fast morgentid starter morgenrutinen og setter hjemmeværende i nattutvalget våkne i Homey. Det er en statusendring; lys, musikk eller annen fysisk vekking legges til som handlinger. Frakobling følger valget under Alarm.
+
+En Flow eller Advanced Flow kan starte hele morgenrutinen med **House Guard → Sett modus i House Guard → Morgen** (kan brukes på nytt etter en ny natt samme dag; automatisk morgen kjøres maksimalt én gang per dato). For individuell vekking bruker du Homeys tilstedeværelseskort til å sette én person våken. House Guard kan da frakoble ved første oppvåkning uten å vekke de andre. Slå av fast morgentid hvis egne Flows styrer tidspunktet. Morgenrutinen kan også starte en valgt eksisterende Flow.
+
+## Alarmpanel i Homey
+
+Enheten viser Frakoblet, Nattalarm tilkoblet, Bortealarm tilkoblet, forsinkelser og utløst alarm med sensorårsak. Den har bare **Avstill alarm**, som frakobler og stopper alarmresponsen. Knappen endrer ikke tilstedeværelse eller sovestatus. Natt- og borterutiner styres av House Guard. Den gamle modusvelgeren fjernes automatisk også fra eksisterende paneler; alarmstatus-taggen og utløst-alarm-status beholdes.
+
+## Manuell tilstedeværelse uten GPS
+
+På Hjem finnes **Start bortemodus** og **Sett alle hjemme**. De setter alle brukere i tilstedeværelsesutvalget under Personer til henholdsvis borte eller hjemme i Homey. Brukere utenfor utvalget endres ikke. Dette krever en klar direkte API-forbindelse; ingen hjelpeflows trengs. De vanlige hjemkomst-/borterutinene, alarmvalgene, forsinkelsene og gjesteinnstillingene gjelder. Alarmen armeres ikke på grunnlag av ubekreftet eller delvis oppdatert tilstedeværelse.
+
+Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. Automatisk nattankomst kan fortsatt sette ankomne våkne etter valgene dine. En bruker som allerede har ønsket status endres ikke på nytt. Delvis feil vises i grensesnittet og loggen, uten automatisk gjentakelse. GPS kan oppdatere status senere. I observasjon logges bare hva som ville skjedd. Eksisterende Sett modus-Flowkort har uendret oppførsel.

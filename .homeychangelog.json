@@ -46,5 +46,29 @@
   "0.4.1": {
     "no": "Tydelig mottakervalg «Motta pushvarsler» og valgfri tidslinjekopi per varsel. Vanlig, kritisk og bildepush samt eksisterende Flow-koblinger beholdes. Tidslinjen erstatter ikke alarmvarsling.",
     "en": "Clear Receive push notifications selection and an optional timeline copy per notification. Normal, critical and image push notifications and existing Flow connections are preserved. Timeline copies do not replace alarm notifications."
+  },
+  "0.4.11": {
+    "no": "Fjernet temperaturmåling og temperaturgrense fra garasjeportstyringen. Automatisk lukking ved tilkoblingsforsinkelse kan fortsatt slås av og på. Statuskontroll og øvrige portvilkår er bevart.",
+    "en": "Removed the temperature sensor and threshold from garage door control. Automatic closing during arming remains optional. Door state checks and other operating conditions are preserved."
+  },
+  "0.4.12": {
+    "no": "Natt og morgen under Rutiner starter nå sammenfoldet når innstillingene åpnes.",
+    "en": "Night and morning under Routines now starts collapsed when opening settings."
+  },
+  "0.4.13": {
+    "no": "Nattankomst frakobler alarmen når hjemkomstfrakobling og automatisk våkenstatus er valgt. Bare den ankomne vekkes; ventende nattaktivering avbrytes. Tydeligere forklaring av fast morgentid og egne Flows for vekking.",
+    "en": "Night arrivals disarm the alarm when arrival disarming and automatic awake status are enabled. Only the arriving resident is marked awake and pending night activation is cancelled. Clearer guidance for scheduled mornings and custom wake-up Flows."
+  },
+  "0.4.14": {
+    "no": "Start morgen kan brukes igjen etter en ny nattmodus samme dag. Ventende nattaktivering avbrytes ved morgenstart, mens doble trykk og automatiske gjentakelser hindres.",
+    "en": "Start morning works again after a new night on the same day. Morning cancels pending night actions while preventing duplicate clicks and automatic repeats."
+  },
+  "0.4.15": {
+    "no": "Alarmpanelet viser nå status og har bare Avstill alarm. Modusvelgeren fjernes også fra eksisterende paneler slik at tilkobling ikke omgår husmodusrutinene. Status-taggen beholdes.",
+    "en": "The alarm panel now shows status with a single Dismiss alarm button. The mode picker is removed from existing panels too, so arming cannot bypass house-mode routines. The status tag is preserved."
+  },
+  "0.4.16": {
+    "no": "Manuelle hjemme-/borteknapper setter alle valgte brukere direkte i Homey, også uten GPS. Rettet morgenstart etter ny natt samme dag og frakobling ved nattankomst. Alarmpanelet viser status med kun avstilling. Rutiner åpner sammenfoldet. Temperaturkrav for automatisk portlukking er fjernet; av/på-valg beholdes.",
+    "en": "Manual home/away buttons update all selected residents directly in Homey, including without GPS. Fixed morning after a new night on the same day and disarming on night arrivals. The alarm panel now shows status with only a dismiss button. Routines open collapsed. Removed the temperature requirement for automatic garage closing while retaining its on/off option."
   }
 }

@@ -30,14 +30,22 @@ test('Nattspørsmål avgjøres ikke før fristen; ett nei har veto', () => {
   q.answers = { a: 'error', b: 'error' }; assert.equal(decideQuestion(q, 100), 'no');
   q.answers = { a: 'yes' }; q.rule = 'all-yes'; assert.equal(decideQuestion(q, 100), 'no');
 });
-test('Port krever kjent status, over 5 grader og bekreftet våkent hus', () => {
+test('Port krever kjent status og bekreftet våkent hus, uavhengig av temperatur', () => {
   const good = { open: true, temperature: 6, temperatureFresh: true, nobodyAsleep: true, validated: true, commandType: 'pulse' };
   assert.equal(garageDecision(good), null);
-  for (const bad of [{ open: null }, { open: false }, { temperature: 5 }, { temperature: null }, { temperatureFresh: false }, { nobodyAsleep: false }, { validated: false }]) assert.ok(garageDecision({ ...good, ...bad }));
+  for(const temperature of [-20,0,5,null,undefined])assert.equal(garageDecision({...good,temperature,temperatureFresh:false}),null);
+  for (const bad of [{ open: null }, { open: false }, { nobodyAsleep: false }, { validated: false }]) assert.ok(garageDecision({ ...good, ...bad }));
 });
 test('Konfigurasjon avviser utrygg port og direkte låsehandling', () => {
   const c = defaults(); c.security.garage.enabled = true; assert.throws(() => validate(c), /Portstyring/);
   c.security.garage.enabled = false;
   c.routines[0].actions.push({ id: 'unlock', kind: 'set', category: 'lock', deviceId: 'lock', capability: 'locked', value: false, delaySeconds: 0, onError: 'stop' });
   assert.throws(() => validate(c), /sikkerhetsoppsettet/);
+});
+
+test('Old garage temperature fields are removed while the closing switch and device choices survive',()=>{
+ const c=defaults();Object.assign(c.security.garage,{enabled:true,validated:true,statusDeviceId:'port',statusCapability:'alarm_contact',commandDeviceId:'relay',commandCapability:'onoff',temperatureDeviceId:'weather',temperatureCapability:'measure_temperature',maxAgeSeconds:600});
+ const migrated=validate(c);assert.equal(migrated.security.garage.enabled,true);assert.equal(migrated.security.garage.commandDeviceId,'relay');
+ for(const key of ['temperatureDeviceId','temperatureCapability','maxAgeSeconds'])assert(!Object.hasOwn(migrated.security.garage,key));
+ assert.deepEqual(validate(migrated),migrated);
 });

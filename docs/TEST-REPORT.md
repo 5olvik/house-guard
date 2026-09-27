@@ -1,3 +1,23 @@
+# Lokal testversjon 0.4.16 – manuell hjemme/borte
+
+210 tester, syntakskontroll av 68 filer og Homey-validering består. Nye tester dekker bare valgte brukere, normale forsinkelser og alarmvalg, hjemkomst uten morgenrutine, delvis feil/ukjent utfall, observasjon, samtidige trykk, endret oppsett, GPS-hjemkomst og gjestevern. Direkte kort-IDer er lest fra Homey. Ingen faktisk personstatus er endret under testingen.
+
+# Lokal testversjon 0.4.15 – alarmpanel med status og avstilling
+
+201 tester, syntakskontroll av 66 filer og Homey-validering består. Tester dekker oppgradering av eksisterende panel uten alarmkommando, ingen modusvelger, uendret status-tag, løpende natt-/borte-/forsinkelses-/sensorstatus, avstilling gjennom appen og sletting uten modusendring. Ingen fysisk alarm utløses under testen.
+
+# Lokal testversjon 0.4.14 – gjentatt manuell morgen
+
+198 tester består. Regresjonstesten dekker lagret morgenstart fra samme dato, ny natt, manuell morgen, avbrutt ventende natt, dobbelttrykk, frakobling før vekking og kun hjemmeværende våkne. Automatisk morgen beholder datobeskyttelsen.
+
+# Lokal testversjon 0.4.13 – nattankomst og vekking
+
+197 tester og syntakskontroll av 65 filer består. Nye tester dekker frakobling uten hjemkomstforsinkelse, bare ankomne våkne, avbrutt ventende natt, senere ny skallsikring, deaktiverte ekstrarutiner, av/på-valg, avreist person, observasjon og reconnect. Fast morgen og Flow-startet morgen setter bare hjemmeværende våkne; ekstern individuell oppvåkning frakobler uten å endre andres sovestatus. Ingen fysiske alarmprøver eller personstatusendringer er sendt under testen.
+
+# Lokal testversjon 0.4.11 – port uten temperaturkrav
+
+194 tester og Homey-validering består. Nye kontroller dekker automatisk lukking uten temperaturdata, av/på-valget og migrering som bevarer portvalg og fjerner gamle temperaturfelt. Krav om kjent åpen port og våkent hus er bevart. Ingen fysisk portkommando er sendt under testingen.
+
 # Lokal testversjon 0.4.10 – flere alarmkameraer
 
 192 tester og syntakskontroll av 65 filer består. Nye tester dekker migrering av enkeltkamera, grense på tre uten duplikater, push før bilder, uavhengige kamerafeil, bildevalg ved alarmgjentakelse, sensor-/kameranavn per mottaker og kameratest med observasjon, avbrudd og delvise feil. Nettleserdemo bekrefter legge til/fjerne, grensen på tre, autosave etter innlasting og korrekt antall testvarsler. Nye fysiske bildevarsler er ikke sendt; mottak fra flere kameraer må prøves med testknappen.

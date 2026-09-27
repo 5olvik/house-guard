@@ -164,3 +164,11 @@ test('Timeout etter faktisk sending gir ukjent utfall og bare tilstandsavlesning
   h.device('lock', 'locked', false); h.ingest(); h.engine.event('arming'); await h.engine.tick(); assert.equal(h.engine.runs.at(-1).actions[0].status, 'waiting');
   h.device('lock', 'locked', true); await h.engine.tick(); assert.equal(h.engine.runs.at(-1).actions[0].status, 'confirmed'); assert.equal(attempts, 1);
 });
+
+test('Automatic garage closing works without temperature and its switch prevents closing',async()=>{
+ for(const enabled of [true,false]){
+  const h=harness(c=>Object.assign(c.security.garage,{enabled,validated:true,statusDeviceId:'port',statusCapability:'alarm_contact',commandDeviceId:'relay',commandCapability:'onoff'}));
+  h.device('port','alarm_contact',true);h.device('relay','onoff',false);h.ingest();h.engine.event('arming');h.advance(20000);await h.engine.tick();
+  assert.equal(h.calls.filter(c=>c[0]==='set'&&c[1]==='relay').length,enabled?1:0);
+ }
+});

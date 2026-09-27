@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.4.10",
+  "version": "0.4.16",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [
@@ -101,7 +101,6 @@
         "local"
       ],
       "capabilities": [
-        "homealarm_state",
         "alarm_generic",
         "alarm_status",
         "button"
@@ -109,8 +108,8 @@
       "capabilitiesOptions": {
         "button": {
           "title": {
-            "no": "Frakoble og avstill",
-            "en": "Disarm and silence"
+            "no": "Avstill alarm",
+            "en": "Dismiss alarm"
           }
         },
         "alarm_generic": {

@@ -30,6 +30,7 @@ module.exports = {
       case 'alarm': await homey.app.setAlarmMode(body.mode); break;
       case 'alarm-test': await homey.app.testAlarmSensor(body.deviceId,body.capability); break;
       case 'mode': await engine.manual(body.mode); break;
+      case 'presence': await engine.setAllPresent(body.present); break;
       case 'guest': engine.setGuest(body.value); break;
       case 'skip': engine.skipNight(); break;
       case 'routine': engine.start(body.id); break;
