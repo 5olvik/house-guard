@@ -12,7 +12,7 @@ module.exports = class HouseGuard extends Homey.App {
     const storedConfig = this.homey.settings.get(CONFIG_KEY);
     try { config = validate(storedConfig || defaults()); validStored = !!storedConfig; }
     catch (error) { config = defaults(); this.error('Ugyldig lagret oppsett – starter i observasjon', error); }
-    if (validStored && (!storedConfig.security?.responses || !storedConfig.security?.automation)) {
+    if (validStored && (!storedConfig.security?.responses || !storedConfig.security?.automation || Object.values(storedConfig.security.responses).some(r=>r.imageDeviceIds===undefined || r.imageOnRepeat===undefined))) {
       config.revision++;
       this.homey.settings.set(CONFIG_KEY, config);
     }

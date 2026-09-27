@@ -225,20 +225,29 @@
     renderApiKey();
     const container = $('integration-list'); container.replaceChildren();
     const checks = data.readiness?.checks || [], names = { ready:'Tilkoblet', missing:'Krever oppsett', off:'Ikke valgt', review:'Se over' };
-    for (const check of checks) { const row = el('div', undefined, 'integration-row'), copy = el('div'); copy.append(el('strong',check.title),el('p',check.detail)); row.append(copy,el('span',names[check.level],`badge ${check.level === 'ready' ? 'ok' : check.level === 'off' ? '' : 'warn'}`)); container.append(row); }
-    $('readiness-list').replaceChildren(...[...container.children].map(row => row.cloneNode(true)));
-    $('readiness-heading').textContent = `Oppsett og tilkoblinger · ${checks.filter(c => c.level === 'missing').length} mangler`;
+    const seen = new Set();
+    const active = checks.filter(c => {
+      const key=`${c.title}|${c.level}|${c.detail}`;
+      if(c.level==='off'||c.id==='alarm-events'||seen.has(key))return false;
+      seen.add(key);return true;
+    });
+    const issues = active.filter(c => ['missing','review'].includes(c.level));
+    for (const check of [...issues,...active.filter(c=>c.level==='ready')]) { const row = el('div', undefined, 'integration-row'), copy = el('div'); copy.append(el('strong',check.title),el('p',check.detail)); row.append(copy,el('span',names[check.level],`badge ${check.level === 'ready' ? 'ok' : 'warn'}`)); container.append(row); }
+    const issueCount = issues.length + (data.catalog.errors || []).length;
+    $('home-attention').hidden = issueCount === 0;
+    $('home-attention-text').textContent = `${issueCount} ${issueCount===1?'punkt trenger':'punkter trenger'} oppfølging`;
+    $('system-status-heading').textContent = issueCount ? `Systemstatus · ${issueCount} å se over` : 'Systemstatus · Alt klart';
     const deliveries = $('delivery-status'); deliveries.replaceChildren(el('h3','Siste leveringsresultater'));
     const recent = data.readiness?.deliveries?.slice(-5) || [];
     if (!recent.length) deliveries.append(el('p','Ingen leveringer er sendt. Observasjon sender ingen meldinger.','hint'));
     for (const d of recent.reverse()) deliveries.append(el('p',`${new Date(d.at).toLocaleString('nb-NO',{timeZone:config.timeZone})} · ${kinds[d.kind] || 'Nattspørsmål'} · ${resultNames[d.result]}${d.detail ? ` · ${d.detail}` : ''}`,'summary-line'));
-    const events = Object.entries(data.readiness?.events || {});
-    if (events.length) deliveries.append(el('h3','Mottatte integrasjonshendelser'));
-    for (const [type,at] of events) deliveries.append(el('p',`${config.routines.find(r => r.id === type)?.name || type} · ${new Date(at).toLocaleString('nb-NO',{timeZone:config.timeZone})}`,'hint'));
     for (const error of data.catalog.errors || []) container.append(el('p', error, 'error'));
   }
   function renderApiKey() {
     const status=data?.direct || data?.catalog?.direct || {};
+    $('direct-api-heading').textContent = `Direkte forbindelse · ${status.ready?'Klar':status.configured?'Må kontrolleres':'Ikke satt opp'}`;
+    const panel=$('direct-api-settings');
+    if(!panel.dataset.initialized){panel.open=!status.ready;panel.dataset.initialized='true';}
     $('direct-api-status').textContent=apiKeyMessage || (status.configured?(status.ready?'Direkte forbindelse er klar. Nøkkelen er lagret.':status.problem || 'Forbindelsen må kontrolleres.'):'Legg inn API-nøkkel for direkte Flow-start, push og Sonos.');
     $('direct-api-key').disabled=apiKeyBusy || demo;
     $('direct-api-check').disabled=apiKeyBusy || demo || !status.configured;
@@ -452,6 +461,7 @@
         $('setup-dialog').close();
       }catch(error){$('setup-error').textContent=error.message;}finally{$('setup-next').disabled=false;}
     };
+    $('show-system-status').onclick=()=>{document.querySelector('[data-tab=more]').click();$('system-status').open=true;$('system-status-heading').focus();$('system-status').scrollIntoView({block:'start'});};
     document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { if(button.dataset.tab==='security')renderAlarmResponses(); document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
       try { await flush(); await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }

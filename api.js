@@ -6,7 +6,7 @@ module.exports = {
     const sounds=await adapter.api.flow.getFlowCardAutocomplete({id:'homey:device:'+device.id+':cloud_play_sound',type:'action',name:'sound',query:'',args:{}});
     return sounds.map(s=>({id:s.id,label:s.name}));
   },
-  async testDirectConnection({homey,body}) {return require('./lib/direct-test').testDirect(homey.app,body?.type,{notificationType:body?.notificationType,imageDeviceId:body?.imageDeviceId});},
+  async testDirectConnection({homey,body}) {return require('./lib/direct-test').testDirect(homey.app,body?.type,{notificationType:body?.notificationType,imageDeviceId:body?.imageDeviceId,alarmCameras:body?.alarmCameras===true});},
   async saveApiKey({homey,body}) {return homey.app.configureApiKey(body);},
   async checkIntegrationAccess({ homey }) {
     const app = homey.app;

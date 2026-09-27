@@ -91,3 +91,9 @@ test('Saving key through the app API preserves config and cancels pending operat
  const run={id:'pending',actions:[{status:'pending'}]};h.engine.runs.push(run);
  const result=await app.configureApiKey({token:TOKEN});assert.equal(h.engine.state.generation,generation+1);assert(run.cancelled);assert.equal(JSON.stringify(h.config),configBefore);assert(!JSON.stringify(result).includes(TOKEN));assert(!JSON.stringify(h.engine.status()).includes(TOKEN));
 });
+
+test('Each camera push identifies its camera and triggering sensor for every recipient',async()=>{
+ const h=await fixture();h.adapter.api.devices.getDevice=async({id})=>({id,name:id==='one'?'Garasje':'Inngang',available:true,images:[{id:'snapshot',type:'camera'}]});
+ for(const camera of ['one','two'])await h.adapter.emit({kind:'notify',notificationType:'image',imageDeviceId:camera,text:'Alarm i Entré',context:{sensorName:'Ytterdør'},recipients:['a','b']},()=>true);
+ assert.equal(h.calls.length,4);for(const [,call] of h.calls){assert.match(call.args.text,/Sensor: Ytterdør/);assert.match(call.args.text,call.droptoken.includes(':one|')?/Kamera: Garasje/:/Kamera: Inngang/);}
+});

@@ -28,16 +28,16 @@ test('Migration keeps disabled and dependent alarm actions without activating th
   const m=validate(c);assert.equal(m.security.responses.alarm.push,false);assert.equal(m.routines.find(r=>r.id==='alarm').actions.length,2);assert.equal(m.security.responses.alarmOff.push,false);
 });
 test('Critical push and image are separate, optional timeline is not the notification route',()=>{
-  const c=defaults();c.security.alarmDeviceId=ID;Object.assign(c.security.responses.alarm,{critical:true,imageDeviceId:'camera',timeline:true});
+  const c=defaults();c.security.alarmDeviceId=ID;Object.assign(c.security.responses.alarm,{critical:true,imageDeviceIds:['camera'],timeline:true});
   const a=responses.actions(c,'alarm');assert.deepEqual(a.map(a=>a.kind),['notify','notify','timeline']);assert.deepEqual(a.filter(a=>a.kind==='notify').map(a=>a.notificationType),['critical','image']);
   assert(a.every(a=>a.onError==='continue'));
 });
 test('An active bypassed sensor always gets exactly one push even with image and critical configured',()=>{
-  const c=defaults();c.security.alarmDeviceId=ID;Object.assign(c.security.responses.activeSensor,{critical:true,imageDeviceId:'camera'});
+  const c=defaults();c.security.alarmDeviceId=ID;Object.assign(c.security.responses.activeSensor,{critical:true,imageDeviceIds:['camera']});
   const actions=builtins('activeSensor',c,{bypassed:true},{});assert.equal(actions.filter(a=>a.kind==='notify').length,1);assert.equal(actions.find(a=>a.kind==='notify').notificationType,'normal');
 });
 test('Camera failure and waiting alarm lights cannot prevent push or Sonos',async()=>{
-  const h=harness(c=>{c.security.alarmDeviceId=ID;c.people.notifications=['a'];c.routines=[];Object.assign(c.security.responses.alarm,{critical:true,imageDeviceId:'broken-camera',audio:[{kind:'sound',deviceId:'speaker',text:'alarm3',volume:35,when:''}],lights:[{deviceId:'light',when:'',confirmSeconds:60}]});});
+  const h=harness(c=>{c.security.alarmDeviceId=ID;c.people.notifications=['a'];c.routines=[];Object.assign(c.security.responses.alarm,{critical:true,imageDeviceIds:['broken-camera'],audio:[{kind:'sound',deviceId:'speaker',text:'alarm3',volume:35,when:''}],lights:[{deviceId:'light',when:'',confirmSeconds:60}]});});
   h.adapter.direct={configured:true};h.device(ID,'alarm_generic',true);h.device('light','onoff',false);h.ingest();h.engine.state.alarm={active:true};
   const emit=h.adapter.emit;h.adapter.emit=async(...args)=>{if(args[0].notificationType==='image')throw Error('Camera unavailable');return emit(...args);};
   const run=h.engine.start('alarm') || h.engine.runs.find(r=>r.routineId==='alarm');await h.engine.tick();
@@ -64,4 +64,25 @@ test('Disabled legacy arming extras do not silently enable lock or garage during
   h.ingest();assert.equal(h.engine.start('arming').actions.length,0);
   h.config.security.responses.arming.push=true;
   assert.deepEqual(h.engine.start('arming').actions.map(a=>a.kind),['notify']);
+});
+
+test('Existing single camera migrates once without modifying other alarm choices',()=>{
+ const c=defaults();const r=c.security.responses.alarm;delete r.imageDeviceIds;delete r.imageOnRepeat;r.imageDeviceId='old-camera';r.critical=true;
+ const migrated=validate(c);assert.deepEqual(migrated.security.responses.alarm.imageDeviceIds,['old-camera']);assert.equal(migrated.security.responses.alarm.imageOnRepeat,false);assert(migrated.security.responses.alarm.critical);assert(!('imageDeviceId' in migrated.security.responses.alarm));assert.deepEqual(validate(migrated),migrated);assert.equal(c.security.responses.alarm.imageDeviceId,'old-camera');
+});
+test('Three distinct cameras are allowed, with no images on repeats unless selected',()=>{
+ const c=defaults();c.security.alarmDeviceId=ID;c.security.responses.alarm.imageDeviceIds=['one','two','three'];validate(c);
+ assert.deepEqual(responses.actions(c,'alarm').filter(a=>a.notificationType==='image').map(a=>a.imageDeviceId),['one','two','three']);
+ assert(!responses.actions(c,'alarm',{repeated:true}).some(a=>a.notificationType==='image'));
+ c.security.responses.alarm.imageOnRepeat=true;assert.equal(responses.actions(c,'alarm',{repeated:true}).filter(a=>a.notificationType==='image').length,3);
+ c.security.responses.alarm.imageDeviceIds.push('four');assert.throws(()=>validate(c),/tre kameraer/);
+ c.security.responses.alarm.imageDeviceIds=['one','one'];assert.throws(()=>validate(c),/én gang/);
+});
+test('Urgent push is attempted first and independent cameras survive another camera failure',async()=>{
+ const h=harness(c=>{c.security.alarmDeviceId=ID;c.people.notifications=['a'];c.routines=[];Object.assign(c.security.responses.alarm,{critical:true,imageDeviceIds:['bad','good','slow']});});
+ h.adapter.direct={configured:true};h.device(ID,'alarm_generic',true);h.ingest();h.engine.state.alarm={active:true,nextAt:h.now()+60000};
+ const order=[];let releasePush,releaseSlow;const pushWait=new Promise(r=>releasePush=r),slowWait=new Promise(r=>releaseSlow=r);
+ h.adapter.emit=async data=>{order.push(data.notificationType==='critical'?'push':data.imageDeviceId);if(data.notificationType==='critical'){await pushWait;throw Error('Push unavailable');}if(data.imageDeviceId==='bad')throw Error('Bad camera');if(data.imageDeviceId==='slow')await slowWait;};
+ const run=h.engine.start('alarm') || h.engine.runs.find(r=>r.routineId==='alarm');const ticking=h.engine.tick();await new Promise(setImmediate);assert.deepEqual(order,['push']);releasePush();await new Promise(setImmediate);assert.deepEqual(order,['push','bad','good','slow']);assert.equal(run.actions.find(a=>a.imageDeviceId==='good').status,'accepted');releaseSlow();await ticking;
+ h.advance(61000);h.adapter.emit=async data=>order.push(data.notificationType);await h.engine.tick();assert.equal(order.at(-1),'critical');assert.equal(order.filter(x=>x==='good').length,1);
 });

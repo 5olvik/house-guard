@@ -1,6 +1,6 @@
 # Alarmoppsett
 
-House Guard 0.4.8 har egen alarmmotor og seks underfaner under Alarm:
+House Guard har egen alarmmotor og seks underfaner under Alarm:
 
 - **Oversikt:** alarmstatus, manuell betjening og automatisk tilkobling/frakobling.
 - **Sensorer:** sensorer for borte og natt, samt inn- og utgangsforsinkelse.
@@ -10,6 +10,10 @@ House Guard 0.4.8 har egen alarmmotor og seks underfaner under Alarm:
 - **Avansert:** ekstra alarmhandlinger og gjestevalg.
 
 Endringer lagres automatisk.
+
+Lyslisten følger enhetstypen du har valgt i Homey. Fra 0.4.9 vises også dimmere og stikkontakter som er satt til lys. Velg lys under **Lyd og lys → Når alarmen utløses → Legg til lys** og angi eventuelt når lyset skal slås på.
+
+**Mer** samler grunnoppsett, direkte forbindelse, drift/testing, systemstatus, sikkerhetskopi og hendelseslogg i sammenleggbare seksjoner. Hjem viser en snarvei til Systemstatus når noe trenger oppfølging. Veiviseren vises bare på Hjem til grunnoppsettet er fullført, og kan alltid åpnes igjen under Mer.
 
 ## Automatisk alarm
 
@@ -21,7 +25,11 @@ Ved oppgradering bevares tidligere deaktiverte alarmhendelser. Eldre enkle varse
 
 ## Push og kamera
 
-Velg **Motta pushvarsler** per mottaker under Personer. Under **Alarm → Varsler → Når alarmen utløses** velges kritisk push og eventuelt kamera. Kritisk push og bilde sendes som to separate varsler når begge er valgt. Kritiske varsler må være tillatt for Homey på telefonen. En valgfri tidslinjekopi erstatter ikke push.
+Velg **Motta pushvarsler** per mottaker under Personer. Under **Alarm → Varsler → Når alarmen utløses** velges kritisk push og opptil tre kameraer med **Legg til kamera**. Pushmeldingen forsøkes først, deretter sendes ett bildevarsel per kamera til hver valgt mottaker. Kameranavn og utløsende sensor (når tilgjengelig) står i bildevarselet. En kamerafeil stopper ikke øvrige bilder. Kritiske varsler må være tillatt for Homey på telefonen. En valgfri tidslinjekopi erstatter ikke push.
+
+Kamerabilder gjentas ikke automatisk mens alarmen går. Slå eventuelt på **Send bilder også ved gjentatt alarm**. Eksisterende tekst-, lyd- og lysvalg beholdes. Et eldre enkeltkameravalg blir automatisk første kamera i listen. Hver alarmhendelse kan ha egne kameraer; obligatorisk varsel om forbikoblede sensorer er fortsatt ett vanlig tekstvarsel.
+
+**Test kameravarsler** tester kameraene under «Når alarmen utløses». Før sending vises kameraer × mottakere og samlet antall varsler. Resultatet viser akseptert eller feil/ukjent utfall per kamera; det bekrefter ikke telefonmottak. En test kan ikke gjentas før etter ett minutt.
 
 Legg inn en [API-nøkkel](API-KEY.md) under Mer → Direkte forbindelse. Testknappene under Varsler sender faste testmeldinger til valgte mottakere uten å utløse alarmen. Kontroller faktisk mottak og bilde på telefonen; et akseptert Homey-kall bekrefter ikke telefonmottak.
 

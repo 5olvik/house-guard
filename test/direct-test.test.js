@@ -23,3 +23,17 @@ test('Image diagnostic accepts the camera configured under Alarm without any rou
  const h=fixture();h.app.engine.config.security={garage:{imageDeviceId:''},responses:{alarm:{imageDeviceId:'alarm-camera'}}};h.app.engine.config.routines=[];
  await testDirect(h.app,'push',{notificationType:'image'});assert.equal(h.calls[0][1].imageDeviceId,'alarm-camera');
 });
+
+test('Batch camera diagnostic attempts each configured camera once and reports partial failures',async()=>{
+ const h=fixture();h.app.engine.config.security={garage:{imageDeviceId:''},responses:{alarm:{imageDeviceIds:['bad','good']}}};h.app.engine.config.routines=[];
+ h.app.adapter.emit=async data=>{h.calls.push(data);if(data.imageDeviceId==='bad')throw Error('unavailable');};
+ const result=await testDirect(h.app,'push',{notificationType:'image',alarmCameras:true,imageDeviceId:'unselected'});
+ assert.equal(result.accepted,false);assert.equal(result.attemptedNotifications,4);assert.deepEqual(result.results.map(r=>r.accepted),[false,true]);assert.deepEqual(h.calls.map(d=>d.imageDeviceId),['bad','good']);
+ await assert.rejects(()=>testDirect(h.app,'push',{notificationType:'image',alarmCameras:true}),/minutt/);
+});
+test('Batch image test obeys observation and cancels remaining work after configuration changes',async()=>{
+ const h=fixture();h.app.engine.config.security={garage:{imageDeviceId:''},responses:{alarm:{imageDeviceIds:['first','second']}}};h.app.engine.config.routines=[];h.app.engine.config.observation=true;
+ await assert.rejects(()=>testDirect(h.app,'push',{notificationType:'image',alarmCameras:true}),/Observasjon/);assert.equal(h.calls.length,0);
+ h.app.engine.config.observation=false;h.app.adapter.emit=async data=>{h.calls.push(data);h.app.engine.state.generation++;};
+ const result=await testDirect(h.app,'push',{notificationType:'image',alarmCameras:true});assert.deepEqual(h.calls.map(d=>d.imageDeviceId),['first']);assert.equal(result.results[1].accepted,false);
+});

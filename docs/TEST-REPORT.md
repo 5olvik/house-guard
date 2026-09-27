@@ -1,3 +1,11 @@
+# Lokal testversjon 0.4.10 – flere alarmkameraer
+
+192 tester og syntakskontroll av 65 filer består. Nye tester dekker migrering av enkeltkamera, grense på tre uten duplikater, push før bilder, uavhengige kamerafeil, bildevalg ved alarmgjentakelse, sensor-/kameranavn per mottaker og kameratest med observasjon, avbrudd og delvise feil. Nettleserdemo bekrefter legge til/fjerne, grensen på tre, autosave etter innlasting og korrekt antall testvarsler. Nye fysiske bildevarsler er ikke sendt; mottak fra flere kameraer må prøves med testknappen.
+
+# Lokal testversjon 0.4.9 – lysutvalg og enklere innstillinger
+
+186 tester, syntakskontroll av 65 filer og lokal Homey-validering består. En regresjonstest dekker Homeys valgte enhetstype, slik at en stikkontakt brukt som lys blir med uten å inkludere andre apparater. Nettleserdemo bekrefter lysvalg, automatisk lagring etter ny innlasting, sammenleggbare innstillinger og snarveien fra Hjem til Systemstatus. Ingen fysiske lyskommandoer eller testvarsler er sendt.
+
 # Lokal testversjon 0.4.8 – selvstendige alarmvalg
 
 185 tester, syntakskontroll av 65 filer og lokal Homey-validering består. Bortealarm, skallsikring og automatisk frakobling har egne valg under Alarm som fungerer uavhengig av tilhørende rutines av/på-status. Migrering bevarer tidligere deaktiverte hendelser. GUI-valg og autosave er prøvd i demo. Ingen nye fysiske alarmprøver eller varsler. Se [alarmoppsett](ALARM-SETUP.md).

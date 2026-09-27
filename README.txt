@@ -4,4 +4,4 @@ Starts in observation mode without controlling devices or sending messages.
 Test release. Physical effects and actual delivery still require testing. The settings interface is currently in Norwegian.
 
 Includes a native alarm with door/window and motion sensors, separate night/away selection, entry/exit delays and an alarm panel device. No separate alarm app or alarm bridge Flows required.
-Alarm settings have separate sections for sensors, notifications, sound and lights. Choose automatic arming when everyone leaves, night protection and disarming on arrival or waking. Select push recipients, critical alerts and a camera for image notifications. Critical and image alerts are delivered as separate notifications.
+Alarm settings have separate sections for sensors, notifications, sound and lights. Choose automatic arming when everyone leaves, night protection and disarming on arrival or waking. Select push recipients, critical alerts and up to three cameras per alarm event for image notifications. Critical and image alerts are delivered as separate notifications.

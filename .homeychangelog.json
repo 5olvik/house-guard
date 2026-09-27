@@ -1,4 +1,12 @@
 {
+  "0.4.10": {
+    "no": "Velg opptil tre kameraer per alarmhendelse. Alarmmeldingen forsøkes før kamerabildene, hvert bilde merkes med kameranavn og sensor, og kamerafeil stopper ikke øvrige bilder. Bilder ved gjentatt alarm er valgfritt og av som standard. Samlet kameratest med resultat per kamera.",
+    "en": "Select up to three cameras per alarm event. The alarm message is attempted before camera notifications, each image identifies its camera and triggering sensor, and camera failures do not stop other images. Repeated alarm images are optional and off by default. Batch camera test with per-camera results."
+  },
+  "0.4.9": {
+    "no": "Lysutvalget inkluderer nå dimmere og stikkontakter som er satt til lys i Homey. Hjem viser bare oppsettspunkter som trenger oppfølging. Mer er ryddet i sammenleggbare seksjoner med samlet systemstatus.",
+    "en": "Light selection now includes dimmers and sockets configured as lights in Homey. The home page only highlights setup items needing attention. More settings are organized into collapsible sections with consolidated system status."
+  },
   "0.4.8": {
     "no": "Direkte Homey-integrasjoner med API-nøkkel uten hjelpeflows. Alarm med egne underfaner, valg for automatisk tilkobling og frakobling, kamera, kritiske pushvarsler, lyd og lys. Forbedret forsidestatus og styring, sensorhåndtering ved tilkobling og sletting av rutiner.",
     "en": "Direct Homey integrations using an API key without helper Flows. Alarm sections with automatic arming and disarming options, camera notifications, critical push, sound and lights. Improved dashboard status and controls, handling of active sensors when arming, and routine deletion."

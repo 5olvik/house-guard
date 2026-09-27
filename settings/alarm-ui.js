@@ -8,7 +8,7 @@ window.HouseGuardAlarm = (() => {
     const opened = new Set([...root.querySelectorAll('details[open][data-event]')].map(e=>e.dataset.event));
     const first = !root.children.length;
     const testControls=[];
-    const testDisabled=type=>testing||demo||config.observation||!data.direct?.ready||!config.people.notifications.length||(type==='image'&&!config.security.responses.alarm.imageDeviceId);
+    const testDisabled=type=>testing||demo||config.observation||!data.direct?.ready||!config.people.notifications.length||(type==='image'&&!config.security.responses.alarm.imageDeviceIds.length);
     root.replaceChildren();
     const devices = Object.values(data.catalog.devices || {});
     const speakers = devices.filter(d=>d.driverId?.includes('sonos') && d.available !== false).map(d=>({id:d.id,label:`${d.name} · ${d.zone || ''}`}));
@@ -31,12 +31,22 @@ window.HouseGuardAlarm = (() => {
       if(section==='notifications') {
       field(grid,'Send push til valgte mottakere',r,'push','checkbox');
       field(grid,'Bruk kritisk push',r,'critical','checkbox');
-      field(grid,'Kamera – send eget bildevarsel',r,'imageDeviceId','text',[{id:'',label:'Ingen bildevarsler'},...deviceItems('camera')]);
+      body.append(el('h3','Kamerabilder'));
+      const cameras=deviceItems('camera');
+      for(const cameraId of r.imageDeviceIds) {
+        const row=el('div',undefined,'row');row.append(el('span',cameras.find(c=>c.id===cameraId)?.label || (data.catalog.devices?.[cameraId]?.name || cameraId)+' · utilgjengelig'));
+        remove(row,r.imageDeviceIds,cameraId,'Fjern kamera');body.append(row);
+      }
+      const cameraAdd=el('select');options(cameraAdd,cameras.filter(c=>!r.imageDeviceIds.includes(c.id)),'','Legg til kamera …');
+      cameraAdd.setAttribute('aria-label','Legg til kamera: '+title);cameraAdd.disabled=r.imageDeviceIds.length>=3;
+      cameraAdd.onchange=()=>{if(!cameraAdd.value||r.imageDeviceIds.length>=3)return;r.imageDeviceIds.push(cameraAdd.value);changed(true);rerender();};body.append(cameraAdd);
+      body.append(el('p','Velg opptil tre kameraer. Ett eget bildevarsel per kamera sendes til alle valgte pushmottakere.','hint'));
+      if(id==='alarm')field(body,'Send bilder også ved gjentatt alarm',r,'imageOnRepeat','checkbox');
       field(grid,'Vis også i Homeys tidslinje',r,'timeline','checkbox');
-      if(id==='alarm')body.append(el('p','Velg mottakere under Personer → Motta pushvarsler. Kritisk push og kamerabilde sendes som to separate varsler når begge er valgt. Kritiske varsler må være tillatt for Homey på telefonen. Tidslinjen erstatter ikke push.','hint'));
+      if(id==='alarm')body.append(el('p','Velg mottakere under Personer → Motta pushvarsler. Alarmmeldingen sendes først, deretter ett bildevarsel per valgt kamera. Kritiske varsler må være tillatt for Homey på telefonen. Tidslinjen erstatter ikke push.','hint'));
       if(id==='activeSensor')body.append(el('p','House Guard sender alltid et vanlig push om sensorer som holdes midlertidig utenfor ved tilkobling. De overvåkes automatisk når de blir inaktive. Valgene over gjelder øvrige sensorvarsler.','hint'));
       const textOptions=el('details');textOptions.append(el('summary','Tilpass meldingene'));const textBody=el('div',undefined,'form-grid');textOptions.append(textBody);body.append(textOptions);
-      field(textBody,'Pushmelding',r,'text');field(textBody,'Tekst i tidslinjen',r,'timelineText');textBody.append(el('p','{zone}, {reason} og {seconds} fylles inn av House Guard.','hint'));
+      field(textBody,'Pushmelding',r,'text');field(textBody,'Tekst i tidslinjen',r,'timelineText');textBody.append(el('p','{zone}, {reason}, {sensorName} og {seconds} fylles inn av House Guard.','hint'));
       continue;
       }
       body.append(el('h3','Lyd på Sonos'));
@@ -67,12 +77,12 @@ window.HouseGuardAlarm = (() => {
       const lightAdd=el('select');options(lightAdd,lights.filter(d=>!r.lights.some(a=>a.deviceId===d.id)),'','Legg til lys …');lightAdd.setAttribute('aria-label',`Legg til lys: ${title}`);lightAdd.onchange=()=>{if(!lightAdd.value)return;r.lights.push({deviceId:lightAdd.value,when:'',confirmSeconds:60});changed(true);rerender();};body.append(lightAdd);
     }
     if(section!=='notifications')return;
-    const test=el('div',undefined,'card');test.append(el('h2','Prøv varsler på telefonen'),el('p','Sender ett testvarsel til hver valgt pushmottaker. Ingen alarm, lyd, lys, lås eller port aktiveres. Kritisk test kan gi lyd på telefonen.','hint'));
+    const test=el('div',undefined,'card');test.append(el('h2','Prøv varsler på telefonen'),el('p','Vanlig og kritisk test sender ett varsel per mottaker. Kameratesten bruker kameraene under «Når alarmen utløses»: '+config.security.responses.alarm.imageDeviceIds.length+' kameraer × '+config.people.notifications.length+' mottakere = '+(config.security.responses.alarm.imageDeviceIds.length*config.people.notifications.length)+' bildevarsler. Ingen alarm, lyd, lys, lås eller port aktiveres. Kritisk test kan gi lyd på telefonen.','hint'));
     const status=el('p');status.setAttribute('role','status');const buttons=el('div',undefined,'button-row');test.append(buttons,status);root.append(test);
-    for(const [type,title] of [['normal','Test vanlig push'],['critical','Test kritisk push'],['image','Test kamerabilde']]) {
+    for(const [type,title] of [['normal','Test vanlig push'],['critical','Test kritisk push'],['image','Test kameravarsler']]) {
       const button=el('button',title);button.disabled=testDisabled(type);testControls.push([button,type]);buttons.append(button);
       button.onclick=async()=>{if(testing)return;testing=true;[...buttons.children].forEach(b=>b.disabled=true);status.textContent='Sender test …';
-        try {await flush();await api('POST','/direct-test',{type:'push',notificationType:type,imageDeviceId:config.security.responses.alarm.imageDeviceId});status.textContent='Homey har akseptert testvarselet. Kontroller at det kom på telefonen.';}
+        try {await flush();const result=await api('POST','/direct-test',{type:'push',notificationType:type,...(type==='image'?{alarmCameras:true}:{})});status.textContent=result.results ? result.results.map(r=>r.name+': '+(r.accepted?'akseptert av Homey':'feilet eller ukjent utfall – '+r.error)).join(' · ')+' Kontroller bildene på telefonen.' : 'Homey har akseptert testvarselet. Kontroller at det kom på telefonen.';}
         catch(error){status.textContent=error.message;}
         finally{testing=false;for(const [button,type] of testControls)button.disabled=testDisabled(type);}
       };

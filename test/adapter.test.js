@@ -33,6 +33,16 @@ test('Normalisering bevarer ukjent verdi og manglende tidsstempel', () => {
   assert.equal(d.capabilities.alarm_contact.value, null); assert.equal(d.capabilities.alarm_contact.updatedAt, null);
 });
 
+test('Homey device type overrides include socket lights and exclude sockets used for other appliances', () => {
+  const socket = {id:'dimmer',class:'socket',capabilitiesObj:{onoff:{value:false,type:'boolean',setable:true}}};
+  const light = normalizedDevice({...socket,virtualClass:'light'});
+  assert.equal(light.class,'light');
+  assert.equal(light.capabilities.onoff.setable,true);
+  assert.equal(normalizedDevice({...socket,virtualClass:null}).class,'socket');
+  assert.equal(normalizedDevice({...socket,virtualClass:'fan'}).class,'fan');
+  assert.equal(normalizedDevice({...socket,class:'light'}).class,'light');
+});
+
 test('Flow-start bruker en kontrollert SDK-kobling og avbrytes ved endret autorisasjon',async()=>{
   const h=setup(),flow={enabled:true,broken:false,triggerable:true};let authorized=true,reads=0,dispatched=0;
   const bridge=(id,type)=>({enabled:true,trigger:{id:'homey:app:no.husmodus:scene_requested',args:{flow:{id,type}}},conditions:[],actions:[{id:'homey:manager:flow:programmatic_trigger',args:{flow:{id,type:type==='normal'?'standard':'advanced'}}}]});

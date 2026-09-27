@@ -26,7 +26,8 @@ const devices = Object.fromEntries([
   ['demo-sonos', 'Sonos Arc', 'Stue', { speaker_playing: cap(false, 'boolean', true, 'Avspilling') }],
 ].map(([id, name, zone, capabilities]) => [id, { id, name, zone, available: true, capabilities }]));
 devices['demo-lights'].class = 'light';
-devices['demo-extra-light'] = { ...structuredClone(devices['demo-lights']), id:'demo-extra-light', name:'Leselampe' };
+devices['demo-extra-light'] = require('../lib/homey-adapter').normalizedDevice({id:'demo-extra-light',name:'Downlights soverom',zone:'Soverom 2etg',class:'socket',virtualClass:'light',capabilitiesObj:{onoff:{value:false,type:'boolean',setable:true},dim:{value:0,type:'number',setable:true}}});
+for(const [id,name,zone] of [['demo-camera-1','Garasje','Garasje'],['demo-camera-2','Inngang','Entré'],['demo-camera-3','Hage','Ute']])devices[id]={id,name,zone,class:'camera',available:true,capabilities:{},images:[{id:'snapshot',type:'camera'}]};
 const catalogue = { people, devices, zones: { 'demo-living': { id: 'demo-living', name: 'Stue' } }, flows: [{ id:'demo-scene', name:'Velkomstlys', type:'normal', enabled:true, triggerable:true }, { id:'demo-lights-off', name:'Slå av alle lys', type:'normal', enabled:true, triggerable:true }, { id:'demo-night', name:'God natt', type:'advanced', enabled:true, triggerable:true }, { id:'demo-no-start', name:'Bevegelseslys', type:'advanced', enabled:true, triggerable:false }], errors: [] };
 let intrusion;
 const snapshot = async () => { if(intrusion)devices[ALARM_ID]=intrusion.device(); for (const p of Object.values(people)) p.observedAt = clock(); return structuredClone({ connected: true, people, devices }); };

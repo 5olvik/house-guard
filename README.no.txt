@@ -4,4 +4,4 @@ Starter i observasjonsmodus uten å styre enheter eller sende varsler.
 Testversjon. Fysisk virkning og faktisk levering må fortsatt testes på Homey.
 
 Egen alarm med dør-/vindussensorer og bevegelse, eget natt-/borteutvalg, inn-/utgangsforsinkelse og alarmpanel som Homey-enhet. Ingen separat alarmapp eller alarmbroflows.
-Alarmoppsettet har egne underfaner for sensorer, varsler, lyd og lys. Velg automatisk tilkobling når alle drar, skallsikring om natten og frakobling ved hjemkomst eller oppvåkning. Velg pushmottakere, kritiske varsler og kamera for bildevarsler. Kritiske varsler og bildevarsler sendes som separate varsler.
+Alarmoppsettet har egne underfaner for sensorer, varsler, lyd og lys. Velg automatisk tilkobling når alle drar, skallsikring om natten og frakobling ved hjemkomst eller oppvåkning. Velg pushmottakere, kritiske varsler og opptil tre kameraer per alarmhendelse for bildevarsler. Kritiske varsler og bildevarsler sendes som separate varsler.
