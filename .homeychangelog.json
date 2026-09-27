@@ -1,4 +1,8 @@
 {
+  "0.4.8": {
+    "no": "Direkte Homey-integrasjoner med API-nøkkel uten hjelpeflows. Alarm med egne underfaner, valg for automatisk tilkobling og frakobling, kamera, kritiske pushvarsler, lyd og lys. Forbedret forsidestatus og styring, sensorhåndtering ved tilkobling og sletting av rutiner.",
+    "en": "Direct Homey integrations using an API key without helper Flows. Alarm sections with automatic arming and disarming options, camera notifications, critical push, sound and lights. Improved dashboard status and controls, handling of active sensors when arming, and routine deletion."
+  },
   "0.2.1": {
     "no": "Appen heter nå House Guard på alle brukerflater, i appbilder og integrasjonsflows.",
     "en": "The app is now named House Guard across the interface, app images and integration flows."
