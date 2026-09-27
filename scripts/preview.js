@@ -21,6 +21,7 @@ const devices = Object.fromEntries([
   ['demo-door', 'Ytterdør', 'Entré', { alarm_contact: cap(false, 'boolean', false, 'Kontakt') }],
   ['demo-weather', 'Utetemperatur', 'Ute', { measure_temperature: cap(12, 'number', false, 'Temperatur') }],
   ['demo-lux', 'Lysmåler', 'Kjøkken', { measure_luminance: cap(9, 'number', false, 'Lux') }],
+  ['demo-motion', 'Bevegelse kjøkken', 'Kjøkken', { alarm_motion: cap(false, 'boolean', false, 'Bevegelse') }],
   ['demo-relay', 'Portrelé', 'Garasje', { onoff: cap(false, 'boolean', true, 'Relé') }],
   ['demo-port', 'Portstatus', 'Garasje', { alarm_contact: cap(false, 'boolean', false, 'Åpen port') }],
   ['demo-sonos', 'Sonos Arc', 'Stue', { speaker_playing: cap(false, 'boolean', true, 'Avspilling') }],

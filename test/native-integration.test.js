@@ -96,3 +96,65 @@ test('Disarm responds immediately during a blocked arm read, and the late result
   const disarmed=await app.setAlarmMode('disarmed');assert.equal(disarmed.mode,'disarmed');assert.equal(h.engine.snapshot.devices[ID].capabilities.homealarm_state.value,'disarmed');
   release();await rejected;assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(h.engine.runs.some(r=>r.routineId==='arming'),false);
 });
+
+async function motionSetup(change=()=>{}){
+ const s=setup(),{h,app}=s;h.advance(7*3600000);
+ Object.assign(h.config.morning.motion,{enabled:true,deviceId:'kitchen',capability:'alarm_motion',start:'06:00',end:'12:00'});
+ h.config.people.presence=['a','b','c'];h.config.people.night=['a'];h.person('a',true,true);h.person('b',true,true);h.person('c',false,true);
+ h.device('kitchen','alarm_motion',false);h.snapshot.devices.kitchen.name='Kitchen';h.config.security.intrusion.sensors.push({deviceId:'kitchen',capability:'alarm_motion',partial:true,full:true,delay:false});
+ app.adapter.direct={ready:true};h.engine.adapter=app.adapter;change(s);await app.refresh({initial:true});app.intrusion.mode('partially_armed',h.snapshot);
+ s.motion=async(value=true,flags={})=>{h.device('kitchen','alarm_motion',value);app.sensorEvents.push({id:'kitchen',capability:'alarm_motion',value,revision:h.config.revision,at:Date.now()});await app.refresh(flags);};return s;
+}
+
+test('Morning motion disarms before the same night sensor triggers, wakes all home residents and preserves extras',async()=>{
+ const {h,app,motion}=await motionSetup(({h})=>{h.config.security.automation.morning=false;add(h.config,'morning',[step('old-extra')]);});
+ const routines=structuredClone(h.config.routines);await motion();assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(app.intrusion.state.active,false);assert(!h.engine.runs.some(r=>r.routineId==='alarm'));
+ const run=h.engine.runs.find(r=>r.routineId==='morning');assert(run);assert.equal(run.context.source,'motion');assert.deepEqual(h.config.routines,routines);
+ await h.engine.tick();assert.deepEqual(h.calls,[['person','a',false]]);h.person('a',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','b',false]);h.person('b',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['timeline','old-extra']);assert(!h.calls.some(c=>c[0]==='person'&&c[1]==='c'));
+ await motion(false);await motion();assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
+});
+test('Disabled feature, outside window, no one home, observation and guest protection preserve alarm behavior',async()=>{
+ for(const scenario of ['disabled','early','late','away','observation','guest','api']){
+  const {h,app,motion}=await motionSetup();
+  if(scenario==='disabled')h.config.morning.motion.enabled=false;
+  if(scenario==='early'){h.config.morning.motion.start='07:00';}
+  if(scenario==='late'){h.config.morning.motion.start='04:00';h.config.morning.motion.end='06:00';}
+  if(scenario==='away'){h.person('a',false,true);h.person('b',false,true);}
+  if(scenario==='observation')h.config.observation=true;
+  if(scenario==='guest')h.engine.state.guest=true;
+  if(scenario==='api')app.adapter.direct.ready=false;
+  await motion();assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);assert.equal(app.intrusion.state.mode,'partially_armed',scenario);
+ }
+});
+test('Full alarm, entry delay, existing alarm or simultaneous other sensor cannot be dismissed by morning motion',async()=>{
+ for(const scenario of ['full','entry','active','other']){
+  const {h,app,motion}=await motionSetup();
+  if(scenario==='full')app.intrusion.state.mode='armed';
+  if(scenario==='entry')app.intrusion.state.entryAt=h.now()+30000;
+  if(scenario==='active')app.intrusion.state.active=true;
+  if(scenario==='other')h.device('door','alarm_contact',true);
+  await motion();assert.notEqual(app.intrusion.state.mode,'disarmed',scenario);assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);
+ }
+});
+test('No morning replay on initial read, reconnect or a sensor active before the time window',async()=>{
+ for(const flags of [{initial:true},{reconnect:true}]){const {h,app,motion}=await motionSetup();await motion(true,flags);assert(!h.engine.runs.some(r=>r.routineId==='morning'));assert.notEqual(app.intrusion.state.mode,'disarmed');}
+ const {h,app,motion}=await motionSetup();h.config.security.intrusion.sensors=h.config.security.intrusion.sensors.filter(s=>s.deviceId!=='kitchen');h.config.morning.motion.start='07:00';await motion();h.advance(3600000);await app.refresh();assert(!h.engine.runs.some(r=>r.routineId==='morning'));await motion(false);await motion();assert.equal(app.intrusion.state.mode,'disarmed');assert(h.engine.runs.some(r=>r.routineId==='morning'));
+});
+test('A short motion pulse survives reconciliation and morning works after a new night on the same date',async()=>{
+ const {h,app,motion}=await motionSetup();h.engine.state.morningKey='morning-2026-09-22';
+ app.sensorEvents=[true,false].map(value=>({id:'kitchen',capability:'alarm_motion',value,at:Date.now(),revision:h.config.revision}));await app.refresh();assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(h.engine.state.motionMorningConsumed,true);
+ // Even if waking fails, more motion does not retry the same morning.
+ for(const r of h.engine.runs.filter(r=>r.routineId==='morning'))for(const a of r.actions)a.status='failed';
+ await motion();assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
+ await h.engine.manual('night');assert.equal(h.engine.state.motionMorningConsumed,false);await motion(false);await motion();assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,2);
+});
+test('Motion waking remains built in when morning extras are disabled, without changing ordinary morning',async()=>{
+ const {h,motion}=await motionSetup(({h})=>{h.config.routines.find(r=>r.id==='morning').enabled=false;add(h.config,'morning',[step('disabled-extra')]);});await motion();const run=h.engine.runs.find(r=>r.routineId==='morning');assert(run.actions.some(a=>a.personId==='b'));assert(!run.actions.some(a=>a.id==='disabled-extra'));
+ const normal=harness(c=>{c.people.night=['a'];});normal.person('a',true,true);normal.person('b',true,true);normal.ingest();await normal.engine.manual('morning');assert(!normal.engine.runs.find(r=>r.routineId==='morning').actions.some(a=>a.personId==='b'));
+});
+
+test('Motion morning migration is off and preserves every existing routine and setting',()=>{
+ const {validate,defaults}=require('../lib/config');const old=defaults();delete old.morning.motion;old.morning.scheduled=true;old.morning.time='08:15';old.security.automation.morning=false;old.routines.find(r=>r.id==='morning').enabled=false;
+ const migrated=validate(old),expected=structuredClone(old);expected.morning.motion=defaults().morning.motion;assert.deepEqual(migrated,expected);assert.deepEqual(validate(migrated),migrated);
+ for(const fields of [{start:'12:00',end:'06:00'},{start:'06:00',end:'06:00'},{capability:'alarm_contact'},{enabled:true,deviceId:''}])assert.throws(()=>validate({...migrated,morning:{...migrated.morning,motion:{...migrated.morning.motion,...fields}}}));
+});

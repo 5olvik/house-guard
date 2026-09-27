@@ -7,3 +7,5 @@ Includes a native alarm with door/window and motion sensors, separate night/away
 Alarm settings have separate sections for sensors, notifications, sound and lights. Choose automatic arming when everyone leaves, night protection and disarming on arrival or waking. Select push recipients, critical alerts and up to three cameras per alarm event for image notifications. Critical and image alerts are delivered as separate notifications.
 
 Manual home and away buttons update all selected residents in Homey, including without GPS. The alarm panel displays status and offers a dismiss button; house routines are controlled through House Guard.
+
+Optional morning start on motion within a chosen time window disarms night protection and marks home residents awake. Fixed routines cannot be deleted; their switches control only extra actions. Custom routines have clearer setup steps, readable choices and optional advanced settings.

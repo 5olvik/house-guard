@@ -59,11 +59,11 @@ test('Wizard can restore a deleted default routine without affecting other choic
   const next=require('../settings/setup-model').change(c,{flows:{away:'normal:off'}},{people:{a:{id:'a'}},flows:[{id:'off',type:'normal',name:'Lights off',enabled:true,triggerable:true}]});
   assert.equal(next.routines.find(r=>r.id==='away').actions[0].flowId,'off');assert.deepEqual(next.security,c.security);
 });
-test('Disabled legacy arming extras do not silently enable lock or garage during migration',()=>{
+test('Disabled arming extras preserve migrated responses while lock follows its Alarm setting',()=>{
   const h=harness(c=>{delete c.security.responses;c.security.alarmDeviceId=ID;c.security.lockDeviceId='lock';c.security.lockOnArming=true;c.routines.find(r=>r.id==='arming').enabled=false;});
-  h.ingest();assert.equal(h.engine.start('arming').actions.length,0);
+  h.ingest();const first=h.engine.start('arming');assert.deepEqual(first.actions.map(a=>a.id),['lock']);first.cancelled=true;
   h.config.security.responses.arming.push=true;
-  assert.deepEqual(h.engine.start('arming').actions.map(a=>a.kind),['notify']);
+  assert.deepEqual(h.engine.start('arming').actions.map(a=>a.kind),['notify','set']);
 });
 
 test('Existing single camera migrates once without modifying other alarm choices',()=>{

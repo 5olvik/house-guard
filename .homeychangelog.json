@@ -70,5 +70,13 @@
   "0.4.16": {
     "no": "Manuelle hjemme-/borteknapper setter alle valgte brukere direkte i Homey, også uten GPS. Rettet morgenstart etter ny natt samme dag og frakobling ved nattankomst. Alarmpanelet viser status med kun avstilling. Rutiner åpner sammenfoldet. Temperaturkrav for automatisk portlukking er fjernet; av/på-valg beholdes.",
     "en": "Manual home/away buttons update all selected residents directly in Homey, including without GPS. Fixed morning after a new night on the same day and disarming on night arrivals. The alarm panel now shows status with only a dismiss button. Routines open collapsed. Removed the temperature requirement for automatic garage closing while retaining its on/off option."
+  },
+  "0.4.17": {
+    "no": "Valgfri morgenstart ved ny bevegelse i valgt tidsrom. Frakobler nattalarmen før samme sensor vurderes, setter hjemmeværende våkne og beholder eksisterende morgenhandlinger. Avslått som standard; eksisterende rutiner og innstillinger beholdes.",
+    "en": "Optional morning start on new motion within a selected time window. Disarms night protection before evaluating the same sensor, marks home residents awake, and keeps existing morning actions. Off by default; existing routines and settings are preserved."
+  },
+  "0.4.18": {
+    "no": "Valgfri morgenstart ved ny bevegelse i valgt tidsrom frakobler nattalarm og setter hjemmeværende våkne. Faste rutiner kan ikke slettes. Avkrysningen stopper bare ekstrahandlinger, mens innebygde funksjoner følger alarm- og personvalgene. Egne rutiner har enklere veiledning, lesbare valg og samlet avansert oppsett. Eksisterende handlinger og innstillinger beholdes.",
+    "en": "Optional morning start on new motion within a selected time window disarms night protection and marks home residents awake. Fixed routines cannot be deleted. Their switch controls only extra actions; built-in functions follow alarm and presence settings. Custom routines have clearer guidance, readable choices and collapsible advanced settings. Existing actions and settings are preserved."
   }
 }

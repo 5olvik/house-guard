@@ -46,7 +46,8 @@
     document.querySelectorAll('select[data-device]').forEach(s => options(s, deviceItems(s.dataset.device), get(config, s.dataset.bind)));
     document.querySelectorAll('select[data-capabilities]').forEach(s => {
       const d = data.catalog.devices[get(config, s.dataset.capabilities)];
-      const items = Object.entries(d?.capabilities || {}).filter(([, c]) => (!s.dataset.write || c.setable) && (!s.dataset.capType || c.type === s.dataset.capType)).map(([id, c]) => ({ id, label: `${c.title || id} (${id})` }));
+      const items = Object.entries(d?.capabilities || {}).filter(([id, c]) => (!s.dataset.prefix || id===s.dataset.prefix || id.startsWith(s.dataset.prefix+'.')) && (!s.dataset.write || c.setable) && (!s.dataset.capType || c.type === s.dataset.capType)).map(([id, c]) => ({ id, label: `${c.title || id} (${id})` }));
+      if(s.dataset.prefix)s.parentElement.hidden=items.length<=1;
       options(s, items, get(config, s.dataset.bind));
     });
     document.querySelectorAll('select[data-source="zones"]').forEach(s => options(s, Object.values(data.catalog.zones || {}).map(z => ({ id: z.id, label: z.name })), get(config, s.dataset.bind)));
@@ -64,6 +65,10 @@
       if (input.dataset.valueType === 'boolean') value = value === 'true';
       if (input.dataset.valueType === 'scalar') value = scalar(value);
       if (!input.dataset.bind.includes('.')) config[input.dataset.bind] = value; else put(config, input.dataset.bind, value);
+      if(input.dataset.bind==='morning.motion.deviceId'){
+        config.morning.motion.capability=Object.keys(data.catalog.devices[value]?.capabilities || {}).find(id=>id==='alarm_motion' || id.startsWith('alarm_motion.')) || 'alarm_motion';
+        if(!value){config.morning.motion.enabled=false;document.querySelector('[data-bind="morning.motion.enabled"]').checked=false;}
+      }
       if (input.dataset.bind.startsWith('security.garage.') && !['security.garage.enabled', 'security.garage.validated'].includes(input.dataset.bind)) {
         config.security.garage.validated = false; config.security.garage.enabled = false;
         document.querySelector('[data-bind="security.garage.validated"]').checked = false;
@@ -163,22 +168,26 @@
   }
   function describeAction(a) {
     const target = data.catalog.devices[a.deviceId]?.name || a.deviceId || data.catalog.people[a.personId]?.name || a.personId || data.catalog.flows.find(f => f.id === a.flowId)?.name || a.flowId || '';
-    return `${kinds[a.kind] || a.kind}${target ? ` · ${target}` : ''}${a.value !== undefined ? ` → ${String(a.value)}` : ''}${a.text ? ` · ${a.text}` : ''}`;
+    const booleanLabels=a.kind==='person'?['Våken','Sovende']:{onoff:['Av','På'],locked:['Ulåst','Låst'],alarm_contact:['Lukket','Åpen'],alarm_motion:['Ingen bevegelse','Bevegelse']}[a.capability] || ['Inaktiv / nei','Aktiv / ja'];
+    const value=typeof a.value==='boolean'?booleanLabels[Number(a.value)]:String(a.value);
+    return `${kinds[a.kind] || a.kind}${target ? ` · ${target}` : ''}${a.value !== undefined ? ` → ${value}` : ''}${a.text ? ` · ${a.text}` : ''}`;
   }
   function renderRoutines() {
     const list = $('routine-list'), alarmList = $('alarm-routine-list'); list.replaceChildren(); alarmList.replaceChildren();
     for (const routine of config.routines) {
-      if(routine.hidden)continue;
+      const custom=routine.id.startsWith('custom-');
+      if(custom && routine.hidden)continue;
       const alarmEvent = ['alarm','arming','entryDelay','activeSensor','alarmOff'].includes(routine.id);
-      if(alarmEvent && !routine.actions.length)continue;
       const card = el('details', undefined, 'card'), heading = el('summary', routine.name), body = el('div', undefined, 'details-body');
       card.open = routine.id === actionRoutine?.id;
-      const nameLabel = el('label', 'Rutinenavn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;
+      const nameLabel = el('label', custom?'1. Gi rutinen et navn':'Rutinenavn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;nameInput.placeholder='For eksempel: Rolig kveld';
       nameInput.oninput = () => { routine.name = nameInput.value; heading.textContent = routine.name; setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel);
       const enabledWrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = routine.enabled;
-      check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode(alarmEvent ? 'Ekstra handlinger er aktive' : 'Rutinen er aktiv'));
+      check.onchange = () => { routine.enabled = check.checked;const run=body.querySelector('[data-routine-start]');if(run)run.disabled=!routine.enabled || !routine.actions.length;setDirty(true); }; enabledWrap.append(check, document.createTextNode(custom ? 'Rutinen er aktiv' : 'Ekstra handlinger er aktive'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
-      execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap, execution);
+      execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap);
+      if(custom){body.append(el('h3','2. Slik starter du rutinen'),el('p','Trykk «Start rutine» her, eller bruk Homey-kortet House Guard → Start navngitt rutine i en Flow. Velg denne rutinens navn i kortet.','hint'),el('h3','3. Velg hva som skal skje'),el('p','Legg til én eller flere handlinger, for eksempel slå på et lys, starte en Flow eller sende et varsel. Vilkår avgjør om en handling utføres når rutinen starter.','hint'));}
+      const orderLabel=el('label','Rekkefølge på handlingene');orderLabel.append(execution);body.append(orderLabel);
       const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const builtinList = el('div');
@@ -188,7 +197,7 @@
       };
       showBuiltins(data.builtins?.[routine.id] || []); body.append(builtinList);
       card.ontoggle = async () => { if (!card.open) return; try { const p = await api('POST','/preview',{ id:routine.id, config }); showBuiltins(p.actions.filter(a => a.builtin)); } catch (error) { toast(error.message); } };
-      if (!routine.actions.length) body.append(el('p', routine.id === 'welcome' ? 'Mangler lys-/scenehandling.' : routine.id === 'alarm' ? 'Mangler varsel-/lydhandling. Alarmgjentakelse alene sender ingenting.' : 'Ingen ekstra handlinger valgt.', 'empty'));
+      if (!routine.actions.length) body.append(el('p',custom?'Trykk «Legg til handling» for å velge hva rutinen skal gjøre.':alarmEvent?'Varsler, lyd og lys følger valgene under Alarm. Du kan legge til egne handlinger her.':'Ingen ekstra handlinger valgt.', 'empty'));
       routine.actions.forEach((a, index) => {
         const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy');
         copy.append(el('small', `${a.delaySeconds} s · ${labels[a.category]} · ${a.when || 'Rutinens vilkår'}${a.condition ? ' · med enhetsvilkår' : ''}${a.requireConfirmed ? ' · krever bekreftet avhengighet' : ''}`));
@@ -211,13 +220,12 @@
           $('preview-dialog').showModal();
         } catch (error) { toast(error.message); } finally { preview.disabled = false; }
       }; body.append(preview);
-      if (routine.id.startsWith('custom-')) {
-        const run = el('button', 'Start rutine'); run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
+      if (custom) {
+        const run = el('button', 'Start rutine');run.disabled=!routine.enabled || !routine.actions.length;run.dataset.routineStart=routine.id; run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
+        const removeRoutine = el('button','Slett egen rutine');
+        removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutines();};body.append(removeRoutine);
       }
-      const removeRoutine = el('button', alarmEvent ? 'Fjern ekstra handlinger' : 'Slett rutine');
-      removeRoutine.onclick = () => { if(routine.id.startsWith('custom-'))config.routines.splice(config.routines.indexOf(routine),1);else {routine.actions=[];routine.hidden=true;} actionRoutine=null; setDirty(true); renderRoutines(); };
-      body.append(removeRoutine);
-      if(!routine.id.startsWith('custom-'))body.append(el('p','Fjerner egne handlinger. Alarm, lås og personstatus følger fortsatt valgene under Alarm og Personer.','hint'));
+      if(!custom)body.append(el('p','Fast rutine i House Guard. Den kan ikke slettes. Krysset styrer bare ekstrahandlingene dine. Innebygde funksjoner følger fortsatt valgene under Alarm, Natt og morgen og Gjestemodus.','hint'));
       card.append(heading, body); (alarmEvent ? alarmList : list).append(card);
     }
   }
@@ -417,6 +425,17 @@
     const d = data.catalog.devices[$('action-device').value], verify = $('action-kind').value === 'verify';
     const protectedDevice = d && (d.class === 'lock' || d.capabilities.locked || d.capabilities.lock_unlock_open || [config.security.lockDeviceId,config.security.garage.commandDeviceId].includes(d.id));
     options($('action-capability'), Object.entries(d?.capabilities || {}).filter(([id, c]) => verify || (c.setable && !protectedDevice && !/^(locked|lock_unlock_open)(\.|$)|^homealarm_state$/.test(id))).map(([id, c]) => ({ id, label: `${c.title || id} (${id})` })), '', 'Velg funksjon');
+    updateActionValue();
+  }
+  function updateActionValue() {
+    const kind=$('action-kind').value,cap=data.catalog.devices[$('action-device').value]?.capabilities[$('action-capability').value],value=$('action-value').value;
+    let choices=[];
+    if(kind==='person')choices=[{id:'false',label:'Våken'},{id:'true',label:'Sovende'}];
+    else if(cap?.type==='boolean')choices=[{id:'true',label:$('action-capability').value==='onoff'?'På':'Aktiv / ja'},{id:'false',label:$('action-capability').value==='onoff'?'Av':'Inaktiv / nei'}];
+    else if(cap?.type==='enum')choices=(cap.values || []).map(v=>({id:typeof v==='string'?v:v.id,label:typeof v==='string'?v:typeof v.title==='object'?(v.title.no || v.title.en || v.id):(v.title || v.id)}));
+    $('action-value').hidden=choices.length>0;$('action-value-choice').hidden=!choices.length;
+    if(choices.length)options($('action-value-choice'),choices,value,'Velg resultat');
+    $('action-value').placeholder=cap?.type==='number'?`Tall${cap.min!==undefined && cap.max!==undefined?` mellom ${cap.min} og ${cap.max}`:''}${cap.units?` (${cap.units})`:''}`:'Skriv ønsket verdi';
   }
   function updateConditionCapabilities(value = '') {
     const d = data.catalog.devices[$('condition-device').value];
@@ -424,6 +443,7 @@
   }
   function openAction(routine, existing = null) {
     actionRoutine = routine; editedAction = existing; actionChanged = false; $('action-form').reset(); $('action-error-message').textContent = '';
+    $('action-advanced').open=!!(existing?.when || existing?.condition || existing?.dependsOn || existing?.onError==='continue' || existing?.confirmSeconds && existing.confirmSeconds!==60);
     $('action-also-timeline').checked=!!existing?.alsoTimeline;
     $('action-title').textContent = existing ? 'Rediger handling' : 'Legg til handling';
     options($('action-category'), Object.entries(labels).map(([id, label]) => ({ id, label })), 'lights', null);
@@ -440,7 +460,7 @@
       updateCapabilities();
       $('action-capability').value = existing.capability || '';
     }
-    $('action-dialog').showModal();
+    updateActionValue();$('action-dialog').showModal();
   }
   function download(filename, value) {
     const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -485,8 +505,8 @@
       catch(error) { toast(error.message); }
     };
     $('add-alarm-extra').onclick = () => { let routine=config.routines.find(r=>r.id==='alarm'); if(!routine){routine={id:'alarm',name:'Utløst alarm – ekstra handlinger',enabled:true,execution:'parallel',actions:[]};config.routines.push(routine);} delete routine.hidden; openAction(routine); };
-    $('new-routine').onclick = () => { config.routines.push({ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] }); setDirty(true); renderRoutines(); };
-    $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('close-action').onclick = () => $('action-dialog').close();
+    $('new-routine').onclick = () => { const routine={ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] };config.routines.push(routine);actionRoutine=routine;setDirty(true);renderRoutines(); };
+    $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('action-capability').onchange=updateActionValue;$('action-value-choice').onchange=()=>{$('action-value').value=$('action-value-choice').value;};$('close-action').onclick = () => $('action-dialog').close();
     $('condition-device').onchange = () => updateConditionCapabilities();
     function saveAction(immediate = false) {
       try {
@@ -495,8 +515,8 @@
         if (editedAction?.setupManaged === true) a.setupManaged = true;
         if (['set', 'verify', 'speak', 'sound'].includes(kind)) a.deviceId = $('action-device').value;
         if (['set', 'verify'].includes(kind)) { a.capability = $('action-capability').value; if (!a.deviceId || !a.capability) throw new Error('Velg enhet og funksjon.'); }
-        if (['set', 'verify', 'person'].includes(kind)) { a.value = scalar($('action-value').value); a.confirmSeconds = Number($('action-confirm').value); if ($('action-value').value === '') throw new Error('Skriv ønsket verdi.'); }
-        if (kind === 'person') { a.personId = $('action-person').value; if (!a.personId || typeof a.value !== 'boolean') throw new Error('Velg person og bruk true (sover) eller false (våken).'); }
+        if (['set', 'verify', 'person'].includes(kind)) { const raw=$('action-value').value,cap=data.catalog.devices[a.deviceId]?.capabilities[a.capability];a.value=cap?.type==='enum'?raw:scalar(raw); a.confirmSeconds = Number($('action-confirm').value); if (raw === '') throw new Error('Velg ønsket resultat.'); }
+        if (kind === 'person') { a.personId = $('action-person').value; if (!a.personId || typeof a.value !== 'boolean') throw new Error('Velg person og om personen skal være våken eller sovende.'); }
         if (kind === 'flow') { const selected = $('action-flow').value; if (!selected) throw new Error('Velg en Flow.'); [a.flowType, a.flowId] = selected.split(':'); }
         if (['notify', 'timeline', 'speak', 'sound'].includes(kind)) { a.text = $('action-text').value; if (!a.text.trim()) throw new Error('Skriv tekst eller lydnavn.'); }
         if (kind === 'notify') { a.alsoTimeline=$('action-also-timeline').checked; a.notificationType = $('action-notification').value; a.imageDeviceId = $('action-camera').value; if (a.notificationType === 'image' && !a.imageDeviceId) throw new Error('Velg kamera for bildevarsel.'); }

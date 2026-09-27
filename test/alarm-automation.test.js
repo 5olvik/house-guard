@@ -17,7 +17,7 @@ test('Each alarm automation switch controls only its own mode change',()=>{
 test('Configured alarm transitions survive disabled or deleted routines; custom actions stay disabled',()=>{
   for(const id of EVENTS)for(const removed of [false,true]){
     const h=harness(c=>{c.security.alarmDeviceId=ID;add(c,id,[step('extra')]);if(removed)c.routines=c.routines.filter(r=>r.id!==id);else c.routines.find(r=>r.id===id).enabled=false;});
-    const run=h.engine.start(id);assert(run.actions.some(a=>a.alarmAutomation));if(!removed)assert(run.actions.every(a=>a.alarmAutomation));
+    const run=h.engine.start(id);assert(run.actions.some(a=>a.alarmAutomation));assert(!run.actions.some(a=>a.id==='extra'));assert(run.actions.every(a=>a.builtin));
   }
 });
 test('Turning automatic alarm off leaves the chosen lights Flow enabled',async()=>{

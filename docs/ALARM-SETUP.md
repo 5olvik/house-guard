@@ -58,3 +58,21 @@ Enheten viser Frakoblet, Nattalarm tilkoblet, Bortealarm tilkoblet, forsinkelser
 På Hjem finnes **Start bortemodus** og **Sett alle hjemme**. De setter alle brukere i tilstedeværelsesutvalget under Personer til henholdsvis borte eller hjemme i Homey. Brukere utenfor utvalget endres ikke. Dette krever en klar direkte API-forbindelse; ingen hjelpeflows trengs. De vanlige hjemkomst-/borterutinene, alarmvalgene, forsinkelsene og gjesteinnstillingene gjelder. Alarmen armeres ikke på grunnlag av ubekreftet eller delvis oppdatert tilstedeværelse.
 
 Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. Automatisk nattankomst kan fortsatt sette ankomne våkne etter valgene dine. En bruker som allerede har ønsket status endres ikke på nytt. Delvis feil vises i grensesnittet og loggen, uten automatisk gjentakelse. GPS kan oppdatere status senere. I observasjon logges bare hva som ville skjedd. Eksisterende Sett modus-Flowkort har uendret oppførsel.
+
+## Morgen ved bevegelse
+
+Åpne **Rutiner → Natt og morgen → Start morgen ved bevegelse**. Velg for eksempel kjøkkensensoren, sett tidsrommet 06:00–12:00 og slå på «Start morgen ved ny bevegelse i tidsrommet». Alt lagres automatisk. Funksjonen er avslått ved oppgradering. Eksisterende rutiner, personutvalg og innstillinger endres ikke.
+
+Huset må være i nattmodus med bekreftet hjemmeværende, og sensoren må gå fra rolig til aktiv innenfor tidsrommet (fra er inkludert, til er ekskludert, i Homeys tidssone). Funksjonen frakobler nattalarmen før den samme bevegelsen vurderes som alarm, og setter alle hjemmeværende i tilstedeværelsesutvalget våkne. Dette gjelder også personer utenfor nattutvalget. Egne handlinger i Morgen-rutinen kjører som før hvis rutinen er aktivert. Den nye funksjonens frakobling og vekking er innebygd og gjelder også når ekstra morgenhandlinger er deaktivert. Vanlig manuell/planlagt morgen beholder de tidligere person- og alarmvalgene.
+
+Det kreves klar direkte API-forbindelse. Gjestevalg gjelder fortsatt. Bortealarm, aktiv alarm, pågående inngangsforsinkelse eller en annen samtidig aktiv nattalarmsensor frakobles ikke av automasjonen. En sensor som allerede står aktiv ved oppstart, ny tilkobling eller starten av tidsrommet gir ikke morgenstart. Kort bevegelsespuls håndteres også når sensoren allerede er rolig ved neste avlesning. Funksjonen starter én gang per nattperiode; nye bevegelser gjentar ikke en feilet vekking. En ny nattperiode gjør den klar igjen. Observasjon logger bare hendelsen.
+
+Fast morgentid er et uavhengig valg. Slå den av selv hvis bare bevegelse skal starte morgen. Ingen innstillinger slås av automatisk.
+
+## Faste og egne rutiner
+
+Faste rutiner kan ikke slettes. Krysset **Ekstra handlinger er aktive** slår bare egne tillegg av eller på, uten å fjerne dem. Innebygde alarm-, lås-, port- og personhandlinger følger fortsatt innstillingene under Alarm, Natt og morgen og Gjestemodus. Tidligere skjulte faste rutiner blir synlige igjen, med lagrede handlinger og avkrysninger bevart. Alarmhendelsenes ekstrahandlinger ligger under Alarm → Avansert.
+
+Velg **+ Egen rutine**, gi rutinen et navn og legg til handlinger. Velg for eksempel et lys og **På/Av**, eller en person og **Våken/Sovende**. **Vilkår og avanserte valg** samler begrensninger, avhengigheter og feilregler. Endringer lagres automatisk. Egne rutiner kan deaktiveres med krysset eller fjernes med **Slett egen rutine**.
+
+Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Natt og morgen som beskrevet ovenfor.

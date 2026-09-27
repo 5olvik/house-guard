@@ -13,7 +13,7 @@ module.exports = {
     if (!app.engine.config.observation) throw new Error('Kontroller tilgang i observasjonsmodus.');
     return require('./lib/integration-access')(app.adapter.api);
   },
-  async validateConfig({ body }) { return require('./lib/config').validate(body); },
+  async validateConfig({ homey,body }) { if(homey?.app?.engine)require('./lib/config').protectRoutines(homey.app.engine.config,body);return require('./lib/config').validate(body); },
   async getState({ homey }) { const app = homey.app; app.adapter.catalogue.direct=app.adapter.direct?.status(); return { version:require('./app.json').version, direct:app.adapter.direct?.status(), controls:require('./lib/manual-controls').status(app.engine), sleepConnections:require('./lib/sleep-flows').selected(app.engine.config), status: app.engine.status(), intrusion:app.intrusion?.status(), config: app.engine.config, catalog: app.adapter.catalogue, readiness: require('./lib/readiness')(app.engine.config, app.engine.snapshot, app.adapter.catalogue, app.engine.state, Date.now(), { intrusion:app.intrusion?.status() }), builtins: Object.fromEntries(app.engine.config.routines.map(r => [r.id, require('./lib/plans').builtins(r.id, app.engine.config, { personId:app.engine.facts().homeIds[0] }, app.engine.facts())])) }; },
   async previewRoutine({ homey, body }) { const config = require('./lib/config').validate(body.config || homey.app.engine.config); return require('./lib/preview')(homey.app.engine, body.id, config, homey.app.adapter.catalogue, await homey.app.adapter.snapshot(config)); },
   async setupBridges({ homey }) { return homey.app.setupBridges(); },

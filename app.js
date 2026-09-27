@@ -43,7 +43,7 @@ module.exports = class HouseGuard extends Homey.App {
     this.sensorEvents=[];
     this.adapter.onSensor=(id,capability,value)=>{
       const c=this.engine.config;
-      if(nativeAlarm(c) && typeof value==='boolean' && c.security.intrusion.sensors.some(s=>s.deviceId===id && s.capability===capability)) {
+      if(typeof value==='boolean' && ((nativeAlarm(c) && c.security.intrusion.sensors.some(s=>s.deviceId===id && s.capability===capability)) || (c.morning.motion.enabled && c.morning.motion.deviceId===id && c.morning.motion.capability===capability))) {
         this.sensorEvents.push({id,capability,value,revision:c.revision,at:Date.now()});this.sensorEvents=this.sensorEvents.slice(-200);
       }
     };
@@ -71,11 +71,7 @@ module.exports = class HouseGuard extends Homey.App {
     if(!['disarmed','armed','partially_armed'].includes(mode))throw Error('Ukjent alarmmodus');
     const cancelPending=()=>this.engine.cancel(r=>r.actions.some(a=>a.deviceId===ALARM_ID && ['pending','checking','dispatching','sent','waiting'].includes(a.status)),'Ventende alarmrutine avbrutt ved manuell alarmstyring');
     if(mode==='disarmed') {
-      // Disarming must not wait behind a slow device read or a pending arm request.
-      this.alarmCommandGeneration=(this.alarmCommandGeneration || 0)+1;
-      this.alarmCommands=Promise.resolve();cancelPending();
-      this.intrusion.mode(mode,this.engine.snapshot);this.engine.save();
-      return this.getAlarmStatus();
+      return this.disarmAlarm();
     }
     const generation=this.alarmCommandGeneration || 0;
     this.alarmCommands=(this.alarmCommands || Promise.resolve()).catch(()=>{}).then(async()=>{
@@ -86,6 +82,14 @@ module.exports = class HouseGuard extends Homey.App {
       if(revision!==this.engine.config.revision)throw Error('Oppsettet ble endret. Prøv igjen.');
       this.intrusion.mode(mode,snapshot);await this.refresh();return this.getAlarmStatus();
     });return this.alarmCommands;
+  }
+  disarmAlarm() {
+    // Synchronous so an eligible morning disarms before its sensor is evaluated.
+    this.alarmCommandGeneration=(this.alarmCommandGeneration || 0)+1;
+    this.alarmCommands=Promise.resolve();
+    this.engine.cancel(r=>r.actions.some(a=>a.deviceId===ALARM_ID && ['pending','checking','dispatching','sent','waiting'].includes(a.status)),'Ventende alarmrutine avbrutt ved frakobling');
+    this.intrusion.mode('disarmed',this.engine.snapshot);this.engine.save();
+    return this.getAlarmStatus();
   }
   async testAlarmSensor(deviceId,capability) {
     const c=this.engine.config;
@@ -128,21 +132,27 @@ module.exports = class HouseGuard extends Homey.App {
         if (revision !== this.engine.config.revision) { this.refreshOptions.reconnect = true; this.refreshAgain = true; continue; }
         const flags = this.refreshOptions; this.refreshOptions = {};
         const reconnect = !!flags.reconnect || (this.engine.started && !this.engine.snapshot.connected && snapshot.connected);
-        if(this.intrusion && nativeAlarm(this.engine.config)) {
-          const events=this.sensorEvents.splice(0);
-          if(this.intrusion.state.mode!=='disarmed' && !this.intrusion.state.target && !flags.initial && !reconnect)for(const e of events.filter(e=>e.revision===revision && Date.now()-e.at<10000)) {
+        const motionMorning=require('./lib/motion-morning'),events=(this.sensorEvents || []).splice(0);
+        let morningStarted=false;
+        if(flags.initial || reconnect)motionMorning(this,snapshot,{reset:true});
+        else for(const e of events.filter(e=>e.revision===revision && e.at<=Date.now() && Date.now()-e.at<10000)) {
             const d=snapshot.devices[e.id];if(!d || d.available===false)continue;
-            this.intrusion.update({...snapshot,devices:{...snapshot.devices,[e.id]:{...d,capabilities:{...d.capabilities,[e.capability]:{...d.capabilities[e.capability],value:e.value}}}}});
-          }
+            const eventSnapshot={...snapshot,devices:{...snapshot.devices,[e.id]:{...d,capabilities:{...d.capabilities,[e.capability]:{...d.capabilities[e.capability],value:e.value}}}}};
+            morningStarted=motionMorning(this,eventSnapshot,{event:e}) || morningStarted;
+            if(this.intrusion && nativeAlarm(this.engine.config) && this.intrusion.state.mode!=='disarmed' && !this.intrusion.state.target)this.intrusion.update(eventSnapshot);
+        }
+        if(!flags.initial && !reconnect)morningStarted=motionMorning(this,snapshot) || morningStarted;
+        if(this.intrusion && nativeAlarm(this.engine.config)) {
           this.intrusion.update(snapshot);snapshot.devices[ALARM_ID]=this.intrusion.device();
         }
-        this.engine.ingest(snapshot, { initial: !!flags.initial, reconnect });
+        this.engine.ingest(snapshot, { initial: !!flags.initial, reconnect, morningStarted });
         if (Date.now() - this.adapter.catalogueAt > 300000) await this.adapter.catalog();
       } while (this.refreshAgain);
     })().finally(() => { this.refreshing = null; });
     return this.refreshing;
   }
   async saveConfig(config) {
+    require('./lib/config').protectRoutines(this.engine.config,config);
     config.timeZone = this.homey.clock.getTimezone();
     const checked = validate(config); checked.revision = this.engine.config.revision + 1;
     if (checked.security.alarmDeviceId && checked.security.alarmDeviceId !== ALARM_ID) throw Error('House Guard bruker bare sin egen alarm. Slå på «Bruk House Guard-alarm» under Alarm.');

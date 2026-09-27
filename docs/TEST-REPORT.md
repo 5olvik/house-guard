@@ -1,3 +1,17 @@
+# Lokal testversjon 0.4.18 – faste og egne rutiner
+
+222 tester består. Nye kontroller dekker sperret sletting av faste rutiner, tillatt sletting av egne rutiner, gjenoppretting av skjulte/manglende faste rutiner og bevaring av handlinger og avkrysninger. Innebygde person-, alarm-, lås-, port- og gjestehandlinger følger sine egne innstillinger når ekstrahandlinger er deaktivert. Forhåndsvisningen bruker samme regel. Egne rutiner kjører bare når de er aktivert.
+
+Nettleserdemo bekrefter lesbare lys- og personvalg, sammenfoldede avanserte valg, bevarte vilkår ved redigering, avkrysning etter ny innlasting, oppretting og sletting av egen rutine og ingen sletteknapp på faste rutiner. Eksisterende handlinger beholdes når avkrysningen fjernes. Ingen fysiske enheter eller personstatuser er endret under testingen.
+
+Installert lokalt på Solviks Homey. Etterkontroll bekrefter uendret revisjon og bevarte handlinger, avkrysninger, morgeninnstillinger og Flow-IDer. Direkte forbindelse er klar. GitHub og App Stores testkanal er ikke oppdatert med denne versjonen.
+
+# Lokal testversjon 0.4.17 – morgen ved bevegelse
+
+217 tester består, inkludert eksisterende rutinetester. Nye integrasjonstester dekker prioritet før nattalarm på samme sensor, alle hjemmeværende våkne, bevarte morgenhandlinger, avslått funksjon, tidsgrenser, ingen hjemme, observasjon, gjester og manglende API. Full alarm, utløst alarm, inngangsforsinkelse og annen aktiv sensor beskyttes. Oppstart/reconnect, kort puls og ny natt samme dato er testet. Migrering legger bare til et avslått valg og bevarer øvrig oppsett.
+
+Nettleserdemo bekrefter sensorvalg, redigering av tidsrom, aktivering og automatisk lagring etter ny innlasting. Ingen sensor er valgt eller automasjon aktivert på brukerens Homey under utviklingen.
+
 # Lokal testversjon 0.4.16 – manuell hjemme/borte
 
 210 tester, syntakskontroll av 68 filer og Homey-validering består. Nye tester dekker bare valgte brukere, normale forsinkelser og alarmvalg, hjemkomst uten morgenrutine, delvis feil/ukjent utfall, observasjon, samtidige trykk, endret oppsett, GPS-hjemkomst og gjestevern. Direkte kort-IDer er lest fra Homey. Ingen faktisk personstatus er endret under testingen.

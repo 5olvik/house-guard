@@ -57,6 +57,15 @@
         <label class="check"><input type="checkbox" data-bind="morning.scheduled">Start morgen til fast tid</label>
         <label>Morgentid / utløp for «hopp over»<input type="time" data-bind="morning.time"></label>
         <label class="check"><input type="checkbox" data-bind="morning.requireHome">Morgen krever at noen er hjemme</label>
+        <fieldset class="full"><legend>Start morgen ved bevegelse</legend><div class="form-grid">
+          <label>Bevegelsessensor<select data-bind="morning.motion.deviceId" data-device="alarm_motion"></select></label>
+          <label>Bevegelsesfunksjon<select data-bind="morning.motion.capability" data-capabilities="morning.motion.deviceId" data-prefix="alarm_motion"></select></label>
+          <label>Fra og med<input type="time" data-bind="morning.motion.start"></label>
+          <label>Frem til<input type="time" data-bind="morning.motion.end"></label>
+          <label class="check full"><input type="checkbox" data-bind="morning.motion.enabled">Start morgen ved ny bevegelse i tidsrommet</label>
+          <p class="hint full">Når huset er i nattmodus og noen er hjemme: Frakoble nattalarmen, sett alle hjemmeværende i personutvalget våkne og kjør de vanlige morgenhandlingene. Dette valget inkluderer frakobling selv om vanlig morgenfrakobling er slått av under Alarm. Ingen ekstra Flow er nødvendig.</p>
+          <p class="hint full">Kjøres én gang per nattperiode, på ny bevegelse etter at sensoren har vært rolig. Bortealarm, allerede utløst alarm eller inngangsforsinkelse avbrytes ikke. Gjestevalg og observasjonsmodus gjelder fortsatt. Krever klar API-forbindelse. Fast morgentid er et eget valg over.</p>
+        </div></fieldset>
         <p class="hint full">Soneaktivitet leses direkte fra Homey. Mobilspørsmål krever frakoblet alarm og bekreftet våkent hus. Nattspørsmål og sovestatus bruker API-forbindelsen under Mer.</p>
         <p class="hint full">Fast morgentid setter hjemmeværende i nattutvalget våkne i Homey og starter morgenrutinen. Nattalarm kobles til når alle hjemme i nattutvalget sover, hvis skallsikring er valgt under Alarm.</p>
         <details class="full"><summary>Bruk egne Flows for vekking</summary><p class="hint">For hele huset: Bruk House Guard → Sett modus i House Guard → Morgen i en Flow eller Advanced Flow. For individuell vekking: Bruk Homeys tilstedeværelseskort til å sette én person våken. House Guard følger sovestatusen og kan frakoble ved første oppvåkning, slik du velger under Alarm. Slå av fast morgentid her hvis dine egne Flows skal bestemme tidspunktet. Du kan også legge handlingen «Start eksisterende Flow» i morgenrutinen for lys, musikk og andre vekkehandlinger.</p></details>
@@ -148,10 +157,10 @@
 </div>
 <dialog id="preview-dialog"><form method="dialog"><div class="dialog-heading"><h2 id="preview-title">Hva ville skjedd nå?</h2><button aria-label="Lukk">×</button></div><p class="hint" id="preview-note"></p><div id="preview-actions"></div><div class="button-row"><button>Lukk forhåndsvisning</button></div></form></dialog>
 <dialog id="action-dialog"><form id="action-form" novalidate><div class="dialog-heading"><h2 id="action-title">Legg til handling</h2><button type="button" id="close-action" aria-label="Lukk">×</button></div><p class="hint">Gyldige endringer lagres automatisk. Fullfør feltene for å legge til en ny handling.</p><div class="form-grid">
-  <label>Handling<select id="action-kind"><option value="set">Sett enhet til verdi</option><option value="flow">Start eksisterende Flow / scene</option><option value="notify">Send pushvarsel</option><option value="speak">Si tekst på Sonos</option><option value="sound">Spill lyd på Sonos</option><option value="timeline">Skriv til tidslinje</option><option value="person">Sett sovestatus for hjemmeværende</option><option value="verify">Bekreft enhetstilstand</option></select></label>
-  <label>Kategori<select id="action-category"></select></label>
+  <label>Hva skal skje?<select id="action-kind"><option value="set">Styr en enhet, for eksempel et lys</option><option value="flow">Start en Flow du har laget i Homey</option><option value="notify">Send pushvarsel</option><option value="speak">Si tekst på Sonos</option><option value="sound">Spill lyd på Sonos</option><option value="timeline">Skriv til tidslinje</option><option value="person">Sett en hjemmeværende person våken eller sovende</option><option value="verify">Kontroller at en enhet har ønsket status</option></select></label>
+  <label>Hva slags handling? (brukes av gjestemodus)<select id="action-category"></select></label>
   <label class="action-device">Enhet<select id="action-device"></select></label><label class="action-cap">Funksjon<select id="action-capability"></select></label>
-  <label class="action-value">Ønsket verdi<input id="action-value" placeholder="true, false, 0.5 eller tekst"></label>
+  <label class="action-value">Ønsket resultat<select id="action-value-choice" aria-label="Ønsket resultat" hidden></select><input id="action-value" aria-label="Ønsket resultat" placeholder="Skriv ønsket verdi"></label>
   <label class="action-flow" hidden>Flow / scene<select id="action-flow"></select></label>
   <label class="action-person" hidden>Person<select id="action-person"></select></label>
   <label class="action-text full" hidden>Tekst / lydnavn<textarea id="action-text" rows="2" placeholder="Bruk {zone}, {reason} eller {personId} ved behov"></textarea></label>
@@ -161,7 +170,9 @@
   <p class="action-notification hint full" hidden>Push sendes til alle som har «Motta pushvarsler» under Personer. Kritisk push og bildevarsel sendes direkte via API-forbindelsen. Tidslinjekopi er valgfritt og erstatter ikke push. Push fra tidslinjen kan gi et ekstra varsel hvis brukeren har aktivert det i Homey.</p>
   <label class="action-volume" hidden>Volum<input id="action-volume" type="number" min="1" max="100" value="35"></label>
   <label>Forsinkelse fra rutinen starter (sekunder)<input id="action-delay" type="number" min="0" max="86400" value="0" required></label>
-  <label>Vilkår<select id="action-when"><option value="">Rutinens vilkår</option><option value="home">Noen er hjemme</option><option value="away">Alle er bekreftet borte</option><option value="asleep">Noen hjemme sover</option><option value="awake">Ingen hjemme sover</option><option value="night">Nattmodus</option></select></label>
+  <details id="action-advanced" class="full"><summary>Vilkår og avanserte valg (valgfritt)</summary><div class="details-body form-grid">
+  <p class="hint full">Disse valgene begrenser handlingen når rutinen starter. For en automatisk start av en egen rutine bruker du en Homey Flow med «Start navngitt rutine».</p>
+  <label>Utfør handlingen bare når<select id="action-when"><option value="">Ingen ekstra begrensning</option><option value="home">Noen er hjemme</option><option value="away">Alle er bekreftet borte</option><option value="asleep">Noen hjemme sover</option><option value="awake">Ingen hjemme sover</option><option value="night">Nattmodus</option></select></label>
   <label>Ekstra vilkår – enhet (valgfritt)<select id="condition-device"></select></label>
   <label>Funksjon som skal kontrolleres<select id="condition-capability"></select></label>
   <label>Sammenligning<select id="condition-operator"><option value="eq">Er lik</option><option value="lt">Er mindre enn</option><option value="gt">Er større enn</option></select></label>
@@ -170,6 +181,7 @@
   <label>Ved feil<select id="action-error"><option value="stop">Stopp resten av rutinen</option><option value="continue">Logg og fortsett</option></select></label>
   <label>Vent på bekreftet tidligere handling<select id="action-dependency"></select></label>
   <label class="action-confirm">Bekreftelsesfrist (sekunder)<input id="action-confirm" type="number" min="1" max="300" value="60"></label>
+  </div></details>
   <p class="hint full">Lås og port konfigureres under Alarm. Eksterne Flows kan styre flere enheter; velg dem bevisst. Ukjent levering gjentas ikke automatisk.</p>
   </div><p id="action-error-message" class="error" role="alert"></p><p class="hint" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</p><div class="button-row"><button type="submit" class="primary">Ferdig</button></div></form></dialog>
 <dialog id="setup-dialog" aria-labelledby="setup-title"><div class="dialog-heading"><h2 id="setup-title">Kom i gang</h2><button id="close-setup" aria-label="Lukk veiviseren">×</button></div><p id="setup-progress" class="hint"></p><div id="setup-body"></div><p id="setup-error" class="error" role="alert"></p><p class="hint" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</p><div class="button-row"><button id="setup-back">Tilbake</button><button id="setup-next" class="primary">Neste</button></div></dialog>

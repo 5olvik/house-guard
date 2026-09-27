@@ -4,13 +4,15 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg 
 
 **Versjon 0.4.16 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.16**, med manuelle hjemme-/borteknapper, forbedret natt og morgen, alarmpanel med status og avstilling og temperaturuavhengig portstyring. Versjon **0.4.16** er publisert i Homey App Stores testkanal. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
+Kildekoden her er versjon **0.4.18**, med valgfri morgenstart ved bevegelse, faste rutiner som ikke kan slettes og enklere oppsett av egne rutiner. Versjon **0.4.16** er publisert i Homey App Stores testkanal. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
 
 ## Funksjoner
 
 - Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
 - Veiviser med personvalg og valg av én Flow for avreise, hjemkomst og natt.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
+- Faste rutiner beholdes; avkrysningen styrer bare ekstrahandlingene. Egne rutiner kan deaktiveres eller slettes.
+- Valgfri morgenstart ved bevegelse i et valgt tidsrom: frakobler nattalarm og setter hjemmeværende våkne.
 - Gjestemodus som egen av/på-enhet i Homey.
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
 - Alarmpanel som egen Homey-enhet med status og avstilling. Ingen separat alarmapp eller alarmbroflows.
