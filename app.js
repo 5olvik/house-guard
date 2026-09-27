@@ -8,9 +8,14 @@ const CONFIG_KEY = 'husmodus.config.v1', RUNTIME_KEY = 'husmodus.runtime.v1';
 
 module.exports = class HouseGuard extends Homey.App {
   async onInit() {
-    let config;
-    try { config = validate(this.homey.settings.get(CONFIG_KEY) || defaults()); }
+    let config, validStored = false;
+    const storedConfig = this.homey.settings.get(CONFIG_KEY);
+    try { config = validate(storedConfig || defaults()); validStored = !!storedConfig; }
     catch (error) { config = defaults(); this.error('Ugyldig lagret oppsett – starter i observasjon', error); }
+    if (validStored && (!storedConfig.security?.responses || !storedConfig.security?.automation)) {
+      config.revision++;
+      this.homey.settings.set(CONFIG_KEY, config);
+    }
     const migrated = !!config.security.alarmDeviceId && config.security.alarmDeviceId !== ALARM_ID;
     if (migrated) {
       config.security.alarmDeviceId = ALARM_ID;
@@ -140,10 +145,10 @@ module.exports = class HouseGuard extends Homey.App {
   async saveConfig(config) {
     config.timeZone = this.homey.clock.getTimezone();
     const checked = validate(config); checked.revision = this.engine.config.revision + 1;
-    if (checked.security.alarmDeviceId && checked.security.alarmDeviceId !== ALARM_ID) throw Error('House Guard bruker bare sin egen alarm. Velg House Guard under Sikkerhet.');
+    if (checked.security.alarmDeviceId && checked.security.alarmDeviceId !== ALARM_ID) throw Error('House Guard bruker bare sin egen alarm. Slå på «Bruk House Guard-alarm» under Alarm.');
     this.intrusion?.checkConfig(checked);
     checked.bridges = require('./lib/bridges').coverage(checked,this.adapter.catalogue).enabled;
-    for (const r of checked.routines) for (const a of r.actions) {
+    for (const a of [...checked.routines.flatMap(r=>r.actions), ...require('./lib/alarm-responses').allActions(checked)]) {
       if (a.kind === 'set' && require('./lib/action-safety').protectedWrite(checked,a.deviceId,a.capability,this.adapter.catalogue?.devices?.[a.deviceId])) throw new Error('Bruk sikkerhetsoppsettet for lås, alarm og port');
     }
     this.refreshOptions = { ...this.refreshOptions, reconnect: true };
@@ -151,6 +156,21 @@ module.exports = class HouseGuard extends Homey.App {
     const next = this.engine.updateConfig(checked);
     this.intrusion?.configure(next);this.sensorEvents=[];
     await this.adapter.subscribe(); await this.refresh({ reconnect: true }); return next;
+  }
+  async configureApiKey(body) {
+    if(!this.adapter.direct)throw Error('Homey-forbindelsen starter. Prøv igjen om litt.');
+    if(!body || (!body.check && typeof body.token!=='string'))throw Error('Mangler API-nøkkel.');
+    const direct=this.adapter.direct;
+    direct.onChange=()=>{
+      this.engine.state.generation++;
+      this.engine.cancel(()=>true,'Ventende handlinger avbrutt fordi API-forbindelsen ble endret');
+      if(this.engine.state.question && !this.engine.state.question.decided)this.engine.state.question.decided='cancelled';
+      this.engine.save();
+    };
+    const result=body.check?await direct.check():await direct.configure(body.token);
+    this.adapter.catalogue.direct=result;
+    this.engine.log(result.configured?'Direkte API-forbindelse kontrollert. Ingen prøvemeldinger sendt.':'API-nøkkel fjernet. Eksisterende Flow-koblinger brukes igjen.',{result:'info'});this.engine.save();
+    return result;
   }
   async setupBridges() {
     if (!this.engine.config.observation) throw new Error('Sett appen i observasjon før integrasjonsflows endres.');
@@ -172,8 +192,10 @@ module.exports = class HouseGuard extends Homey.App {
   }
   registerCards() {
     require('./lib/simple-flows').register(this);
+    require('./lib/scene-flows').register(this);
+    require('./lib/sleep-flows').register(this);
 
-    this.homey.flow.getActionCard('check_integration_access').registerRunListener(async () => true);
+    this.homey.flow.getActionCard('check_integration_access').registerRunListener(async () => {this.integrationTestCount=(this.integrationTestCount||0)+1;return true;});
     this.homey.flow.getActionCard('set_mode').registerRunListener(async ({ mode }) => { await this.engine.manual(mode); return true; });
     this.homey.flow.getActionCard('set_guest').registerRunListener(async ({ enabled }) => { this.engine.setGuest(enabled === 'true'); return true; });
     this.homey.flow.getActionCard('skip_night').registerRunListener(async () => { this.engine.skipNight(); return true; });

@@ -72,9 +72,10 @@ test('Home routine disarms a pending exit instead of treating its current disarm
   h.adapter.snapshot=app.adapter.snapshot;h.adapter.set=async(id,cap,value,guard,dispatch)=>{assert.equal(guard(),true);dispatch();app.intrusion.mode(value,h.snapshot);};
   h.engine.start('home');await h.engine.tick();assert.equal(app.intrusion.state.target,null);assert.equal(app.intrusion.state.mode,'disarmed');
 });
-test('Zero exit delay rejects an open delayed door before creating arming actions',()=>{
+test('Zero exit delay arms with an active delayed door excluded and queues the warning',()=>{
   const {h,app}=setup();h.config.security.intrusion.sensors[0].delay=true;h.snapshot.devices.door.capabilities.alarm_contact.value=true;
-  assert.throws(()=>app.intrusion.mode('armed',h.snapshot),/aktiv/);assert.equal(h.engine.runs.some(r=>r.routineId==='arming'),false);
+  app.intrusion.mode('armed',h.snapshot);assert.equal(app.intrusion.state.mode,'armed');assert.equal(app.intrusion.state.bypassed.length,1);
+  const warning=h.engine.runs.find(r=>r.routineId==='activeSensor');assert.equal(warning.context.bypassed,true);assert.equal(warning.actions[0].kind,'notify');
 });
 test('Alarm panel shows latest state and cleans up without disarming when deleted',async()=>{
   const {app}=setup(),Device=load('drivers/alarm-panel/device.js'),d=new Device(),timers=new Map();

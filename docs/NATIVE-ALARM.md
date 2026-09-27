@@ -1,10 +1,10 @@
-# Alarmen i House Guard 0.4.0
+# Alarmen i House Guard
 
 House Guard har sin egen alarmmotor. Heimdall-integrasjonen, app-til-app-tillatelsen og kortene for innrapportering av eksterne alarmhendelser er fjernet. Ingen Heimdall-kode er kopiert.
 
 ## Oppsett
 
-1. Åpne **Sikkerhet** og velg **House Guard-alarm**.
+1. Åpne **Sikkerhet** og slå på **Bruk House Guard-alarm**.
 2. Velg sensorer for **Borte** og **Natt**. Bare dør/vindu (`alarm_contact`) og bevegelse (`alarm_motion`) støttes. Velg eksempelvis skallsensorer for natt; unngå bevegelsessensorer i rom som brukes om natten.
 3. Merk inngangssensorer som **Forsinket**. Andre sensorer utløser alarm umiddelbart. Angi inn- og utgangsforsinkelse (0–240 sekunder).
 4. Velg reaksjoner under **Rutiner → Utløst alarm**. Sensorens navn, sone og årsak følger alarmen. Mobilvarsler og Sonos trenger fortsatt sine egne leveringskoblinger under **Mer → Koblinger**.
@@ -20,8 +20,8 @@ Observasjon endrer intern testtilstand, men sender ikke mobilvarsler, lyd, låsk
 
 ## Tilstand og avbrudd
 
-- Ukjente/utilgjengelige sensorer og aktive umiddelbare sensorer hindrer tilkobling.
-- En forsinket dør kan være åpen mens utgangsforsinkelsen går. Alle valgte sensorer må være klare ved slutten; ellers avbrytes tilkoblingen med forklaring.
+- Ukjente/utilgjengelige sensorer hindrer tilkobling. Aktive sensorer holdes midlertidig utenfor mens resten av alarmen kobles til.
+- Sensorer som fortsatt er aktive etter utgangsforsinkelsen listes på forsiden og i pushvarsel til valgte mottakere. Når en sensor bekreftes inaktiv, overvåkes den automatisk igjen. Denne listen bevares ved omstart. Push krever fungerende mobilkoblinger.
 - Å lukke en dør etter innpassering stopper ikke inngangsforsinkelsen. Frakobling stopper den.
 - Avstilling stopper alarmgjentakelse og ventende inngangs-/tilkoblingshandlinger. Allerede sendte eksterne kommandoer kan ikke trekkes tilbake.
 - Ved omstart beholdes tilkoblet modus, aktiv alarm og utløst inngangsforsinkelse. Uferdig utgangsforsinkelse avbrytes og må startes på nytt. Avlesing må være tilkoblet før forsinkelser fullføres.
@@ -36,4 +36,4 @@ De gamle alarmkortene `integration_event`, `report_alarm_details`, `report_entry
 
 ## Avgrensning
 
-Dette er en testversjon for Homey Pro. PIN/RFID, sabotasjealarm, batterivarsler, vedlikeholdsmodus og automatisert sensorforbikobling er ikke implementert. Alarmen er avhengig av Homey, sensorenes rapportering og eventuelle eksterne leveringsflows. Full test med faktiske sensorer og mottakere gjenstår.
+Dette er en testversjon for Homey Pro. PIN/RFID, sabotasjealarm, batterivarsler, vedlikeholdsmodus er ikke implementert. Alarmen er avhengig av Homey, sensorenes rapportering og eventuelle eksterne leveringsflows. Full test med faktiske sensorer og mottakere gjenstår.

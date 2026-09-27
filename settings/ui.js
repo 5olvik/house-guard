@@ -7,6 +7,8 @@
   const modeNames = { home: 'Hjemme', away: 'Borte', night: 'Natt', unknown: 'Ukjent' };
   let data, config, dirty = false, homey, demo = false, actionRoutine, editedAction, toastTimer, autosave, actionChanged = false;
   let setupStep = 0, setupOptions;
+  const controlBusy = new Set(), controlErrors = {};
+  let apiKeyBusy=false,apiKeyMessage='';
   function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
   function get(object, path) { return path.split('.').reduce((v, key) => v?.[key], object); }
   function put(object, path, value) { const parts = path.split('.'); const key = parts.pop(); get(object, parts.join('.'))[key] = value; }
@@ -51,13 +53,14 @@
   }
   function fillBindings() {
     fillSelects();
-    document.querySelectorAll('[data-bind]').forEach(input => { const v = get(config, input.dataset.bind); if (input.type === 'checkbox') input.checked = !!v; else input.value = String(v ?? ''); });
+    document.querySelectorAll('[data-bind]').forEach(input => { const v = get(config, input.dataset.bind); if (input.type === 'checkbox') input.checked = input.dataset.checkedValue ? v === input.dataset.checkedValue : !!v; else input.value = String(v ?? ''); });
     $('timezone').textContent = `Tidssone: ${config.timeZone}. Bruker Homeys tidssone når appen er installert.`;
   }
   function bindEvents() {
     const changed = event => {
       const input = event.target; if (!input.dataset.bind) return;
       let value = input.type === 'checkbox' ? input.checked : input.type === 'number' ? (input.value === '' ? null : Number(input.value)) : input.value;
+      if (input.dataset.checkedValue) value = input.checked ? input.dataset.checkedValue : '';
       if (input.dataset.valueType === 'boolean') value = value === 'true';
       if (input.dataset.valueType === 'scalar') value = scalar(value);
       if (!input.dataset.bind.includes('.')) config[input.dataset.bind] = value; else put(config, input.dataset.bind, value);
@@ -99,12 +102,7 @@
       pill.append(el('div', (p.name || '?').slice(0, 1).toUpperCase(), 'avatar'), copy); people.append(pill);
     }
     if (!people.children.length) people.append(el('p', 'Velg personer i Personer-fanen for å beregne modus for huset.', 'empty'));
-    const cap = (id, key) => s.devices?.[id]?.capabilities?.[key]?.value;
-    const sec = data.config.security, alarmMode = cap(sec.alarmDeviceId, 'homealarm_state'), active = cap(sec.alarmDeviceId, 'alarm_generic'), locked = cap(sec.lockDeviceId, 'locked'), port = cap(sec.garage.statusDeviceId, sec.garage.statusCapability);
-    $('security-status').replaceChildren();
-    for (const [name, value, sub] of [['ALARM', { disarmed: 'Frakoblet', armed: 'Tilkoblet', partially_armed: 'Delvis tilkoblet' }[alarmMode] || 'Ukjent', active === true ? 'Alarm utløst' : active === false ? 'Ingen utløst alarm' : 'Alarmstatus ukjent'], ['YTTERDØR', locked === true ? 'Låst' : locked === false ? 'Ulåst' : 'Ukjent', sec.lockDeviceId ? 'Avlest tilstand' : 'Velg lås i Sikkerhet'], ['GARASJEPORT', typeof port === 'boolean' ? (port === sec.garage.openValue ? 'Åpen' : 'Lukket') : 'Ukjent', sec.garage.validated ? 'Polaritet validert' : 'Krever oppsett']]) {
-      const box = el('div', undefined, 'status-box'); box.append(el('div', name, 'eyebrow'), el('strong', value), el('small', sub)); $('security-status').append(box);
-    }
+    renderHomeControls();
     const changed = data.config.night.markAsleep ? data.config.people.night.filter(id => s.people[id]?.present === true && s.people[id]?.available !== false).map(id => s.people[id]?.name || id) : [];
     $('manual-explanation').textContent = changed.length ? `Nattmodus vil sette disse sovende: ${changed.join(', ')}.${s.observation ? ' I observasjon logges dette bare.' : ''}` : 'Ingen personstatuser vil endres av nattoppsettet.';
     $('skip-status').textContent = s.skipUntil > Date.now() ? `Automatisk natt hoppes over til ${new Date(s.skipUntil).toLocaleString('nb-NO', { timeZone: config.timeZone })}.` : '';
@@ -124,6 +122,23 @@
     }
     $('demo-panel').hidden = !demo;
     renderIntegrations();
+  }
+  function renderHomeControls() {
+    const c=data.config.security,s=data.status,cap=(id,key)=>s.devices?.[id]?.available!==false?s.devices?.[id]?.capabilities?.[key]?.value:undefined;
+    const locked=cap(c.lockDeviceId,'locked'),port=cap(c.garage.statusDeviceId,c.garage.statusCapability);
+    $('home-lock-state').textContent=locked===true?'Låst':locked===false?'Ulåst':'Ukjent';
+    $('home-garage-state').textContent=typeof port==='boolean'?(port===c.garage.openValue?'Åpen':'Lukket'):'Ukjent';
+    for(const target of ['lock','garage']){
+      const control=data.controls?.[target],pending=controlBusy.has(target) || control?.pending;
+      const current=target==='lock'?locked:typeof port==='boolean'?port===c.garage.openValue:undefined;
+      document.querySelectorAll('[data-control="'+target+'"]').forEach(button=>{
+        const value=button.dataset.controlValue==='true',option=control?.options[String(value)];
+        button.disabled=!!pending || !option?.allowed || value===current;
+        button.title=pending?'Venter på bekreftet status':option?.reason || '';
+      });
+      const next=typeof current==='boolean'?String(!current):'true';
+      $(target+'-control-note').textContent=controlErrors[target] || (pending?'Kommando pågår – venter på bekreftet status.':control?.options[next]?.reason || (s.observation?'Observasjon: knappene logger bare ønsket handling.':'Status leses fra Homey.'));
+    }
   }
   function renderPeople() {
     $('people-selection').replaceChildren();
@@ -151,22 +166,25 @@
     return `${kinds[a.kind] || a.kind}${target ? ` · ${target}` : ''}${a.value !== undefined ? ` → ${String(a.value)}` : ''}${a.text ? ` · ${a.text}` : ''}`;
   }
   function renderRoutines() {
-    const list = $('routine-list'); list.replaceChildren();
+    const list = $('routine-list'), alarmList = $('alarm-routine-list'); list.replaceChildren(); alarmList.replaceChildren();
     for (const routine of config.routines) {
+      if(routine.hidden)continue;
+      const alarmEvent = ['alarm','arming','entryDelay','activeSensor','alarmOff'].includes(routine.id);
+      if(alarmEvent && !routine.actions.length)continue;
       const card = el('details', undefined, 'card'), heading = el('summary', routine.name), body = el('div', undefined, 'details-body');
       card.open = routine.id === actionRoutine?.id;
       const nameLabel = el('label', 'Rutinenavn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;
       nameInput.oninput = () => { routine.name = nameInput.value; heading.textContent = routine.name; setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel);
       const enabledWrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = routine.enabled;
-      check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode('Rutinen er aktiv'));
+      check.onchange = () => { routine.enabled = check.checked; setDirty(true); }; enabledWrap.append(check, document.createTextNode(alarmEvent ? 'Ekstra handlinger er aktive' : 'Rutinen er aktiv'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
       execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap, execution);
-      const builtin = { away: 'House Guard-alarmen kobles til når alarm er aktivert.', home: 'House Guard-alarmen frakobles når alarm er aktivert. Opplåsing er et separat sikkerhetsvalg.', night: 'Hjemmeværende i nattutvalget kan settes sovende; valgt alarm tilkobles delvis.', morning: 'Valgt alarm frakobles; hjemmeværende i nattutvalget settes våkne.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomnes sovestatus kan endres.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const builtinList = el('div');
       const showBuiltins = actions => {
         builtinList.replaceChildren();
-        for (const a of actions) { const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy'); copy.append(el('small','Innebygd · følger Sikkerhet og personvalg')); row.append(el('span','•','action-number'),copy); builtinList.append(row); }
+        for (const a of actions.filter(a=>!a.alarmAutomation)) { const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy'); copy.append(el('small','Innebygd · følger Alarm og personvalg')); row.append(el('span','•','action-number'),copy); builtinList.append(row); }
       };
       showBuiltins(data.builtins?.[routine.id] || []); body.append(builtinList);
       card.ontoggle = async () => { if (!card.open) return; try { const p = await api('POST','/preview',{ id:routine.id, config }); showBuiltins(p.actions.filter(a => a.builtin)); } catch (error) { toast(error.message); } };
@@ -196,10 +214,15 @@
       if (routine.id.startsWith('custom-')) {
         const run = el('button', 'Start rutine'); run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
       }
-      card.append(heading, body); list.append(card);
+      const removeRoutine = el('button', alarmEvent ? 'Fjern ekstra handlinger' : 'Slett rutine');
+      removeRoutine.onclick = () => { if(routine.id.startsWith('custom-'))config.routines.splice(config.routines.indexOf(routine),1);else {routine.actions=[];routine.hidden=true;} actionRoutine=null; setDirty(true); renderRoutines(); };
+      body.append(removeRoutine);
+      if(!routine.id.startsWith('custom-'))body.append(el('p','Fjerner egne handlinger. Alarm, lås og personstatus følger fortsatt valgene under Alarm og Personer.','hint'));
+      card.append(heading, body); (alarmEvent ? alarmList : list).append(card);
     }
   }
   function renderIntegrations() {
+    renderApiKey();
     const container = $('integration-list'); container.replaceChildren();
     const checks = data.readiness?.checks || [], names = { ready:'Tilkoblet', missing:'Krever oppsett', off:'Ikke valgt', review:'Se over' };
     for (const check of checks) { const row = el('div', undefined, 'integration-row'), copy = el('div'); copy.append(el('strong',check.title),el('p',check.detail)); row.append(copy,el('span',names[check.level],`badge ${check.level === 'ready' ? 'ok' : check.level === 'off' ? '' : 'warn'}`)); container.append(row); }
@@ -212,15 +235,58 @@
     const events = Object.entries(data.readiness?.events || {});
     if (events.length) deliveries.append(el('h3','Mottatte integrasjonshendelser'));
     for (const [type,at] of events) deliveries.append(el('p',`${config.routines.find(r => r.id === type)?.name || type} · ${new Date(at).toLocaleString('nb-NO',{timeZone:config.timeZone})}`,'hint'));
-    $('setup-bridges').disabled = !data.status.observation || dirty || demo;
     for (const error of data.catalog.errors || []) container.append(el('p', error, 'error'));
   }
-  function renderConfig() { fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); }
+  function renderApiKey() {
+    const status=data?.direct || data?.catalog?.direct || {};
+    $('direct-api-status').textContent=apiKeyMessage || (status.configured?(status.ready?'Direkte forbindelse er klar. Nøkkelen er lagret.':status.problem || 'Forbindelsen må kontrolleres.'):'Legg inn API-nøkkel for direkte Flow-start, push og Sonos.');
+    $('direct-api-key').disabled=apiKeyBusy || demo;
+    $('direct-api-check').disabled=apiKeyBusy || demo || !status.configured;
+    $('direct-api-remove').disabled=apiKeyBusy || demo || !status.configured;
+  }
+  async function updateApiKey(body) {
+    if(apiKeyBusy)return;apiKeyBusy=true;apiKeyMessage='Kontrollerer og lagrer …';renderApiKey();
+    try{await flush();const result=await api('PUT','/api-key',body);$('direct-api-key').value='';data.direct=result;apiKeyMessage='';await load();}
+    catch(error){$('direct-api-key').value='';apiKeyMessage=error.message;}
+    finally{apiKeyBusy=false;renderApiKey();}
+  }
+  function renderSetupEntry() { $('setup-intro').hidden = data.config.setupCompleted === true; }
+  function renderAlarmResponses() {
+    for(const [id,section] of [['alarm-responses','notifications'],['alarm-audio-responses','audio']])
+      HouseGuardAlarm.render({root:$(id),section,config,data,el,options,deviceItems,changed:setDirty,api,flush,demo});
+  }
+  function initializeAlarmTabs() {
+    const tabs=[...document.querySelectorAll('[data-alarm-tab]')];
+    function select(tab,focus=false) {
+      for(const button of tabs){const selected=button===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}
+      document.querySelectorAll('[data-alarm-panel]').forEach(panel=>{panel.hidden=panel.dataset.alarmPanel!==tab.dataset.alarmTab;});
+      if(focus)tab.focus();
+    }
+    tabs.forEach((tab,index)=>{
+      tab.onclick=()=>select(tab);
+      tab.onkeydown=event=>{
+        const next={ArrowRight:(index+1)%tabs.length,ArrowLeft:(index+tabs.length-1)%tabs.length,Home:0,End:tabs.length-1}[event.key];
+        if(next===undefined)return;event.preventDefault();select(tabs[next],true);
+      };
+    });
+  }
+  function renderConfig() { document.querySelectorAll('[data-app-version]').forEach(node=>node.textContent=data.version || ''); renderAlarmResponses(); renderSetupEntry(); fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); }
   function renderIntrusionStatus() {
     const s=data.intrusion;if(!s)return;
     const phase=s.active?'ALARM UTLØST':s.entryAt?'Inngangsforsinkelse':s.target?'Utgangsforsinkelse':{disarmed:'Frakoblet',armed:'Bortealarm tilkoblet',partially_armed:'Nattalarm tilkoblet'}[s.mode];
     const seconds=Math.max(0,Math.ceil(((s.entryAt || s.exitAt || 0)-Date.now())/1000));
     $('intrusion-status').textContent=`${s.observation?'Observasjon · ':''}${phase}${s.entryAt || s.target?` · ${seconds} s`:''}${s.context && (s.active || s.entryAt)?` · ${s.context.zone} · ${s.context.reason}`:''}${s.faults.length?` · ${s.faults.join(' · ')}`:''}`;
+    $('home-alarm-phase').textContent=s.selected?phase:'Alarm ikke aktivert';
+    $('home-alarm').classList.toggle('alarm-active',!!s.active);
+    $('home-alarm-details').textContent=!s.selected?'Slå på House Guard-alarm under Alarm.':[
+      s.observation?'Observasjon – ingen varsler eller fysiske handlinger.':'',
+      s.context && (s.active || s.entryAt)?s.context.zone+' · '+s.context.reason:'',
+      s.target || s.entryAt?seconds+' sekunder igjen.':'',
+      ...(s.faults || []),
+    ].filter(Boolean).join(' ');
+    $('home-alarm-bypassed').hidden=!s.bypassed?.length;
+    $('home-alarm-bypassed').textContent=s.bypassed?.length?'Venter på inaktive sensorer: '+s.bypassed.map(sensor=>sensor.name+' ('+sensor.zone+')').join(', ')+'. Resten av alarmen er tilkoblet.':'';
+    $('home-disarm').disabled=!s.selected || (!s.active && !s.target && !s.entryAt && s.mode==='disarmed');
     document.querySelectorAll('[data-alarm-test]').forEach(button=>{button.disabled=!data.config.observation || !s.selected || s.mode==='disarmed' || !!s.target;});
   }
   function renderIntrusion() {
@@ -244,62 +310,15 @@
     if(!choices.size)wrap.append(el('p','Ingen dør- eller bevegelsessensorer funnet. Oppdater enheter under Mer.','hint'));
     renderIntrusionStatus();
   }
-  function renderConnectionRecipes() {
-    const container = $('connection-recipes'); container.replaceChildren();
-    $('legacy-delivery').hidden = !Object.values(data.config.delivery || {}).includes('legacy');
-    const actions=config.routines.filter(r=>r.enabled).flatMap(r=>r.actions);
-    const groups=[];
-    const name=id=>data.catalog.people[id]?.name || data.catalog.devices[id]?.name || 'Ikke valgt';
-    const types=new Set(actions.filter(a=>a.kind==='notify').map(a=>a.notificationType || 'normal'));
-    if(config.people.notifications.length && (actions.some(a=>['set','verify','person','garage'].includes(a.kind)) || config.security.lockDeviceId || config.security.alarmDeviceId)) types.add('normal');
-    const cameras=new Set(actions.filter(a=>a.kind==='notify' && a.notificationType==='image').map(a=>a.imageDeviceId));
-    if(config.security.garage.enabled && config.people.notifications.length) {
-      if(config.security.garage.imageDeviceId){types.add('image');cameras.add(config.security.garage.imageDeviceId);}else types.add('normal');
-    }
-    const row=(key,title,steps)=>groups.push({key,title,steps});
-    if(types.size && !config.people.notifications.length) row('notifications','Velg mottakere',['Velg varslingsmottakere under Personer før du lager varslingsflow.']);
-    for(const person of config.people.notifications) for(const type of types) {
-      const targets=type==='image'?[...cameras]:[''];
-      for(const camera of targets) row('notifications',`${{normal:'Varsel',critical:'Viktig varsel',image:'Bildevarsel'}[type]} til ${name(person)}`, [
-        `Når: House Guard → ${{normal:'Et varsel',critical:'Et viktig varsel',image:'Et bildevarsel'}[type]} er klart for ${name(person)}${camera?` fra ${name(camera)}`:''}.`,
-        `Så: Mobil → Send ${type==='critical'?'kritisk pushvarsel':type==='image'?'pushvarsel med bilde':'pushvarsel'} til ${name(person)}. Bruk taggen Melding${camera?` og kamerataggen fra ${name(camera)}`:''}.`,
-      ]);
-    }
-    const sounds=new Map(actions.filter(a=>['speak','sound'].includes(a.kind)).map(a=>[`${a.kind}:${a.deviceId}:${a.kind==='sound'?a.text:''}`,a]));
-    for(const a of sounds.values()) row('audio',`${a.kind==='speak'?'Tale':'Alarmlyd'} på ${name(a.deviceId)}`,[
-      `Når: House Guard → ${a.kind==='speak'?'En talebeskjed':'En alarmlyd'} er klar for ${name(a.deviceId)}${a.kind==='sound'?'. Velg samme lyd som i rutinen':''}.`,
-      `Så: Sonos → ${a.kind==='speak'?'Si taggen Melding':'Spill den valgte lyden'}. Bruk taggen Volum.`,
-    ]);
-    if(config.night.automatic) {
-      if(!config.people.questions.length) row('questions','Velg mottakere',['Velg hvem som skal svare på nattspørsmål under Personer.']);
-      for(const person of config.people.questions) row('questions',`Nattspørsmål til ${name(person)}`, [
-        `Når: House Guard → Et nattspørsmål er klart for ${name(person)}.`,
-        `Og: Mobil → Send et ja/nei-spørsmål til ${name(person)} med taggen Melding.`,
-        'Så: House Guard → Registrer svar på nattspørsmålet. Velg Ja og taggen Dette spørsmålet.',
-        'Ellers: Samme svarkort med Nei og samme tagg. Bruk ett spørsmålskort; ikke lag en ekstra Flow som spør en gang til.',
-        'Appen venter på svarfristen. Et uteblitt svar blir ikke et ja. Mobilkortets feil og tidsavbrudd må prøves ved oppsett.',
-      ]);
-    }
-    if(!groups.length) container.append(el('p','Ingen meldings- eller lydkoblinger er nødvendige med dette oppsettet.','hint'));
-    const legacy=new Set();
-    for(const group of groups) {
-      if(config.delivery[group.key]==='legacy') {
-        if(legacy.has(group.key))continue; legacy.add(group.key);
-        const box=el('div',undefined,'recipe');box.append(el('strong',{notifications:'Mobilvarsler',questions:'Nattspørsmål',audio:'Tale og lyd'}[group.key]),el('p','Eldre kobling er valgt. Bytt til enkle flows under for å vise de nye oppskriftene.','hint'));container.append(box);continue;
-      }
-      const box=el('details',undefined,'recipe');box.append(el('summary',group.title));
-      for(const line of group.steps)box.append(el('p',line,'summary-line'));container.append(box);
-    }
-    if(groups.some(g=>config.delivery[g.key]==='simple')) container.append(el('p','Lag vanlige flows uten ekstra betingelser eller forsinkelser. Bruk taggene fra Når-kortet. Oppsettet lagres automatisk. Velg Kontroller integrasjonsflows når koblingene er klare. Enkle utgangsflows bekrefter ikke mottak og har ikke automatisk reservepush.','hint'));
-  }
+  function renderConnectionRecipes() {}
   async function openSetup() {
-    $('open-setup').disabled=true;
+    $('open-setup').disabled=true; $('reopen-setup').disabled=true;
     try {
       data.catalog=await api('GET','/catalog');
       setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:config.people.presence.length > 0 && config.people.presence.every(id=>config.people.night.includes(id)),flows:HouseGuardSetup.selections(config)};
       renderSetup();$('setup-dialog').showModal();
     } catch(error) { toast(`Kunne ikke oppdatere Flow-listen: ${error.message}`); }
-    finally { $('open-setup').disabled=false; }
+    finally { $('open-setup').disabled=false; $('reopen-setup').disabled=false; }
   }
   function setupChange(patch) {
     try {
@@ -320,7 +339,7 @@
       for(const p of Object.values(data.catalog.people).filter(p=>p.available!==false)) choice(body,p.name,setupOptions.people.includes(p.id),checked=>setupChange({people:checked?[...setupOptions.people,p.id]:setupOptions.people.filter(id=>id!==p.id)}));
       if(!Object.keys(data.catalog.people).length)body.append(el('p','Ingen personer er tilgjengelige. Oppdater personer og enheter under Mer.','error'));
     } else if(setupStep===1) {
-      body.append(el('p','Lag for eksempel en Flow i Homey som heter «Slå av alle lys», og velg den under «Når alle drar». Du velger selv hvilke handlinger Flow-en utfører.','hint'));
+      body.append(el('p','Lag for eksempel «Slå av alle lys» i Homey og velg den under «Når alle drar». Med API-nøkkel starter House Guard den direkte. Legg inn nøkkelen under Mer → Direkte forbindelse.','hint'));
       const flows=HouseGuardSetup.flowChoices(data.catalog);
       for(const [id,title] of [['away','Når alle drar'],['home','Når første person kommer hjem'],['night','Når nattmodus starter']]) {
         const label=el('label',title,'setup-flow'),select=el('select');
@@ -349,7 +368,7 @@
       choice(body,'Ta med alle valgte personer i nattutvalget',setupOptions.useNightPeople,checked=>setupChange({useNightPeople:checked}));
       body.append(el('p','Nattmodus kan startes fra Hjem. Mobilspørsmål velges separat under Rutiner.','hint'));
       body.append(el('h3','Gjestemodus uten Flow'),el('p','I Homey: Legg til enhet → House Guard → Gjestemodus. Bryteren følger samme gjestemodus som appen.','hint'));
-      body.append(el('h3','Utvid senere'),el('p','Alarm og dørlås velges under Sikkerhet. Varsler, tale og mobilspørsmål trenger egne koblinger. Veiviseren slår ikke på disse funksjonene.','hint'));
+      body.append(el('h3','Utvid senere'),el('p','Alarm og dørlås velges under Alarm. Varsler, tale og mobilspørsmål trenger egne koblinger. Veiviseren slår ikke på disse funksjonene.','hint'));
     } else {
       body.append(el('p',`Personer: ${setupOptions.people.map(id=>data.catalog.people[id]?.name || 'Utilgjengelig').join(', ')}.`,'summary-line'));
       const flows=HouseGuardSetup.flowChoices(data.catalog);
@@ -358,7 +377,7 @@
         body.append(el('p',`${label}: ${selected ? (flow ? `${flow.name}${flow.reason?` (${flow.reason})`:''}` : 'Flow mangler – velg på nytt') : 'Ingen Flow fra veiviseren'}.`,'summary-line'));
       }
       body.append(el('p',setupOptions.useNightPeople?'Hjemmeværende valgte personer tas med i nattutvalget.':'Nattutvalget beholdes for dem som fortsatt teller som hjemme.','summary-line'));
-      body.append(el('p',`Valgene lagres automatisk. ${config.observation ? 'Observasjonsmodus er på.' : 'Aktiv styring er på.'} Dine øvrige handlinger og sikkerhetsvalg beholdes.`,'hint'));
+      body.append(el('p',`Trykk Ferdig for å skjule veiviseren fra forsiden. Den kan åpnes igjen under Mer. Valgene lagres automatisk. ${config.observation ? 'Observasjonsmodus er på.' : 'Aktiv styring er på.'} Dine øvrige handlinger og sikkerhetsvalg beholdes.`,'hint'));
     }
   }
   async function load(initial = false) {
@@ -367,7 +386,7 @@
       if (!autosave) {
         config = structuredClone(data.config);
         autosave = HouseGuardAutosave.create({ initial:config, write:body=>api('PUT','/config',body), read:async()=>(await api('GET','/state')).config, validate:body=>api('POST','/validate',body), onState:savingState,
-          onSaved:saved=>{ data.config = saved; config.revision = saved.revision; config.bridges = structuredClone(saved.bridges); config.timeZone = saved.timeZone; } });
+          onSaved:saved=>{ data.config = saved; config.revision = saved.revision; config.bridges = structuredClone(saved.bridges); config.timeZone = saved.timeZone; renderSetupEntry(); } });
         renderConfig(); savingState({phase:'saved',pending:false});
       } else if (autosave.observe(data.config)) { config = structuredClone(data.config); renderConfig(); }
       autosave.recover();
@@ -418,9 +437,10 @@
     const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
   async function initialize() {
+    initializeAlarmTabs();
     for (const [category, label] of Object.entries(labels)) { const wrap = el('label', undefined, 'check'), input = el('input'); input.type = 'checkbox'; input.dataset.bind = `guest.allow.${category}`; wrap.append(input, document.createTextNode(label)); $('guest-options').append(wrap); }
     bindEvents(); await load(true); if (homey) homey.ready();
-    $('open-setup').onclick=openSetup;$('close-setup').onclick=()=>$('setup-dialog').close();
+    $('open-setup').onclick=openSetup; $('reopen-setup').onclick=openSetup;$('close-setup').onclick=()=>$('setup-dialog').close();
     $('setup-back').onclick=()=>{setupStep--;renderSetup();};
     $('setup-next').onclick=async()=>{
       $('setup-next').disabled=true;
@@ -428,20 +448,29 @@
         if(setupStep===0 && !setupOptions.people.length)throw new Error('Velg minst én person.');
         await flush();
         if(setupStep<3){setupStep++;renderSetup();return;}
+        config.setupCompleted = true; setDirty(true); await flush();
         $('setup-dialog').close();
       }catch(error){$('setup-error').textContent=error.message;}finally{$('setup-next').disabled=false;}
     };
-    document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
+    document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { if(button.dataset.tab==='security')renderAlarmResponses(); document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
       try { await flush(); await api('POST', '/command', button.dataset.command === 'skip' ? { type: 'skip' } : { type: 'mode', mode: button.dataset.command }); await load(); toast('Kommando behandlet. Se status og logg.'); } catch (error) { toast(error.message); }
     });
     document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}});
+    document.querySelectorAll('[data-control]').forEach(button=>button.onclick=async()=>{
+      const target=button.dataset.control,value=button.dataset.controlValue==='true';
+      if(controlBusy.has(target))return;controlBusy.add(target);delete controlErrors[target];renderHomeControls();
+      try{await flush();await api('POST','/command',{type:'control',target,value});await load();}
+      catch(error){controlErrors[target]=error.message;}
+      finally{controlBusy.delete(target);renderHomeControls();}
+    });
     $('guest-toggle').onchange = async event => { try { await flush(); await api('POST', '/command', { type: 'guest', value: event.target.checked }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } };
     document.querySelectorAll('[data-scenario]').forEach(button => button.onclick = async () => { try { await api('POST', '/scenario', { scenario: button.dataset.scenario }); await load(); } catch (error) { toast(error.message); } });
     $('reload-config').onclick = async () => {
       try { const latest = await api('GET','/state'); autosave.reset(latest.config); data = latest; config = structuredClone(latest.config); renderConfig(); renderStatus(); }
       catch(error) { toast(error.message); }
     };
+    $('add-alarm-extra').onclick = () => { let routine=config.routines.find(r=>r.id==='alarm'); if(!routine){routine={id:'alarm',name:'Utløst alarm – ekstra handlinger',enabled:true,execution:'parallel',actions:[]};config.routines.push(routine);} delete routine.hidden; openAction(routine); };
     $('new-routine').onclick = () => { config.routines.push({ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] }); setDirty(true); renderRoutines(); };
     $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('close-action').onclick = () => $('action-dialog').close();
     $('condition-device').onchange = () => updateConditionCapabilities();
@@ -476,11 +505,10 @@
     $('action-form').onsubmit = async event => { event.preventDefault(); if (actionChanged && !saveAction(true)) return; try { await flush(); $('action-dialog').close(); } catch(error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; } };
     $('log-filter').onchange = renderStatus;
     $('refresh-catalog').onclick = async () => { try { data.catalog = await api('GET', '/catalog'); renderConfig(); toast('Personer og enheter oppdatert.'); } catch (error) { toast(error.message); } };
-    $('setup-bridges').onclick = async () => {
-      $('setup-bridges').disabled = true;
-      try { await flush(); const result = await api('POST','/bridges',{}); await load(); toast(`Integrasjonsflows kontrollert: ${result.routes} leveringskoblinger. Ingen prøvemeldinger sendt.`); }
-      catch (error) { toast(error.message); } finally { $('setup-bridges').disabled = !data.status.observation || dirty || demo; }
-    };
+    $('direct-api-key').onchange=()=>{const token=$('direct-api-key').value.trim();if(token)void updateApiKey({token});};
+    $('direct-api-key').onpaste=()=>setTimeout(()=>{const token=$('direct-api-key').value.trim();if(token)void updateApiKey({token});},0);
+    $('direct-api-check').onclick=()=>updateApiKey({check:true});
+    $('direct-api-remove').onclick=()=>updateApiKey({token:''});
     $('export-config').onclick = () => download('house-guard-oppsett.json', config);
     $('export-log').onclick = () => download('house-guard-logg.json', data.status.history);
     $('import-config').onchange = async event => {

@@ -21,3 +21,8 @@ docs/APPSTORE-USABILITY-PLAN.md
 docs/UPGRADE-*.md
 docs/RENAME-*.md
 docs/REVIEW-*.md
+
+# Local development checkpoints and installation history
+# Public setup instructions are in docs/ALARM-SETUP.md and docs/API-KEY.md.
+docs/*-WORK.md
+docs/PENDING-CHANGES.md

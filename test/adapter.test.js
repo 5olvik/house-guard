@@ -33,17 +33,17 @@ test('Normalisering bevarer ukjent verdi og manglende tidsstempel', () => {
   assert.equal(d.capabilities.alarm_contact.value, null); assert.equal(d.capabilities.alarm_contact.updatedAt, null);
 });
 
-test('Flow-start leser fersk status, bruker riktig API og avbrytes ved endret autorisasjon',async()=>{
-  const h=setup(),flow={enabled:true,broken:false,triggerable:true},calls=[];let authorized=true;
-  h.adapter.api.flow={getFlow:async args=>{calls.push(['read-normal',args]);return flow;},getAdvancedFlow:async args=>{calls.push(['read-advanced',args]);return flow;},triggerFlow:async args=>calls.push(['normal',args]),triggerAdvancedFlow:async args=>calls.push(['advanced',args])};
+test('Flow-start bruker en kontrollert SDK-kobling og avbrytes ved endret autorisasjon',async()=>{
+  const h=setup(),flow={enabled:true,broken:false,triggerable:true};let authorized=true,reads=0,dispatched=0;
+  const bridge=(id,type)=>({enabled:true,trigger:{id:'homey:app:no.husmodus:scene_requested',args:{flow:{id,type}}},conditions:[],actions:[{id:'homey:manager:flow:programmatic_trigger',args:{flow:{id,type:type==='normal'?'standard':'advanced'}}}]});
+  h.adapter.api.flow={getFlow:async()=>{reads++;return flow;},getAdvancedFlow:async()=>{reads++;return flow;},getFlows:async()=>[bridge('one','normal'),bridge('two','advanced')],getAdvancedFlows:async()=>[]};
   await h.adapter.startFlow('one','normal',()=>authorized);await h.adapter.startFlow('two','advanced',()=>authorized);
-  assert.deepEqual(calls,[['read-normal',{id:'one',$cache:false}],['normal',{id:'one'}],['read-advanced',{id:'two',$cache:false}],['advanced',{id:'two'}]]);
-  let dispatched=0;
+  assert.equal(reads,2);assert.equal(h.calls.length,2);
   for(const field of ['enabled','broken','triggerable']) {
     const old=flow[field];flow[field]=field==='broken';await assert.rejects(()=>h.adapter.startFlow('one','normal',()=>true,()=>dispatched++),/Flow er/);flow[field]=old;
   }
   h.adapter.api.flow.getFlow=async()=>{authorized=false;return flow;};
   await assert.rejects(()=>h.adapter.startFlow('one','normal',()=>authorized,()=>dispatched++),/avbrutt/);
   h.config.observation=true;await assert.rejects(()=>h.adapter.startFlow('one','normal',()=>true,()=>dispatched++),/Observasjonsmodus/);
-  assert.equal(dispatched,0);assert.equal(calls.filter(([kind])=>kind==='normal'||kind==='advanced').length,2);
+  assert.equal(dispatched,0);assert.equal(h.calls.length,2);
 });

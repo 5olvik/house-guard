@@ -39,3 +39,11 @@ Alarmpanelet speiler intern tilstand og sender manuelle kommandoer gjennom appen
 ## Push med tidslinjekopi
 
 Push-varsler beholder mottakerutvalget i `people.notifications` og de tre varseltypene. Feltet `alsoTimeline` på en varselhandling legger til en SDK-tidslinjemelding etter at push-koblingene er utløst. Kopien bruker samme generasjons- og observasjonsvern, sendes én gang og gir ingen retry av push ved feil. Feltet er valgfritt og er av for eldre oppsett. Alarmvarsling konverteres aldri automatisk til tidslinje.
+
+## Ikke utgitt: scene-koblinger og fullført oppsett
+
+`scene-flows.js` kontrollerer koblinger fra appens SDK-trigger til Homeys Flow-startkort. Adapteren leser målstatus og koblinger før sending. Kortet godtar bare én forespørsel for riktig mål/type innen 30 sekunder med fortsatt gyldig autorisasjon. Manglende eller duplisert kobling feiler før sending. Dette erstatter direkte start gjennom appens begrensede API-token. Allerede startet ekstern Flow kan ikke trekkes tilbake.
+
+`setupCompleted` er et validert felt i oppsettet. GUI skjuler først startkortet når lagret oppsett bekrefter true; avbrutt veiviser eller mislykket lagring markerer ikke oppsettet som ferdig i lagret konfigurasjon. Mer har alltid en knapp for å åpne veiviseren.
+
+Manuelle kommandoer fra forsiden bruker `lib/manual-controls.js`, med fersk avlesing, bekreftelse og blokkering av gjentatte portpulser. Åpning/opplåsing krever frakoblet alarm. Kjente aktive sensorer holdes utenfor ved tilkobling til de blir inaktive, og gir et obligatorisk varsel til valgte pushmottakere. Homeys sovestatus endres gjennom `lib/sleep-flows.js` og to-korts koblinger til Homeys tilstedeværelseskort, siden appens token ikke kan skrive sovestatus direkte.

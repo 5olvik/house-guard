@@ -78,7 +78,7 @@ function bridgeFixture() {
   const metadata=Object.fromEntries(['triggers','conditions','actions'].map(k=>[k,(manifest.flow[k]||[]).map(c=>({...c,id:own+c.id}))]));
   metadata.conditions.push({id:'homey:manager:mobile:push_confirm'});
   metadata.actions.push(...['push_text','push_text_critical'].map(id=>({id:'homey:manager:mobile:'+id})),{id:'homey:device:sonos:cloud_play_sound'});
-  return {config,people:{a:{name:'A'}},devices:{},metadata,sounds:{'sonos:alarm3':{id:'alarm3',name:'Alarm 3'}}};
+  return {config,people:{a:{name:'A',athomId:'account-a'}},devices:{},metadata,sounds:{'sonos:alarm3':{id:'alarm3',name:'Alarm 3'}}};
 }
 test('Genererte flows har observasjonskontroll, ja/nei/feil og mottakerkvitteringer',()=>{
   const f=bridgeFixture(), plan=build(f.config,f.people,f.devices,f.metadata,f.sounds),cards=Object.values(plan.flows.outgoing.cards);

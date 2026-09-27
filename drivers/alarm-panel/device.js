@@ -14,7 +14,7 @@ module.exports=class AlarmPanelDevice extends Homey.Device {
       if(!s.selected){await this.setUnavailable(this.homey.__('alarm.not_selected'));return;}
       const mode=s.target || s.mode;
       const phase=s.active?'triggered':s.entryAt?'entry':s.target?'exit':s.mode;
-      const status=`${s.observation?this.homey.__('alarm.observation')+' · ':''}${this.homey.__('alarm.'+phase)}${s.faults.length?' · '+s.faults.join(' · '):''}`;
+      const status=`${s.observation?this.homey.__('alarm.observation')+' · ':''}${this.homey.__('alarm.'+phase)}${s.active && s.context?' · '+s.context.reason:''}${s.bypassed?.length?' · Venter på: '+s.bypassed.map(x=>x.name).join(', '):''}${s.faults.length?' · '+s.faults.join(' · '):''}`;
       for(const [id,value]of [['homealarm_state',mode],['alarm_generic',s.active],['alarm_status',status]])if(this.getCapabilityValue(id)!==value)await this.setCapabilityValue(id,value);
       if(!this.stopped)await this.setAvailable();
     });return this.queue;

@@ -1,3 +1,33 @@
+# Lokal testversjon 0.4.8 – selvstendige alarmvalg
+
+185 tester, syntakskontroll av 65 filer og lokal Homey-validering består. Bortealarm, skallsikring og automatisk frakobling har egne valg under Alarm som fungerer uavhengig av tilhørende rutines av/på-status. Migrering bevarer tidligere deaktiverte hendelser. GUI-valg og autosave er prøvd i demo. Ingen nye fysiske alarmprøver eller varsler. Se [alarmoppsett](ALARM-SETUP.md).
+
+# Lokal testversjon 0.4.7 – underfaner i Alarm
+
+Alarm er delt i seks underfaner. Nettleserkontroll i mobilbredde og normal bredde bekrefter separate paneler, bevart autosave og tastaturnavigasjon. 176 eksisterende tester, syntakskontroll og Homey-validering består. Kun GUI-endring, ingen varselprøver eller publisering. Se [alarmoppsett](ALARM-SETUP.md).
+
+# Lokal testversjon 0.4.6 – alarmoppsett
+
+176 tester, syntakskontroll av 63 filer og lokal Homey-validering består. GUI-prøve av autosave, alarmlys og rutinesletting består. 0.4.6 er installert lokalt, migrering og bevarte Flows er verifisert. Kritisk push og bildepush er akseptert av Homey og bekreftet mottatt med bilde på brukerens telefon. Se [alarmoppsett](ALARM-SETUP.md) for omfang og begrensninger. Ingen publisering.
+
+# Lokal testversjon 0.4.4 – direkte overgang
+
+163 tester, syntakskontroll og lokal publish-validering består. Standard Flow-start og et ufarlig Flow-kort er faktisk kjørt fra appen via brukerens API-nøkkel. Midlertidig testflow er slettet. Den gamle hjelpeflowen med 48 kort er sikkerhetskopiert og fjernet; alle øvrige Flows og oppsettet er bevart. Vanlig direkte push ble akseptert av Homey for begge valgte mottakere, og brukeren har bekreftet mottak på sin telefon. Mottak på den andre telefonen og øvrige varseltyper/fysisk levering gjenstår. Se [API-oppsettet](API-KEY.md).
+
+---
+
+# Lokal testversjon 0.4.3 – API-nøkkel
+
+159 tester og JavaScript-kontroll av 58 filer består. Lokal Homey publish-validering består. Installert lokalt uten publisering; oppsett og eksisterende hjelpeflow er bevart. Direkte API er testet med stubber, ikke en reell nøkkel. Brukeren må legge inn nøkkel før live leveringsprøver og fjerning av hjelpeflow. Se [API-oppsettet](API-KEY.md).
+
+---
+
+# Lokal testversjon 0.4.2
+
+143 automatiserte tester, syntakskontroll og lokal Homey publish-validering består. Testversjonen er installert lokalt på Homey uten publisering til GitHub eller App Store. Oppsettet er bevart; scene- og sovestatuskoblinger er kontrollert mot Homeys Flow-modell. Demoens HTTP-API består for nye forsidekontroller og alarmstatus. Faktisk telefonmottak, visuell kontroll og fysisk styring gjenstår. Se [alarmoppsettet](ALARM-SETUP.md).
+
+---
+
 # Tester og begrensninger – 0.4.1
 
 Kontrollert 26. september 2026 med Node.js 24, Homey CLI 4.5.0 og homey-api 3.19.5.

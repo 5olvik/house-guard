@@ -32,8 +32,8 @@
       if(!routineIds.includes(routineId)) throw new Error('Ukjent rutine.');
       const selected = key ? choices.find(flow=>flow.key===key) : null;
       if(key && (!selected || !selected.selectable)) throw new Error('Valgt Flow mangler, er deaktivert, har feil eller kan ikke startes direkte. Oppdater Flow-listen.');
-      const routine=next.routines.find(r=>r.id===routineId);
-      if(!routine) throw new Error('Rutinen mangler.');
+      let routine=next.routines.find(r=>r.id===routineId);
+      if(!routine) {routine={id:routineId,name:{away:'Siste person drar',home:'Første hjemkomst',night:'Nattmodus'}[routineId],enabled:true,execution:'sequential',actions:[]};next.routines.push(routine);}
       const matches = a => selected && a.kind==='flow' && a.flowId===selected.id && a.flowType===selected.type;
       // Reuse a matching custom action instead of starting the same Flow twice.
       const keep = routine.actions.find(a=>a.setupManaged!==true && matches(a)) || routine.actions.find(matches);
@@ -45,7 +45,7 @@
         if(!/^[\w-]{1,100}$/.test(id) || routine.actions.some(a=>a.id===id)) throw new Error('Denne Flow-en må legges til under Rutiner.');
         routine.actions.push({id,kind:'flow',category:'lights',flowId:selected.id,flowType:selected.type,delaySeconds:0,onError:'continue',setupManaged:true});
       }
-      if(selected)routine.enabled=true;
+      if(selected){routine.enabled=true;delete routine.hidden;}
     }
     next.observation = true;
     return next;

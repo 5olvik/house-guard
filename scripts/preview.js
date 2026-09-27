@@ -11,7 +11,7 @@ const config = defaults();
 config.people = { presence: ['demo-alex', 'demo-sam', 'demo-robin'], night: ['demo-alex', 'demo-sam', 'demo-robin'], questions: ['demo-alex', 'demo-sam'], notifications: ['demo-alex', 'demo-sam'] };
 config.security.alarmDeviceId = ALARM_ID; config.security.intrusion={exitSeconds:0,entrySeconds:5,sensors:[{deviceId:'demo-door',capability:'alarm_contact',full:true,partial:true,delay:true}]}; config.security.lockDeviceId = 'demo-lock';
 config.routines.find(r => r.id === 'away').actions = [action('demo-lights', 'set', 'lights', { deviceId: 'demo-lights', capability: 'onoff', value: false, delaySeconds: 10 }), action('demo-away-log', 'timeline', 'other', { text: 'Huset er satt i bortemodus' })];
-config.routines.find(r => r.id === 'alarm').actions = [action('demo-alarm-alert', 'notify', 'notification', { text: 'Alarm i {zone}: {reason}' })];
+
 config.routines.find(r => r.id === 'welcome').actions = [action('demo-welcome', 'flow', 'lights', { flowId: 'demo-scene', flowType: 'normal' })];
 const people = Object.fromEntries([['demo-alex', 'Alex', true], ['demo-sam', 'Sam', true], ['demo-robin', 'Robin', false]].map(([id, name, present]) => [id, { id, name, present, asleep: false, available: true, observedAt: clock() }]));
 const cap = (value, type, setable = true, title = '') => ({ value, type, setable, title, updatedAt: clock() });
@@ -49,7 +49,7 @@ async function start() {
         body = JSON.parse(raw || '{}');
       }
       let output;
-      if (url.pathname === '/api/state') output = { intrusion:intrusion.status(), config: engine.config, status: engine.status(), catalog: catalogue, readiness:require('../lib/readiness')(engine.config,engine.snapshot,catalogue,engine.state,clock()), builtins:Object.fromEntries(engine.config.routines.map(r => [r.id,require('../lib/plans').builtins(r.id,engine.config,{},engine.facts())])) };
+      if (url.pathname === '/api/state') output = { version:require('../app.json').version, controls:require('../lib/manual-controls').status(engine), sleepConnections:require('../lib/sleep-flows').selected(engine.config), intrusion:intrusion.status(), config: engine.config, status: engine.status(), catalog: catalogue, readiness:require('../lib/readiness')(engine.config,engine.snapshot,catalogue,engine.state,clock()), builtins:Object.fromEntries(engine.config.routines.map(r => [r.id,require('../lib/plans').builtins(r.id,engine.config,{},engine.facts())])) };
       else if (url.pathname === '/api/preview' && req.method === 'POST') output = require('../lib/preview')(engine,body.id,body.config,catalogue,await snapshot());
       else if (url.pathname === '/api/catalog') output = catalogue;
       else if (url.pathname === '/api/validate' && req.method === 'POST') output = require('../lib/config').validate(body);
@@ -60,6 +60,7 @@ async function start() {
       } else if (url.pathname === '/api/command' && req.method === 'POST') {
         if(body.type==='alarm') {intrusion.mode(body.mode,await snapshot());await refresh();}
         else if(body.type==='alarm-test') {if(!intrusion.config.security.intrusion.sensors.some(s=>s.deviceId===body.deviceId && s.capability===body.capability))throw Error('Ukjent sensor');const s=await snapshot();s.devices[body.deviceId].capabilities[body.capability].value=true;intrusion.update(s);}
+        else if(body.type==='control') await require('../lib/manual-controls').run(engine,body.target,body.value);
         else if (body.type === 'mode') await engine.manual(body.mode);
         else if (body.type === 'guest') engine.setGuest(body.value);
         else if (body.type === 'skip') engine.skipNight();
@@ -78,7 +79,7 @@ async function start() {
         engine.ingest(await snapshot()); await engine.tick(); output = engine.status();
       } else {
         const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        if (!['index.html', 'ui.js', 'style.css', 'setup-model.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
+        if (!['index.html', 'ui.js', 'alarm-ui.js', 'style.css', 'setup-model.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
         if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end('/* Local preview: Homey bridge intentionally absent. */'); return; }
         const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[path.extname(filename)];
         res.setHeader('Content-Type', `${mime}; charset=utf-8`); res.setHeader('Cache-Control', 'no-store');

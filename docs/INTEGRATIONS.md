@@ -15,6 +15,10 @@ Velg personer og Homey-flows med **Hjem → Åpne veiviseren**, og legg til øns
 | Nattspørsmål | Trigger, mobilbetingelse, ja og nei med Dette spørsmålet | Fire kort per mottaker, inkludert Ellers |
 | Port | Separat status, kommando, temperatur og sikkerhetsvalg | Ingen for styringen; bildevarsel kobles separat |
 
+## Kommende endring: startkobling for scene-Flows
+
+I den lokale, ikke utgitte koden trenger hver valgt scene-Flow en kobling med to kort: **Når: House Guard → En valgt Flow skal startes**, og **Så: Flow → Start en Flow**. Velg samme Flow begge steder. Flere rutiner kan dele denne koblingen. Appen sjekker at det finnes nøyaktig én slik kobling. Direkte start krever `homey.flow.start` i [Homeys API](https://athombv.github.io/node-homey-api/HomeyAPIV3Local.ManagerFlow.html#triggerFlow), og ble avvist med Missing Scopes fra appen på Homey. Se [endringer som ikke er utgitt](PENDING-CHANGES.md).
+
 ## Velg en scene-Flow i veiviseren
 
 Lag en Flow i Homey, for eksempel «Slå av alle lys», med handlingene du vil utføre. Åpne deretter **Hjem → Åpne veiviseren** og velg den under **Når alle drar**. Hjemkomst og natt har hvert sitt valg. «Ingen Flow» er også et gyldig valg.

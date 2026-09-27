@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.4.1",
+  "version": "0.4.8",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [
@@ -176,6 +176,18 @@
     "setupBridges": {
       "method": "POST",
       "path": "/bridges"
+    },
+    "saveApiKey": {
+      "method": "put",
+      "path": "/api-key"
+    },
+    "testDirectConnection": {
+      "method": "POST",
+      "path": "/direct-test"
+    },
+    "alarmSounds": {
+      "method": "POST",
+      "path": "/alarm-sounds"
     }
   },
   "flow": {
@@ -981,6 +993,76 @@
               "no": "Dette spørsmålet",
               "en": "This question"
             }
+          }
+        ]
+      },
+      {
+        "id": "scene_requested",
+        "title": {
+          "no": "En valgt Flow skal startes",
+          "en": "A selected Flow should start"
+        },
+        "titleFormatted": {
+          "no": "Start [[flow]]",
+          "en": "Start [[flow]]"
+        },
+        "hint": {
+          "no": "Koble til Flow → Start en Flow og velg samme Flow. Se Mer → Koblinger.",
+          "en": "Connect to Flow → Start a Flow and select the same Flow. See More → Connections."
+        },
+        "args": [
+          {
+            "name": "flow",
+            "type": "autocomplete",
+            "title": {
+              "no": "Flow",
+              "en": "Flow"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sleep_status_requested",
+        "title": {
+          "no": "Sovestatus skal endres",
+          "en": "Sleep status should change"
+        },
+        "titleFormatted": {
+          "no": "Sett [[person]] [[state]]",
+          "en": "Set [[person]] [[state]]"
+        },
+        "hint": {
+          "no": "Koble til Tilstedeværelse → Sett sovende/våken for samme person. Se Mer → Koblinger.",
+          "en": "Connect to Presence → Set asleep/awake for the same person. See More → Connections."
+        },
+        "args": [
+          {
+            "name": "person",
+            "type": "autocomplete",
+            "title": {
+              "no": "Person",
+              "en": "Person"
+            }
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "asleep",
+                "title": {
+                  "no": "sovende",
+                  "en": "asleep"
+                }
+              },
+              {
+                "id": "awake",
+                "title": {
+                  "no": "våken",
+                  "en": "awake"
+                }
+              }
+            ]
           }
         ]
       }

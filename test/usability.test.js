@@ -9,7 +9,7 @@ const own='homey:app:no.husmodus:';
 const catalog=()=>({devices:{},people:{},flows:[],integrationFlows:[]});
 
 test('Grunnoppsett med personer trenger ingen ekstra flows eller sikkerhetsenheter',()=>{
-  const h=harness();h.ingest();const c=catalog();
+  const h=harness(c=>{c.people.night=[];});h.ingest();const c=catalog();
   const r=readiness(h.config,h.snapshot,c,h.engine.state,h.now());
   assert.deepEqual(r.checks.filter(x=>x.level==='missing'),[]);
   assert.equal(r.checks.find(x=>x.id==='audio').level,'off');
@@ -63,7 +63,7 @@ test('Svar knyttes til riktig nattspørsmål og person, med veto og avvisning av
 
 test('Enkle flows må ha riktig mottaker, tagg og utgang uten skjulte betingelser',()=>{
   const c=defaults();c.people.notifications=['a'];add(c,'alarm',[step('n',{kind:'notify',text:'Alarm'})]);
-  const f={type:'normal',enabled:true,trigger:{id:own+'notification_requested',args:{person:{id:'a'}}},conditions:[],actions:[{group:'then',id:'homey:manager:mobile:push_text',args:{user:{id:'a'},text:'[[text]]'}}]};
+  const f={type:'normal',enabled:true,trigger:{id:own+'notification_requested',args:{person:{id:'a'}}},conditions:[],actions:[{group:'then',id:'homey:manager:mobile:push_text',args:{user:{id:'a',athomId:'account-a'},text:'[[text]]'}}]};
   const cat={...catalog(),integrationFlows:[f]};assert.equal(coverage(c,cat).enabled.notifications,true);
   f.actions[0].args.user.id='b';assert.equal(coverage(c,cat).enabled.notifications,false);f.actions[0].args.user.id='a';
   f.conditions=[{id:'something'}];assert.equal(coverage(c,cat).enabled.notifications,false);f.conditions=[];
@@ -72,7 +72,7 @@ test('Enkle flows må ha riktig mottaker, tagg og utgang uten skjulte betingelse
 
 test('Spørsmålsflow må returnere både ja og nei til samme tagg',()=>{
   const c=defaults();c.night.automatic=true;c.people.questions=['a'];
-  const f={type:'normal',trigger:{id:own+'question_requested',args:{person:{id:'a'}}},conditions:[{id:'homey:manager:mobile:push_confirm',args:{user:{id:'a'},text:'[[text]]'}}],actions:['then','else'].map((group,i)=>({group,id:own+'answer_night_question',args:{reply:'[[reply]]',answer:i?'no':'yes'}}))};
+  const f={type:'normal',trigger:{id:own+'question_requested',args:{person:{id:'a'}}},conditions:[{id:'homey:manager:mobile:push_confirm',args:{user:{id:'a',athomId:'account-a'},text:'[[text]]'}}],actions:['then','else'].map((group,i)=>({group,id:own+'answer_night_question',args:{reply:'[[reply]]',answer:i?'no':'yes'}}))};
   const cat={...catalog(),integrationFlows:[f]};assert.equal(coverage(c,cat).enabled.questions,true);
   f.actions[1].args.reply='old';assert.equal(coverage(c,cat).enabled.questions,false);
 });
@@ -84,7 +84,7 @@ test('Ny migreringsplan bruker enkle kort og dekker samme funksjoner på ett ler
   const manifest=require('../app.json');
   const metadata={triggers:manifest.flow.triggers.map(x=>({id:own+x.id})),conditions:[{id:'homey:manager:mobile:push_confirm'}],actions:manifest.flow.actions.map(x=>({id:own+x.id}))};
   metadata.actions.push(...['push_text','push_image'].map(id=>({id:'homey:manager:mobile:'+id})),...['tts','sound'].map(id=>({id:'homey:device:speaker:cloud_play_'+id})));
-  const people={a:{id:'a',name:'Person A'}}, devices={cam:{id:'cam',name:'Kamera',images:[{id:'1',type:'camera'}]},speaker:{id:'speaker',name:'Stue'}};
+  const people={a:{id:'a',name:'Person A',athomId:'account-a'}}, devices={cam:{id:'cam',name:'Kamera',images:[{id:'1',type:'camera'}]},speaker:{id:'speaker',name:'Stue'}};
   const plan=build(c,people,devices,metadata,{'speaker:alarm3':{id:'alarm3',name:'Alarm 3'}});
   assert.equal(plan.flow.enabled,false);assert.equal(plan.routes,5);assert.equal(plan.cards,12);
   const cat={integrationFlows:collect({},[{...plan.flow,enabled:true}])};

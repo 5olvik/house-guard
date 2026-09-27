@@ -4,6 +4,8 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg 
 
 **Versjon 0.4.1 er en testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
 
+Kildekoden her er versjon **0.4.8**, prøvd ved lokal installasjon. Denne versjonen er ikke publisert til Homey App Store. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
+
 ## Funksjoner
 
 - Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
@@ -83,3 +85,5 @@ Private husoppsett, migreringsskript, logger og sikkerhetskopier inngår ikke i 
 Prosjektet bruker **GPL-3.0-only**. Innstillingssidens visuelle utforming bygger delvis på Power Guard. Se [LICENSE](LICENSE) og [NOTICE.md](NOTICE.md) for lisens og opphavsmerking. House Guard er et separat prosjekt uten offisiell tilknytning til Power Guard, Athom, Heimdall eller Yale.
 
 Den tekniske app-ID-en `no.husmodus` beholdes for oppdateringskompatibilitet. Navnet i brukergrensesnittet er House Guard.
+
+Lokal 0.4.6 støtter direkte API-nøkkel for Flow-start, mobilvarsler, nattspørsmål, Sonos og sovestatus. Se [oppsett av API-nøkkel](docs/API-KEY.md). Direkte kortkjøring og vanlig Flow-start er verifisert på Homey. Vanlig push, kritisk push og bildevarsel er bekreftet på brukerens telefon. Alarmens kamera, varsler, Sonos og lys velges under Alarm. Se [alarmoppsett og teststatus](docs/ALARM-SETUP.md).
