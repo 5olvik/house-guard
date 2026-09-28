@@ -9,7 +9,7 @@ function setup(customize=()=>{}){
 test('Away button changes selected users only and runs normal delayed away routine once',async()=>{
  const h=setup();h.person('a',true,true);await h.engine.setAllPresent(false);
  assert.deepEqual(h.writes,[['a',false],['b',false]]);assert.equal(h.snapshot.people.outside.present,true);assert.equal(h.snapshot.people.a.asleep,true);assert.equal(h.engine.state.mode,'away');
- await h.engine.tick();assert.deepEqual(h.calls,[]);h.advance(21000);await h.engine.tick();assert.deepEqual(h.calls,[['flow','off','normal']]);
+ await h.engine.tick();assert.deepEqual(h.calls,[['person','a',false]]);h.advance(21000);await h.engine.tick();assert.deepEqual(h.calls,[['person','a',false],['flow','off','normal']]);
  await h.engine.setAllPresent(false);assert.equal(h.writes.length,2);assert.equal(h.engine.runs.filter(r=>r.routineId==='away').length,1);
 });
 test('Home button sets every selected user home, cancels departure and uses home rather than morning',async()=>{

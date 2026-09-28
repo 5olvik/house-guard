@@ -52,9 +52,9 @@ test('Hopp over overlever restart; manuell natt virker fortsatt', async () => {
   await other.engine.manual('night'); await other.engine.tick(); assert.deepEqual(other.calls, [['timeline', 'manual']]);
   other.advance(saved.skipUntil - other.now()); assert.equal(other.engine.state.skipUntil > other.now(), false);
 });
-test('Gjestemodus blokkerer per kategori og åpner aldri låsen som standard', async () => {
+test('Gjestemodus hjemme kjører ikke gamle gjestehandlinger eller opplåsing', async () => {
   const h = harness(c => { c.security.lockDeviceId = 'lock'; add(c, 'guestOn', [step('lights', { category: 'lights' }), step('message', { category: 'notification' })]); }); h.ingest(); h.engine.setGuest(true); await h.engine.tick();
-  assert.deepEqual(h.calls, [['timeline', 'message']]);
+  assert.deepEqual(h.calls, []);assert.equal(h.engine.state.mode,'home');
 });
 test('Akseptert låsekommando er ikke bekreftet låsestatus', async () => {
   const h = harness(c => { c.security.lockDeviceId = 'lock'; c.security.lockOnArming = true; }); h.device('lock', 'locked', false); h.ingest(); h.engine.event('arming'); await h.engine.tick();

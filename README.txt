@@ -9,3 +9,5 @@ Alarm settings have separate sections for sensors, notifications, sound and ligh
 Manual home and away buttons update all selected residents in Homey, including without GPS. The alarm panel displays status and offers a dismiss button; house routines are controlled through House Guard.
 
 Optional morning start on motion within a chosen time window disarms night protection and marks home residents awake. Fixed routines cannot be deleted; their switches control only extra actions. Custom routines have clearer setup steps, readable choices and optional advanced settings.
+
+Guest mode counts as someone staying home: departure routines wait and the alarm stays disarmed. Turning it on while residents are home leaves lights unchanged; turning it on in an empty house uses the configured homecoming routine. Built-in push notifications announce activation and when guests are left alone. Optional guest mode on/off routines let you add custom actions. Away residents still marked asleep are automatically marked awake without waking people at home or starting the morning routine.

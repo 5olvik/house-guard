@@ -1,3 +1,21 @@
+# Lokal testversjon 0.4.20 – gjesterutiner og våken ved avreise
+
+253 tester består. Nye tester dekker tomme og beskyttede gjesterutiner, bevarte eldre handlinger uten gjenaktivering, én kjøring per gjesteendring, avkrysning uten å deaktivere innebygde varsler og avbrudd ved raske av/på-endringer.
+
+Bortreiste sovende brukere korrigeres gjennom Homeys vanlige våken-kort. Tester dekker bekreftet status, avreise med gjester, bevarte hjemmeværende sovende, ingen morgen-/første-våkne-rutine, opprydding ved oppstart, ukjent/foreldet/utilgjengelig tilstedeværelse, hjemkomst før kjøring, observasjon og feil uten løpende gjentakelse. Vanlige morgenhandlinger krever fortsatt hjemmeværende bruker.
+
+Installert lokalt på Solviks Homey. Før/etter-kontroll bekrefter bevarte handlinger, avkrysninger, morgenvalg og Flow-IDer, samt to nye tomme gjesterutiner. Hjemmemodus, frakoblet alarm og klar direkte forbindelse var uendret. Nettleserdemo bekrefter synlige gjesterutiner med forklaring, avkrysning og handlingsknapp. 75 JavaScript-filer er kontrollert, Homey-validering på publiseringsnivå er godkjent og offentlig filskann har ingen funn. Ingen fysisk personstatusendring ble nødvendig under etterkontrollen. Ikke publisert til GitHub eller App Store.
+
+# Lokal testversjon 0.4.19 – gjester som tilstedeværelse
+
+240 tester består. Nye tester dekker gjester sammen med beboere, alene, ankomst til tomt hus, vanlig hjemkomst og avreise, lys som beholdes, eksisterende lysvalg, valgt opplåsing etter bekreftet frakobling, utløpt eller avbrutt ankomst og ukjent tilstedeværelse. Push ved påslag og når siste beboer drar er innebygd, uten dubletter eller automatisk retry ved feil. Ekte personstatuser endres ikke.
+
+Native integrasjonstester bekrefter frakobling av aktiv alarm og tilkoblingsforsinkelse, sperret ny tilkobling under gjestemodus, kansellering av en ventende alarmkommando og at en treg eldre gjestekommando ikke overstyrer det nyeste valget. Oppstart/reconnect spiller ikke av gamle ankomster eller varsler. Observasjon har ingen sideeffekter. Migrering bevarer innstillinger og rutinehandlinger og øker revisjonen én gang for gammel gjestemodell.
+
+Nettleserdemo viser Hjemme og frakoblet alarm når alle beboere drar og gjester er igjen. Gamle gjesterutiner og kategorivalg er fjernet fra GUI. Ingen fysisk opplåsing, personstatusendring eller pushprøve er utført under utviklingen.
+
+Installert lokalt på Solviks Homey. Etterkontroll bekrefter versjon 0.4.19, bevarte rutinehandlinger, avkrysninger, morgeninnstillinger og Flow-IDer. Eksisterende nattmodus og skallsikring var uendret etter installasjon, og direkte forbindelse er klar. Kodekontroll av 72 JavaScript-filer, Homey-validering på publiseringsnivå og kontroll av offentlige filer er godkjent. Denne versjonen er ikke publisert til GitHub eller App Store.
+
 # Lokal testversjon 0.4.18 – faste og egne rutiner
 
 222 tester består. Nye kontroller dekker sperret sletting av faste rutiner, tillatt sletting av egne rutiner, gjenoppretting av skjulte/manglende faste rutiner og bevaring av handlinger og avkrysninger. Innebygde person-, alarm-, lås-, port- og gjestehandlinger følger sine egne innstillinger når ekstrahandlinger er deaktivert. Forhåndsvisningen bruker samme regel. Egne rutiner kjører bare når de er aktivert.

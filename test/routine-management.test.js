@@ -11,8 +11,8 @@ test('Fixed routines are restored and unhidden without changing saved actions or
  const full=defaults();full.routines=Array.from({length:50},(_,i)=>({id:`custom-${i}`,name:`Routine ${i}`,enabled:true,execution:'sequential',actions:[]}));const restored=validate(full);assert.equal(restored.routines.length,50+Object.keys(ROUTINES).length);assert.deepEqual(validate(restored),restored);
 });
 
-test('Fixed routine switches suppress extras only, including lock, garage, sleep and guest actions',()=>{
- for(const id of ['away','night','morning','nightArrival','arming','guestOn','guestOff']){
+test('Fixed routine switches suppress extras only, including lock, garage and sleep actions',()=>{
+ for(const id of ['away','night','morning','nightArrival','arming']){
   const h=harness(c=>{
    c.security.alarmDeviceId='alarm';c.security.lockDeviceId='lock';c.security.lockOnArming=true;c.night.wakeArrival=true;
    c.guest.disarmOnEnable=true;c.guest.unlockOnEnable=true;
@@ -29,7 +29,7 @@ test('Fixed routine switches suppress extras only, including lock, garage, sleep
 test('Morning wakes only home users with extras off; switching extras back on preserves their actions',async()=>{
  const h=harness(c=>{add(c,'morning',[step('extra')]);c.routines.find(r=>r.id==='morning').enabled=false;});
  h.person('a',true,true);h.person('b',false,true);h.ingest();h.engine.morning('manual');await h.engine.tick();
- assert.deepEqual(h.calls,[['person','a',false]]);
+ assert.deepEqual(h.calls,[['person','b',false],['person','a',false]]);
  h.person('a',true,false);await h.engine.tick();
  const next=structuredClone(h.config);next.routines.find(r=>r.id==='morning').enabled=true;h.engine.updateConfig(next);
  h.engine.start('morning');await h.engine.tick();assert.deepEqual(h.calls.at(-1),['timeline','extra']);

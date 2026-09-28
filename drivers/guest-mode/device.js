@@ -6,7 +6,7 @@ module.exports = class GuestModeDevice extends Homey.Device {
     this.stopped = false;
     this.syncQueue = Promise.resolve();
     this.registerCapabilityListener('onoff', async value => {
-      this.homey.app.setGuestMode(value);
+      await this.homey.app.setGuestMode(value);
       await this.syncGuestMode();
     });
     this.unsubscribeGuest = this.homey.app.subscribeGuestMode(() => this.refreshGuestMode());

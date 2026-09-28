@@ -60,6 +60,23 @@ test('API change invalidates pending work; direct errors never disclose credenti
  const h=await fixture();let invalidated=0;h.direct.onChange=()=>invalidated++;await h.direct.configure('');assert.equal(invalidated,1);assert(!h.direct.configured);assert(!h.direct.ready);
  await h.direct.configure(TOKEN);h.client.flow.triggerFlow=async()=>{const e=Error(TOKEN);e.statusCode=403;throw e;};await assert.rejects(()=>h.adapter.startFlow('scene','normal',()=>true),e=>!e.message.includes(TOKEN));assert(!h.direct.ready);assert(h.direct.configured);
 });
+
+test('Away sleep correction uses the native awake card and confirms Homey status',async()=>{
+ const h=await fixture();h.person('a',false,true);h.person('b',true,true);
+ h.client.flow.runFlowCardAction=async x=>{h.calls.push(['action',x]);if(x.id==='homey:manager:presence:set_awake')h.snapshot.people[x.args.user.id].asleep=false;return true;};
+ h.ingest();await h.engine.tick();await h.engine.tick();
+ assert.equal(h.calls.length,1);assert.equal(h.calls[0][1].id,'homey:manager:presence:set_awake');assert.equal(h.calls[0][1].args.user.id,'a');assert.equal(h.snapshot.people.a.asleep,false);assert.equal(h.snapshot.people.b.asleep,true);
+ assert.equal(h.engine.runs.find(r=>r.routineId==='departureWake').actions[0].status,'confirmed');
+});
+
+test('Away sleep correction rejects sleeping, return-home races, unknown users and cancelled writes',async()=>{
+ const h=await fixture();h.person('a',false,true);
+ await assert.rejects(()=>h.adapter.setAsleep('a',true,()=>true,()=>{},{away:true}),/bare settes våkne/);
+ h.person('a',true,true);await assert.rejects(()=>h.adapter.setAsleep('a',false,()=>true,()=>{},{away:true}),/bekreftet borte/);
+ h.person('a',null,true);await assert.rejects(()=>h.adapter.setAsleep('a',false,()=>true,()=>{},{away:true}),/bekreftet borte/);
+ h.person('a',false,true);let valid=true;h.adapter.api.users.getUser=async()=>{valid=false;return {present:false,asleep:true};};await assert.rejects(()=>h.adapter.setAsleep('a',false,()=>valid,()=>{},{away:true}),/avbrutt/);
+ assert.equal(h.calls.length,0);
+});
 test('Night question returns without waiting, is deduplicated, and handles no answer',async()=>{
  const h=await fixture();let reply;h.client.flow.runFlowCardCondition=x=>{h.calls.push(['question',x]);return new Promise(r=>reply=r);};
  const q={id:'question-1',recipients:['a'],answers:{},deadline:Date.now()+60000,decided:null};h.engine.state.question=q;

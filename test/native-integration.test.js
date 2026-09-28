@@ -27,6 +27,50 @@ function setup() {
   app.adapter.snapshot=async()=>({...structuredClone(h.snapshot),devices:{...structuredClone(h.snapshot.devices),[ID]:app.intrusion.device()}});
   return {h,app};
 }
+
+test('Guest mode immediately disarms armed, pending or active alarms and prevents new manual arming',async()=>{
+ for(const state of ['armed','pending','active']){
+  const {h,app}=setup();h.config.people.notifications=['a'];h.adapter.direct={configured:true};add(h.config,'home',[step('unexpected-home')]);await app.refresh({initial:true});
+  if(state==='pending')h.config.security.intrusion.exitSeconds=30;
+  app.intrusion.mode('armed',h.snapshot);if(state==='active'){const snapshot=structuredClone(h.snapshot);snapshot.devices.door.capabilities.alarm_contact.value=true;app.intrusion.update(snapshot);}
+  await app.setGuestMode(true);assert.equal(app.intrusion.state.mode,'disarmed',state);assert.equal(app.intrusion.state.active,false);assert.equal(app.intrusion.state.target,null);
+  await h.engine.tick();assert(!h.calls.some(c=>c[1]==='unexpected-home'));assert.equal(h.calls.filter(c=>c[0]==='emit' && c[1].text.startsWith('Gjestemodus er på')).length,1);
+  await assert.rejects(()=>app.setAlarmMode('armed'),/gjestemodus/);await assert.rejects(()=>app.setAlarmMode('partially_armed'),/gjestemodus/);assert.equal(app.intrusion.state.mode,'disarmed');
+ }
+});
+
+test('Guest arrival disarms before queuing ordinary home actions, even when automatic home disarming is off',async()=>{
+ const {h,app}=setup();h.config.security.automation.home=false;h.config.delays.home=10;h.config.people.notifications=['a'];h.adapter.direct={configured:true};add(h.config,'home',[step('regular-home')]);h.person('a',false);h.person('b',false);await app.refresh({initial:true});app.intrusion.mode('armed',h.snapshot);
+ await app.setGuestMode(true);const home=h.engine.runs.find(r=>r.routineId==='home');assert(home && !home.cancelled);assert.equal(app.intrusion.state.mode,'disarmed');await h.engine.tick();assert(!h.calls.some(c=>c[1]==='regular-home'));h.advance(10000);await h.engine.tick();assert(h.calls.some(c=>c[1]==='regular-home'));assert.equal(h.engine.state.mode,'home');
+});
+
+test('Guest activation invalidates an arming command already waiting on a snapshot',async()=>{
+ const {h,app}=setup();await app.refresh({initial:true});const original=app.adapter.snapshot;let release,entered;const started=new Promise(resolve=>{entered=resolve;});
+ app.adapter.snapshot=async()=>{entered();await new Promise(resolve=>{release=resolve;});return original();};
+ const arming=assert.rejects(()=>app.setAlarmMode('armed'),/avbrutt|Gjestemodus/);await started;app.adapter.snapshot=original;await app.setGuestMode(true);release();await arming;assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(app.intrusion.state.target,null);
+});
+
+test('Latest guest toggle wins over a slow earlier snapshot and disconnected reads do not change the mode',async()=>{
+ const {h,app}=setup();await app.refresh({initial:true});const original=app.adapter.snapshot;let release,entered;const started=new Promise(resolve=>{entered=resolve;});
+ app.adapter.snapshot=async()=>{entered();await new Promise(resolve=>{release=resolve;});return original();};const on=app.setGuestMode(true);await started;app.adapter.snapshot=original;await app.setGuestMode(false);release();await on;
+ assert.equal(h.engine.state.guest,false);assert(!h.engine.runs.some(r=>r.routineId==='guestNotice'));
+ app.adapter.snapshot=async()=>({...await original(),connected:false});await assert.rejects(()=>app.setGuestMode(true),/ikke tilkoblet/);assert.equal(h.engine.state.guest,false);
+});
+
+test('Saved guest mode keeps the alarm off at reconnect without replaying notices, and observation stays read-only',async()=>{
+ for(const observation of [false,true]){
+  const {h,app}=setup();await app.refresh({initial:true});app.intrusion.mode('armed',h.snapshot);h.config.observation=observation;h.engine.state.guest=true;
+  await app.refresh({reconnect:true});assert.equal(app.intrusion.state.mode,observation?'armed':'disarmed');await h.engine.tick();assert.deepEqual(h.calls,[]);assert.equal(h.engine.state.mode,'home');
+ }
+});
+
+test('Guest-model upgrade increments revision once and retains saved settings and ordinary routines',async()=>{
+ const old=defaults();delete old.guest.model;old.revision=42;old.guest.unlockOnEnable=true;old.routines.find(r=>r.id==='guestOn').actions=[step('old-guest')];old.routines.find(r=>r.id==='home').actions=[step('home')];
+ const store={'husmodus.config.v1':structuredClone(old),'husmodus.runtime.v1':{revision:42,runs:[]}};
+ class Adapter {constructor(){this.catalogue={devices:{}};}async connect(){}}
+ const Upgrade=load('app.js',Adapter);const init=async()=>{const app=new Upgrade();app.log=()=>{};app.error=()=>{};app.registerCards=()=>{};app.refresh=async()=>{};app.homey={clock:{getTimezone:()=>'Europe/Oslo'},settings:{get:k=>store[k],set:(k,v)=>store[k]=v},setInterval:()=>1};await app.onInit();return app;};
+ const app=await init();assert.equal(app.engine.config.revision,43);assert.equal(app.engine.config.guest.model,'presence');assert.deepEqual(app.engine.config.routines,old.routines);assert.equal(app.engine.config.guest.unlockOnEnable,true);assert.equal((await init()).engine.config.revision,43);
+});
 test('Upgrade removes an external panel, old pending runs and alarm state, preserving other configuration',async()=>{
   const old=defaults();old.security.alarmDeviceId='old-panel';old.observation=false;old.people.presence=['resident'];old.security.lockDeviceId='lock';
   const store={'husmodus.config.v1':old,'husmodus.runtime.v1':{guest:true,alarm:{active:true},runs:[{}]}};
@@ -110,7 +154,7 @@ test('Morning motion disarms before the same night sensor triggers, wakes all ho
  const {h,app,motion}=await motionSetup(({h})=>{h.config.security.automation.morning=false;add(h.config,'morning',[step('old-extra')]);});
  const routines=structuredClone(h.config.routines);await motion();assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(app.intrusion.state.active,false);assert(!h.engine.runs.some(r=>r.routineId==='alarm'));
  const run=h.engine.runs.find(r=>r.routineId==='morning');assert(run);assert.equal(run.context.source,'motion');assert.deepEqual(h.config.routines,routines);
- await h.engine.tick();assert.deepEqual(h.calls,[['person','a',false]]);h.person('a',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','b',false]);h.person('b',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['timeline','old-extra']);assert(!h.calls.some(c=>c[0]==='person'&&c[1]==='c'));
+ await h.engine.tick();assert.deepEqual(h.calls,[['person','c',false],['person','a',false]]);h.person('a',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','b',false]);h.person('b',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['timeline','old-extra']);assert.equal(h.calls.filter(c=>c[0]==='person'&&c[1]==='c').length,1);
  await motion(false);await motion();assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
 });
 test('Disabled feature, outside window, no one home, observation and guest protection preserve alarm behavior',async()=>{
@@ -123,7 +167,7 @@ test('Disabled feature, outside window, no one home, observation and guest prote
   if(scenario==='observation')h.config.observation=true;
   if(scenario==='guest')h.engine.state.guest=true;
   if(scenario==='api')app.adapter.direct.ready=false;
-  await motion();assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);assert.equal(app.intrusion.state.mode,'partially_armed',scenario);
+  await motion();assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);assert.equal(app.intrusion.state.mode,scenario==='guest'?'disarmed':'partially_armed',scenario);
  }
 });
 test('Full alarm, entry delay, existing alarm or simultaneous other sensor cannot be dismissed by morning motion',async()=>{

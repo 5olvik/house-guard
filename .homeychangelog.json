@@ -78,5 +78,13 @@
   "0.4.18": {
     "no": "Valgfri morgenstart ved ny bevegelse i valgt tidsrom frakobler nattalarm og setter hjemmeværende våkne. Faste rutiner kan ikke slettes. Avkrysningen stopper bare ekstrahandlinger, mens innebygde funksjoner følger alarm- og personvalgene. Egne rutiner har enklere veiledning, lesbare valg og samlet avansert oppsett. Eksisterende handlinger og innstillinger beholdes.",
     "en": "Optional morning start on new motion within a selected time window disarms night protection and marks home residents awake. Fixed routines cannot be deleted. Their switch controls only extra actions; built-in functions follow alarm and presence settings. Custom routines have clearer guidance, readable choices and collapsible advanced settings. Existing actions and settings are preserved."
+  },
+  "0.4.19": {
+    "no": "Gjestemodus teller som at noen er hjemme. Alarmen holdes frakoblet, og lysene slukkes ikke av borterutinen når beboerne drar. Innebygde pushvarsler ved aktivering og når gjestene er alene. Gjesteankomst til tomt hus og avreise bruker vanlige hjemkomst-/borterutiner. Forenklet oppsett uten gjestekategorier og egne gjesterutiner.",
+    "en": "Guest mode counts as household presence. The alarm stays disarmed and departure routines do not turn off lights when residents leave. Built-in push notices on activation and when guests are alone. Guest arrivals to an empty home and departures reuse ordinary arrival/departure routines. Simpler setup without guest categories or separate guest routines."
+  },
+  "0.4.20": {
+    "no": "Gjestemodus på og av har egne valgfrie rutiner for ekstrahandlinger. Gamle gjestehandlinger aktiveres ikke på nytt. Bortreiste brukere settes automatisk våkne hvis Homey fortsatt viser dem som sovende, uten å starte morgenrutinen eller vekke hjemmeværende.",
+    "en": "Guest mode on and off have optional routines for custom actions. Legacy guest actions are not reactivated. Away users are automatically marked awake if Homey still reports them asleep, without starting morning routines or waking residents at home."
   }
 }

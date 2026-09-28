@@ -7,7 +7,7 @@ House Guard har egen alarmmotor og seks underfaner under Alarm:
 - **Varsler:** vanlig eller kritisk push, kamera, tidslinje og testvarsler.
 - **Lyd og lys:** Sonos-lyd/tale og lys som skal slås på ved alarmhendelser.
 - **Lås og port:** direkte styring og sikkerhetsvalg for dørlås og garasjeport.
-- **Avansert:** ekstra alarmhandlinger og gjestevalg.
+- **Avansert:** ekstra alarmhandlinger.
 
 Endringer lagres automatisk.
 
@@ -55,7 +55,7 @@ Enheten viser Frakoblet, Nattalarm tilkoblet, Bortealarm tilkoblet, forsinkelser
 
 ## Manuell tilstedeværelse uten GPS
 
-På Hjem finnes **Start bortemodus** og **Sett alle hjemme**. De setter alle brukere i tilstedeværelsesutvalget under Personer til henholdsvis borte eller hjemme i Homey. Brukere utenfor utvalget endres ikke. Dette krever en klar direkte API-forbindelse; ingen hjelpeflows trengs. De vanlige hjemkomst-/borterutinene, alarmvalgene, forsinkelsene og gjesteinnstillingene gjelder. Alarmen armeres ikke på grunnlag av ubekreftet eller delvis oppdatert tilstedeværelse.
+På Hjem finnes **Start bortemodus** og **Sett alle hjemme**. De setter alle brukere i tilstedeværelsesutvalget under Personer til henholdsvis borte eller hjemme i Homey. Brukere utenfor utvalget endres ikke. Dette krever en klar direkte API-forbindelse; ingen hjelpeflows trengs. De vanlige hjemkomst-/borterutinene, alarmvalgene, forsinkelsene og gjestemodus gjelder. Alarmen armeres ikke på grunnlag av ubekreftet eller delvis oppdatert tilstedeværelse.
 
 Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. Automatisk nattankomst kan fortsatt sette ankomne våkne etter valgene dine. En bruker som allerede har ønsket status endres ikke på nytt. Delvis feil vises i grensesnittet og loggen, uten automatisk gjentakelse. GPS kan oppdatere status senere. I observasjon logges bare hva som ville skjedd. Eksisterende Sett modus-Flowkort har uendret oppførsel.
 
@@ -65,14 +65,41 @@ Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. A
 
 Huset må være i nattmodus med bekreftet hjemmeværende, og sensoren må gå fra rolig til aktiv innenfor tidsrommet (fra er inkludert, til er ekskludert, i Homeys tidssone). Funksjonen frakobler nattalarmen før den samme bevegelsen vurderes som alarm, og setter alle hjemmeværende i tilstedeværelsesutvalget våkne. Dette gjelder også personer utenfor nattutvalget. Egne handlinger i Morgen-rutinen kjører som før hvis rutinen er aktivert. Den nye funksjonens frakobling og vekking er innebygd og gjelder også når ekstra morgenhandlinger er deaktivert. Vanlig manuell/planlagt morgen beholder de tidligere person- og alarmvalgene.
 
-Det kreves klar direkte API-forbindelse. Gjestevalg gjelder fortsatt. Bortealarm, aktiv alarm, pågående inngangsforsinkelse eller en annen samtidig aktiv nattalarmsensor frakobles ikke av automasjonen. En sensor som allerede står aktiv ved oppstart, ny tilkobling eller starten av tidsrommet gir ikke morgenstart. Kort bevegelsespuls håndteres også når sensoren allerede er rolig ved neste avlesning. Funksjonen starter én gang per nattperiode; nye bevegelser gjentar ikke en feilet vekking. En ny nattperiode gjør den klar igjen. Observasjon logger bare hendelsen.
+Det kreves klar direkte API-forbindelse. Gjestemodus holder huset hjemme og starter ikke bevegelsesmorgen. Bortealarm, aktiv alarm, pågående inngangsforsinkelse eller en annen samtidig aktiv nattalarmsensor frakobles ikke av bevegelsesautomasjonen. En sensor som allerede står aktiv ved oppstart, ny tilkobling eller starten av tidsrommet gir ikke morgenstart. Kort bevegelsespuls håndteres også når sensoren allerede er rolig ved neste avlesning. Funksjonen starter én gang per nattperiode; nye bevegelser gjentar ikke en feilet vekking. En ny nattperiode gjør den klar igjen. Observasjon logger bare hendelsen.
 
 Fast morgentid er et uavhengig valg. Slå den av selv hvis bare bevegelse skal starte morgen. Ingen innstillinger slås av automatisk.
 
 ## Faste og egne rutiner
 
-Faste rutiner kan ikke slettes. Krysset **Ekstra handlinger er aktive** slår bare egne tillegg av eller på, uten å fjerne dem. Innebygde alarm-, lås-, port- og personhandlinger følger fortsatt innstillingene under Alarm, Natt og morgen og Gjestemodus. Tidligere skjulte faste rutiner blir synlige igjen, med lagrede handlinger og avkrysninger bevart. Alarmhendelsenes ekstrahandlinger ligger under Alarm → Avansert.
+Faste rutiner kan ikke slettes. Krysset **Ekstra handlinger er aktive** slår bare egne tillegg av eller på, uten å fjerne dem. Innebygde alarm-, lås-, port- og personhandlinger følger fortsatt innstillingene under Alarm og Natt og morgen. Gjestemodus holder huset hjemme og alarmen frakoblet. Tidligere skjulte faste rutiner blir synlige igjen, med lagrede handlinger og avkrysninger bevart, bortsett fra de gamle gjesterutinene som er erstattet av modellen nedenfor. Alarmhendelsenes ekstrahandlinger ligger under Alarm → Avansert.
 
 Velg **+ Egen rutine**, gi rutinen et navn og legg til handlinger. Velg for eksempel et lys og **På/Av**, eller en person og **Våken/Sovende**. **Vilkår og avanserte valg** samler begrensninger, avhengigheter og feilregler. Endringer lagres automatisk. Egne rutiner kan deaktiveres med krysset eller fjernes med **Slett egen rutine**.
 
 Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Natt og morgen som beskrevet ovenfor.
+
+## Gjestemodus – gjester teller som hjemme
+
+Slå på **Gjestemodus** på Hjem, med House Guards gjesteenhet eller med Flow-kortet **Sett gjestemodus**. Det opprettes ingen ekstra Homey-bruker, og beboernes GPS- og sovestatus endres ikke.
+
+| Hendelse | Hva House Guard gjør |
+| --- | --- |
+| Gjestemodus på mens en beboer er hjemme | Beholder lysene som de er og sender push. Alarmen holdes frakoblet. |
+| Siste beboer drar med gjestemodus på | Sender push om at gjestene er alene. Huset forblir hjemme; borterutinen slukker ikke lys og kobler ikke til alarm. |
+| Gjestemodus på mens alle beboere er borte | Frakobler alarmen og bruker vanlig hjemkomst, inkludert valgte handlinger og eventuell automatisk opplåsing. Vanlige forsinkelser og vilkår for lys gjelder. |
+| En beboer kommer tilbake til gjestene | Starter ikke første-hjemkomst på nytt. Individuell ankomst og valgt automatisk opplåsing følger det vanlige oppsettet. |
+| Gjestemodus av mens en beboer er hjemme | Gjestenes tilstedeværelse fjernes. Ingen ekstra hjemkomst eller borterutine. Dersom alle hjemme sover, kan vanlig nattmodus starte. |
+| Gjestemodus av mens alle beboere er borte | Starter vanlig borterutine med valgte forsinkelser, lys, lås og alarm. |
+
+Push sendes automatisk til alle med **Motta pushvarsler** under Personer. Ingen gjesterutine eller hjelpeflow må lages. Feilet sending logges uten automatisk gjentakelse. Ved ukjent beboerstatus aktiveres gjestemodus uten å starte hjemkomst eller låse opp. Opplåsing krever fortsatt at vanlig automatisk opplåsing er valgt, alarmen er bekreftet frakoblet, og ankomsten fortsatt er gyldig.
+
+Gjestemodus blokkerer både automatisk og manuell tilkobling av House Guard-alarmen. Nattmodus venter til gjestemodus er slått av. **Slå av gjestemodus når gjestene drar.** I observasjonsmodus logges handlingene; verken alarm, enheter eller push endres fysisk.
+
+Under **Rutiner → Gjestemodus på** og **Gjestemodus av** kan du legge til valgfrie ekstrahandlinger, for eksempel en Flow eller talemelding. De kjøres én gang når gjestemodus faktisk endres. Avkrysningen slår bare av ekstrahandlingene; vanlig tilstedeværelse, alarmbeskyttelse og gjestevarsler gjelder fortsatt. Rutiner som venter avbrytes hvis gjestemodus skifter igjen. Rutinenavn og handlinger kan endres, men de to faste rutinene kan ikke slettes.
+
+De gamle gjestekategoriene og tidligere gjestehandlinger forblir inaktive og skjult. Nye gjesterutiner begynner tomme, slik at tidligere lys-, lyd- eller dørhandlinger ikke aktiveres utilsiktet. Vanlige hjemkomst-, borte- og andre rutiner beholdes.
+
+## Borte betyr våken
+
+House Guard setter automatisk en bruker til **våken** i Homey når brukeren er bekreftet borte, men fremdeles står som sovende. Det gjelder personene valgt under Personer → Tilstedeværelse, både ved GPS, manuell borteknapp og eksterne flows. Eksisterende feil status korrigeres også ved oppstart. Gjestemodus endrer ikke denne regelen.
+
+Dette starter ingen morgenrutine og vekker ikke hjemmeværende. Ukjent, foreldet eller utilgjengelig tilstedeværelse endres ikke. Status leses på nytt før kommandoen; en bruker som er kommet hjem i mellomtiden endres ikke av den gamle avreisen. Observasjon logger bare hva som ville blitt gjort. Feil eller manglende bekreftelse vises i loggen, uten gjentatt sending for samme uendrede status. Den direkte API-forbindelsen brukes som for øvrige personhandlinger.

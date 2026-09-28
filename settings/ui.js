@@ -175,6 +175,7 @@
   function renderRoutines() {
     const list = $('routine-list'), alarmList = $('alarm-routine-list'); list.replaceChildren(); alarmList.replaceChildren();
     for (const routine of config.routines) {
+      if(['guestOn','guestOff'].includes(routine.id))continue;
       const custom=routine.id.startsWith('custom-');
       if(custom && routine.hidden)continue;
       const alarmEvent = ['alarm','arming','entryDelay','activeSensor','alarmOff'].includes(routine.id);
@@ -188,8 +189,9 @@
       execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap);
       if(custom){body.append(el('h3','2. Slik starter du rutinen'),el('p','Trykk «Start rutine» her, eller bruk Homey-kortet House Guard → Start navngitt rutine i en Flow. Velg denne rutinens navn i kortet.','hint'),el('h3','3. Velg hva som skal skje'),el('p','Legg til én eller flere handlinger, for eksempel slå på et lys, starte en Flow eller sende et varsel. Vilkår avgjør om en handling utføres når rutinen starter.','hint'));}
       const orderLabel=el('label','Rekkefølge på handlingene');orderLabel.append(execution);body.append(orderLabel);
-      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', guestOn: 'Frakobling og opplåsing følger uttrykkelige gjestevalg.', guestOff: 'Valgt dør låses; alarm velges fra bekreftet tilstedeværelse.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
+      if(['guestActivated','guestDeactivated'].includes(routine.id))body.append(el('p',routine.id==='guestActivated'?'Kjøres én gang når gjestemodus slås på. Legg til egne handlinger, for eksempel en Flow eller en talemelding. Det vanlige gjestevarselet og frakobling av alarmen er allerede innebygd.':'Kjøres én gang når gjestemodus slås av. Legg til egne handlinger etter behov. Vanlig borterutine starter automatisk hvis alle beboerne er borte.','hint'));
       const builtinList = el('div');
       const showBuiltins = actions => {
         builtinList.replaceChildren();
@@ -225,7 +227,7 @@
         const removeRoutine = el('button','Slett egen rutine');
         removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutines();};body.append(removeRoutine);
       }
-      if(!custom)body.append(el('p','Fast rutine i House Guard. Den kan ikke slettes. Krysset styrer bare ekstrahandlingene dine. Innebygde funksjoner følger fortsatt valgene under Alarm, Natt og morgen og Gjestemodus.','hint'));
+      if(!custom)body.append(el('p','Fast rutine i House Guard. Den kan ikke slettes. Krysset styrer bare ekstrahandlingene dine. Innebygde funksjoner følger fortsatt valgene under Alarm og Natt og morgen. Gjester holder huset hjemme og alarmen frakoblet.','hint'));
       card.append(heading, body); (alarmEvent ? alarmList : list).append(card);
     }
   }
@@ -467,7 +469,6 @@
   }
   async function initialize() {
     initializeAlarmTabs();
-    for (const [category, label] of Object.entries(labels)) { const wrap = el('label', undefined, 'check'), input = el('input'); input.type = 'checkbox'; input.dataset.bind = `guest.allow.${category}`; wrap.append(input, document.createTextNode(label)); $('guest-options').append(wrap); }
     bindEvents(); await load(true); if (homey) homey.ready();
     $('open-setup').onclick=openSetup; $('reopen-setup').onclick=openSetup;$('close-setup').onclick=()=>$('setup-dialog').close();
     $('setup-back').onclick=()=>{setupStep--;renderSetup();};
@@ -498,7 +499,7 @@
       catch(error){controlErrors[target]=error.message;}
       finally{controlBusy.delete(target);renderHomeControls();}
     });
-    $('guest-toggle').onchange = async event => { try { await flush(); await api('POST', '/command', { type: 'guest', value: event.target.checked }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } };
+    $('guest-toggle').onchange = async event => { const value=event.target.checked;event.target.disabled=true;try { await flush(); await api('POST', '/command', { type: 'guest', value }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } finally{event.target.disabled=false;} };
     document.querySelectorAll('[data-scenario]').forEach(button => button.onclick = async () => { try { await api('POST', '/scenario', { scenario: button.dataset.scenario }); await load(); } catch (error) { toast(error.message); } });
     $('reload-config').onclick = async () => {
       try { const latest = await api('GET','/state'); autosave.reset(latest.config); data = latest; config = structuredClone(latest.config); renderConfig(); renderStatus(); }

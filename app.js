@@ -12,7 +12,7 @@ module.exports = class HouseGuard extends Homey.App {
     const storedConfig = this.homey.settings.get(CONFIG_KEY);
     try { config = validate(storedConfig || defaults()); validStored = !!storedConfig; }
     catch (error) { config = defaults(); this.error('Ugyldig lagret oppsett – starter i observasjon', error); }
-    if (validStored && (!storedConfig.security?.responses || !storedConfig.security?.automation || ['temperatureDeviceId','temperatureCapability','maxAgeSeconds'].some(key=>Object.hasOwn(storedConfig.security.garage || {},key)) || Object.values(storedConfig.security.responses).some(r=>r.imageDeviceIds===undefined || r.imageOnRepeat===undefined))) {
+    if (validStored && (['guestActivated','guestDeactivated'].some(id=>!storedConfig.routines?.some(r=>r.id===id)) || storedConfig.guest?.model!=='presence' || !storedConfig.security?.responses || !storedConfig.security?.automation || ['temperatureDeviceId','temperatureCapability','maxAgeSeconds'].some(key=>Object.hasOwn(storedConfig.security.garage || {},key)) || Object.values(storedConfig.security.responses).some(r=>r.imageDeviceIds===undefined || r.imageOnRepeat===undefined))) {
       config.revision++;
       this.homey.settings.set(CONFIG_KEY, config);
     }
@@ -73,6 +73,7 @@ module.exports = class HouseGuard extends Homey.App {
     if(mode==='disarmed') {
       return this.disarmAlarm();
     }
+    if(this.engine.state.guest)throw Error('Slå av gjestemodus før du kobler til alarmen. Gjester holder alarmen frakoblet.');
     const generation=this.alarmCommandGeneration || 0;
     this.alarmCommands=(this.alarmCommands || Promise.resolve()).catch(()=>{}).then(async()=>{
       if(generation!==(this.alarmCommandGeneration || 0))throw Error('Tilkobling avbrutt ved frakobling.');
@@ -80,6 +81,7 @@ module.exports = class HouseGuard extends Homey.App {
       const revision=this.engine.config.revision,snapshot=await this.adapter.snapshot();
       if(generation!==(this.alarmCommandGeneration || 0))throw Error('Tilkobling avbrutt ved frakobling.');
       if(revision!==this.engine.config.revision)throw Error('Oppsettet ble endret. Prøv igjen.');
+      if(this.engine.state.guest)throw Error('Gjestemodus holder alarmen frakoblet.');
       this.intrusion.mode(mode,snapshot);await this.refresh();return this.getAlarmStatus();
     });return this.alarmCommands;
   }
@@ -103,7 +105,23 @@ module.exports = class HouseGuard extends Homey.App {
 
   setGuestMode(value) {
     if (!this.engine) throw new Error('House Guard starter. Prøv igjen om litt.');
-    this.engine.setGuest(value);
+    if(typeof value!=='boolean')throw Error('Gjestemodus må være av/på');
+    const request=this.guestRequest=(this.guestRequest || 0)+1,revision=this.engine.config.revision;
+    return (async()=>{
+      const snapshot=await (this.adapter || this.engine.adapter).snapshot();
+      if(request!==this.guestRequest)return;
+      if(revision!==this.engine.config.revision)throw Error('Oppsettet ble endret. Prøv igjen.');
+      if(!snapshot.connected)throw Error('Homey er ikke tilkoblet. Gjestemodus ble ikke endret.');
+      this.engine.ingest(snapshot);
+      const changed=this.engine.setGuest(value,()=>this.maintainGuestAlarm());
+      if(!changed)this.maintainGuestAlarm();
+    })();
+  }
+  maintainGuestAlarm() {
+    if(this.engine.state.guest && !this.engine.config.observation && this.intrusion && nativeAlarm(this.engine.config)){
+      const s=this.intrusion.state;
+      if(s.mode!=='disarmed' || s.target || s.active || s.entryAt)this.disarmAlarm();
+    }
   }
   publishGuestMode(value) {
     if (this.lastPublishedGuest === value) return;
@@ -131,6 +149,7 @@ module.exports = class HouseGuard extends Homey.App {
         const snapshot = await this.adapter.snapshot();
         if (revision !== this.engine.config.revision) { this.refreshOptions.reconnect = true; this.refreshAgain = true; continue; }
         const flags = this.refreshOptions; this.refreshOptions = {};
+        this.maintainGuestAlarm();
         const reconnect = !!flags.reconnect || (this.engine.started && !this.engine.snapshot.connected && snapshot.connected);
         const motionMorning=require('./lib/motion-morning'),events=(this.sensorEvents || []).splice(0);
         let morningStarted=false;
@@ -207,10 +226,10 @@ module.exports = class HouseGuard extends Homey.App {
 
     this.homey.flow.getActionCard('check_integration_access').registerRunListener(async () => {this.integrationTestCount=(this.integrationTestCount||0)+1;return true;});
     this.homey.flow.getActionCard('set_mode').registerRunListener(async ({ mode }) => { await this.engine.manual(mode); return true; });
-    this.homey.flow.getActionCard('set_guest').registerRunListener(async ({ enabled }) => { this.engine.setGuest(enabled === 'true'); return true; });
+    this.homey.flow.getActionCard('set_guest').registerRunListener(async ({ enabled }) => { await this.setGuestMode(enabled === 'true'); return true; });
     this.homey.flow.getActionCard('skip_night').registerRunListener(async () => { this.engine.skipNight(); return true; });
     const routine = this.homey.flow.getActionCard('start_routine');
-    routine.registerArgumentAutocompleteListener('routine', async query => this.engine.config.routines.filter(r => r.name.toLowerCase().includes(query.toLowerCase())).map(r => ({ id: r.id, name: r.name })));
+    routine.registerArgumentAutocompleteListener('routine', async query => this.engine.config.routines.filter(r => !require('./lib/guest-presence').retired(r.id) && r.name.toLowerCase().includes(query.toLowerCase())).map(r => ({ id: r.id, name: r.name })));
     routine.registerRunListener(async ({ routine: selected }) => { this.engine.start(selected.id); return true; });
 
     this.homey.flow.getActionCard('zone_idle').registerRunListener(async ({ zone_id, minutes }) => {

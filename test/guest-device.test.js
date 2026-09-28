@@ -56,7 +56,7 @@ test('Enhetsbryteren lagrer gjestemodus én gang og beholder observasjon', async
   const s = setup(); await s.device.onInit();
   await s.device.listeners.onoff(true); await s.device.listeners.onoff(true);
   assert.equal(s.app.getGuestMode(), true); assert.equal(s.savedStates.at(-1).guest, true);
-  assert.equal(s.h.engine.runs.filter(r => r.routineId === 'guestOn').length, 1);
+  assert.equal(s.h.engine.runs.filter(r => r.routineId === 'guestNotice').length, 1);
   await s.device.listeners.onoff(false); await s.h.engine.tick();
   assert.equal(s.device.value, false); assert.equal(s.h.engine.config.observation, true);
   assert.deepEqual(s.h.calls, []);
@@ -102,5 +102,5 @@ test('Sletting fjerner abonnement og timer uten å slå av gjestemodus', async (
   const s = setup(true); await s.device.onInit(); s.device.onDeleted();
   assert.equal(s.app.listenerCount('guest_changed'), 0); assert.equal(s.timers.size, 0);
   assert.equal(s.app.getGuestMode(), true);
-  s.app.setGuestMode(false); await s.device.syncQueue; assert.equal(s.device.value, true);
+  await s.app.setGuestMode(false); await s.device.syncQueue; assert.equal(s.device.value, true);
 });

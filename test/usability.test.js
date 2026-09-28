@@ -9,7 +9,7 @@ const own='homey:app:no.husmodus:';
 const catalog=()=>({devices:{},people:{},flows:[],integrationFlows:[]});
 
 test('Grunnoppsett med personer trenger ingen ekstra flows eller sikkerhetsenheter',()=>{
-  const h=harness(c=>{c.people.night=[];});h.ingest();const c=catalog();
+  const h=harness(c=>{c.people.night=[];});h.ingest();const c=catalog();c.direct={configured:true,ready:true};
   const r=readiness(h.config,h.snapshot,c,h.engine.state,h.now());
   assert.deepEqual(r.checks.filter(x=>x.level==='missing'),[]);
   assert.equal(r.checks.find(x=>x.id==='audio').level,'off');
