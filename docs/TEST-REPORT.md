@@ -4,7 +4,7 @@
 
 Bortreiste sovende brukere korrigeres gjennom Homeys vanlige våken-kort. Tester dekker bekreftet status, avreise med gjester, bevarte hjemmeværende sovende, ingen morgen-/første-våkne-rutine, opprydding ved oppstart, ukjent/foreldet/utilgjengelig tilstedeværelse, hjemkomst før kjøring, observasjon og feil uten løpende gjentakelse. Vanlige morgenhandlinger krever fortsatt hjemmeværende bruker.
 
-Installert lokalt på Solviks Homey. Før/etter-kontroll bekrefter bevarte handlinger, avkrysninger, morgenvalg og Flow-IDer, samt to nye tomme gjesterutiner. Hjemmemodus, frakoblet alarm og klar direkte forbindelse var uendret. Nettleserdemo bekrefter synlige gjesterutiner med forklaring, avkrysning og handlingsknapp. 75 JavaScript-filer er kontrollert, Homey-validering på publiseringsnivå er godkjent og offentlig filskann har ingen funn. Ingen fysisk personstatusendring ble nødvendig under etterkontrollen. Ikke publisert til GitHub eller App Store.
+Installert lokalt på Solviks Homey. Før/etter-kontroll bekrefter bevarte handlinger, avkrysninger, morgenvalg og Flow-IDer, samt to nye tomme gjesterutiner. Hjemmemodus, frakoblet alarm og klar direkte forbindelse var uendret. Nettleserdemo bekrefter synlige gjesterutiner med forklaring, avkrysning og handlingsknapp. 75 JavaScript-filer er kontrollert, Homey-validering på publiseringsnivå er godkjent og offentlig filskann har ingen funn. Ingen fysisk personstatusendring ble nødvendig under etterkontrollen. Versjon 0.4.20 er publisert på GitHub og i Homey App Stores testkanal (bygg 8), bekreftet 28. september 2026. Publiseringskontrollen bekrefter 253 beståtte tester, godkjent kode- og Homey-validering og ingen private filer i kildekoden.
 
 # Lokal testversjon 0.4.19 – gjester som tilstedeværelse
 
