@@ -2,9 +2,9 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.20 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Nyere lokal kildekode har veiviser som fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.23 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.23**, med låste standardnavn og faste tilstedeværelsesregler for alarm. Den beholder Flow-kortene fra 0.4.21 for å aktivere og deaktivere alarmsensorer separat for bortealarm og nattalarm. Versjon **0.4.20** er fortsatt publisert i Homey App Stores testkanal (bygg 8). Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert lokalt.
+Kildekoden her er versjon **0.4.23**, med låste standardnavn og faste tilstedeværelsesregler for alarm. Den inkluderer Flow-kortene fra 0.4.21 for å aktivere og deaktivere alarmsensorer separat for bortealarm og nattalarm. Versjon **0.4.23** er publisert i Homey App Stores testkanal (bygg 9), bekreftet 29. september 2026. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 

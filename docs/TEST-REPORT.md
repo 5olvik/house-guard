@@ -1,12 +1,12 @@
-# Navn og alarmregler 0.4.23 – lokal testversjon
+# Navn og alarmregler 0.4.23 – publisert testversjon
 
-Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.23 er installert på Solviks Homey**, uten GitHub- eller App Store-publisering. Etterkontrollen bekrefter revisjon115: bare de tidligere tilpassede standardnavnene for natt og morgen er gjenopprettet. Handlinger, avkrysninger, øvrige innstillinger, Flow-ID-er, sensorunntak, gjestestatus og tilkoblet full alarm er bevart. API-forbindelsen er klar.
+Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.23 er installert på Solviks Homey og publisert på GitHub og i Homey App Stores testkanal (bygg 9).** Etterkontrollen bekrefter revisjon115: bare de tidligere tilpassede standardnavnene for natt og morgen er gjenopprettet. Handlinger, avkrysninger, øvrige innstillinger, Flow-ID-er, sensorunntak, gjestestatus og tilkoblet full alarm er bevart. API-forbindelsen er klar.
 
 Faste rutinenavn låses også ved lagring/import. Natt/morgen-oppsettet heter «Aktivering - Deaktivering av nattalarm», dørlysdelen «Velkomstlys» og forbindelsesdelen «API-nøkkel». Testmodus/aktiv styring er fjernet som brukervalg. Nytt/importert eller tidligere pauset oppsett må fortsatt fullføres i veiviseren; ingen automatisk aktivering av et slikt utkast. Varselprøver beholdes. Visuell lokal kontroll bekrefter navn, fravær av navnefelt i faste rutiner, fjernet modusdel og mobilvisning ved390px.
 
 Full alarm er en fast regel med vanlige forsinkelser når den innebygde alarmen er valgt, alle beboere er bekreftet borte og gjestemodus er av. Morgen krever en hjemmeværende beboer. Delvis tilkobling krever bekreftet hjemmeværende sovende også ved siste kontroll før sending. Nattalarm uten sovende korrigeres før sensorbehandling; en allerede utløst alarm eller inngangsforsinkelse avstilles ikke automatisk. Ukjente persondata brukes ikke til å koble til full alarm eller frakoble etablert dekning. Tester dekker omstart, avstilling, forsinkelser, hjemkomst, gjester, gamle valg/import, feil uten gjentatte forsøk ved hver polling og migrering uten tap av handlinger eller alarmtilstand.
 
-Ingen fysisk alarmprøve eller live push er sendt i denne runden. App Stores testkanal er fortsatt **0.4.20, bygg8**. Tidligere versjoners kontroller følger nedenfor.
+Ingen fysisk alarmprøve eller live push er sendt i denne runden. Publiseringen av **0.4.23, bygg 9** er bekreftet med status `test`; ingen innsending til vurdering eller stabil kanal. Offentlig filskann av 112 filer har ingen private funn. Tidligere versjoners kontroller og daværende publiseringsstatus følger nedenfor.
 
 # GUI 0.4.22 – lokal testversjon
 
