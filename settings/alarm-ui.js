@@ -8,8 +8,14 @@ window.HouseGuardAlarm = (() => {
     const opened = new Set([...root.querySelectorAll('details[open][data-event]')].map(e=>e.dataset.event));
     const first = !root.children.length;
     const testControls=[];
-    const testDisabled=type=>testing||demo||config.observation||!data.direct?.ready||!config.people.notifications.length||(type==='image'&&!config.security.responses.alarm.imageDeviceIds.length);
+    const testDisabled=type=>testing||demo||!data.direct?.ready||!config.people.notifications.length||(type==='image'&&!config.security.responses.alarm.imageDeviceIds.length);
     root.replaceChildren();
+    if(section==='notifications'){
+      const recipients=el('div',undefined,'card');recipients.append(el('h2','Hvem får varsler?'),el('p',config.people.notifications.length?config.people.notifications.map(id=>data.catalog.people[id]?.name || 'Utilgjengelig person').join(', '):'Ingen mottakere valgt.','hint'));
+      const choose=el('button','Velg mottakere');choose.onclick=()=>document.querySelector('[data-tab="people"]').click();recipients.append(choose);
+      if(!data.direct?.ready){recipients.append(el('p','Koble til Homey for å sende varsler direkte.','hint'));const connect=el('button','Koble til Homey');connect.onclick=()=>{document.querySelector('[data-tab="more"]').click();document.getElementById('direct-api-settings').open=true;document.getElementById('direct-api-settings').scrollIntoView({block:'start'});};recipients.append(connect);}
+      root.append(recipients);
+    }
     const devices = Object.values(data.catalog.devices || {});
     const speakers = devices.filter(d=>d.driverId?.includes('sonos') && d.available !== false).map(d=>({id:d.id,label:`${d.name} · ${d.zone || ''}`}));
     const lights = devices.filter(d=>d.class==='light' && d.capabilities?.onoff?.setable && ![config.security.lockDeviceId,config.security.garage.commandDeviceId].includes(d.id)).map(d=>({id:d.id,label:`${d.name} · ${d.zone || ''}`}));
@@ -31,17 +37,17 @@ window.HouseGuardAlarm = (() => {
       if(section==='notifications') {
       field(grid,'Send push til valgte mottakere',r,'push','checkbox');
       field(grid,'Bruk kritisk push',r,'critical','checkbox');
-      body.append(el('h3','Kamerabilder'));
+      const cameraPanel=el('details');cameraPanel.open=r.imageDeviceIds.length>0;cameraPanel.append(el('summary','Kamerabilder'+(r.imageDeviceIds.length?' · '+r.imageDeviceIds.length+' valgt':' (valgfritt)')));body.append(cameraPanel);
       const cameras=deviceItems('camera');
       for(const cameraId of r.imageDeviceIds) {
         const row=el('div',undefined,'row');row.append(el('span',cameras.find(c=>c.id===cameraId)?.label || (data.catalog.devices?.[cameraId]?.name || cameraId)+' · utilgjengelig'));
-        remove(row,r.imageDeviceIds,cameraId,'Fjern kamera');body.append(row);
+        remove(row,r.imageDeviceIds,cameraId,'Fjern kamera');cameraPanel.append(row);
       }
       const cameraAdd=el('select');options(cameraAdd,cameras.filter(c=>!r.imageDeviceIds.includes(c.id)),'','Legg til kamera …');
       cameraAdd.setAttribute('aria-label','Legg til kamera: '+title);cameraAdd.disabled=r.imageDeviceIds.length>=3;
-      cameraAdd.onchange=()=>{if(!cameraAdd.value||r.imageDeviceIds.length>=3)return;r.imageDeviceIds.push(cameraAdd.value);changed(true);rerender();};body.append(cameraAdd);
-      body.append(el('p','Velg opptil tre kameraer. Ett eget bildevarsel per kamera sendes til alle valgte pushmottakere.','hint'));
-      if(id==='alarm')field(body,'Send bilder også ved gjentatt alarm',r,'imageOnRepeat','checkbox');
+      cameraAdd.onchange=()=>{if(!cameraAdd.value||r.imageDeviceIds.length>=3)return;r.imageDeviceIds.push(cameraAdd.value);changed(true);rerender();};cameraPanel.append(cameraAdd);
+      cameraPanel.append(el('p','Velg opptil tre kameraer. Ett eget bildevarsel per kamera sendes til alle valgte pushmottakere.','hint'));
+      if(id==='alarm')field(cameraPanel,'Send bilder også ved gjentatt alarm',r,'imageOnRepeat','checkbox');
       field(grid,'Vis også i Homeys tidslinje',r,'timeline','checkbox');
       if(id==='alarm')body.append(el('p','Velg mottakere under Personer → Motta pushvarsler. Alarmmeldingen sendes først, deretter ett bildevarsel per valgt kamera. Kritiske varsler må være tillatt for Homey på telefonen. Tidslinjen erstatter ikke push.','hint'));
       if(id==='activeSensor')body.append(el('p','House Guard sender alltid et vanlig push om sensorer som holdes midlertidig utenfor ved tilkobling. De overvåkes automatisk når de blir inaktive. Valgene over gjelder øvrige sensorvarsler.','hint'));
@@ -87,8 +93,8 @@ window.HouseGuardAlarm = (() => {
         finally{testing=false;for(const [button,type] of testControls)button.disabled=testDisabled(type);}
       };
     }
-    if(config.observation)test.append(el('p','Prøvemeldinger er slått av i observasjonsmodus.','hint'));
-    if(!data.direct?.ready)test.append(el('p','Legg inn og kontroller API-nøkkelen under Mer → Direkte forbindelse.','hint'));
+    if(config.observation)test.append(el('p','Du kan prøve varsling før oppsettet er fullført. Disse knappene starter ingen rutiner.','hint'));
+    if(!data.direct?.ready)test.append(el('p','Legg inn og kontroller API-nøkkelen under Innstillinger → API-nøkkel.','hint'));
     if(!config.people.notifications.length)test.append(el('p','Velg pushmottakere under Personer.','hint'));
   }
   return {render};

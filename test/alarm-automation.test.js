@@ -5,8 +5,22 @@ const {builtins}=require('../lib/plans');
 const {harness,step,add}=require('./helpers');
 const {EVENTS}=require('../lib/alarm-automation');
 const ID='house-guard-internal-alarm';
-test('Each alarm automation switch controls only its own mode change',()=>{
-  for(const id of EVENTS){
+
+test('Morning cannot run in an empty home or with guests alone, even with a legacy opt-out',async()=>{
+ for(const source of ['manual','external','schedule'])for(const guest of [false,true]){
+  const h=harness(c=>{c.security.alarmDeviceId=ID;c.morning.requireHome=false;add(c,'morning',[step('unexpected')]);},{guest});
+  h.person('a',false,true);h.person('b',false);h.device(ID,'homealarm_state','armed');h.ingest();h.config.morning.requireHome=false;
+  assert.equal(h.engine.morning(source),false);h.engine.start('morning');await h.engine.tick();
+  assert(!h.calls.some(c=>c[0]==='set'||c[0]==='timeline'));assert.equal(h.engine.state.mode,guest?'home':'away');
+ }
+});
+test('Manual night cannot arm if marking residents asleep fails; a confirmed sleeper is required',async()=>{
+ const h=harness(c=>{c.security.alarmDeviceId=ID;c.night.markAsleep=false;});h.device(ID,'homealarm_state','disarmed');h.ingest();
+ await h.engine.manual('night');await h.engine.tick();assert(!h.calls.some(c=>c[3]==='partially_armed'));
+ h.person('a',true,true);h.engine.start('night');await h.engine.tick();assert(h.calls.some(c=>c[3]==='partially_armed'));
+});
+test('Optional alarm automation switches control only their own mode change',()=>{
+  for(const id of EVENTS.filter(id=>id!=='away')){
     const c=defaults();c.security.alarmDeviceId=ID;
     const actions=()=>builtins(id,c,{}, {homeIds:[],allAway:true,allHomeAsleep:false});
     const expected={away:'armed',night:'partially_armed',home:'disarmed',morning:'disarmed',firstWake:'disarmed'}[id];
@@ -20,10 +34,10 @@ test('Configured alarm transitions survive disabled or deleted routines; custom 
     const run=h.engine.start(id);assert(run.actions.some(a=>a.alarmAutomation));assert(!run.actions.some(a=>a.id==='extra'));assert(run.actions.every(a=>a.builtin));
   }
 });
-test('Turning automatic alarm off leaves the chosen lights Flow enabled',async()=>{
+test('Old automatic-away opt-out cannot prevent full coverage or remove the chosen lights Flow',async()=>{
   const h=harness(c=>{c.security.alarmDeviceId=ID;c.security.automation.away=false;add(c,'away',[step('lights',{kind:'flow',category:'lights',flowId:'lights',flowType:'normal'})]);});
   h.device(ID,'homealarm_state','disarmed');h.ingest();h.person('a',false);h.person('b',false);h.ingest();h.advance(21000);await h.engine.tick();
-  assert.equal(h.calls.filter(c=>c[0]==='flow').length,1);assert(!h.calls.some(c=>c[0]==='set'&&c[2]==='homealarm_state'));
+  assert(h.calls.some(c=>c[0]==='set'&&c[3]==='armed'));h.device(ID,'homealarm_state','armed');await h.engine.tick();assert.equal(h.calls.filter(c=>c[0]==='flow').length,1);
 });
 test('A disabled away routine still arms via the Alarm setting after verified departure',async()=>{
   const h=harness(c=>{c.security.alarmDeviceId=ID;c.routines.find(r=>r.id==='away').enabled=false;});h.device(ID,'homealarm_state','disarmed');h.ingest();h.person('a',false);h.person('b',false);h.ingest();
@@ -44,7 +58,7 @@ test('Observation and guest protection still apply to independent automatic armi
 test('Legacy disabled events migrate to disabled alarm settings once and preserve the remaining config',()=>{
   const c=defaults();delete c.security.automation;c.routines.find(r=>r.id==='night').enabled=false;c.routines.find(r=>r.id==='home').enabled=false;
   const v=validate(c);assert.deepEqual(v.security.automation,{away:true,night:false,home:false,morning:true,firstWake:true});assert.deepEqual(v.routines,c.routines);assert.deepEqual(validate(v),v);
-  v.security.automation.away='true';assert.throws(()=>validate(v),/Automatisk alarm/);
+  v.security.automation.night='true';assert.throws(()=>validate(v),/Automatisk alarm/);
 });
 test('Leaving guest mode honours the automatic away and night switches',()=>{
   const c=defaults();c.security.alarmDeviceId=ID;c.security.automation.away=false;c.security.automation.night=false;

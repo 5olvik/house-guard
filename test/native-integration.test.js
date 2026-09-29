@@ -28,6 +28,78 @@ function setup() {
   return {h,app};
 }
 
+test('Partial commands require a fresh home sleeper, including a changed snapshot at dispatch',async()=>{
+ for(const state of ['awake','away-asleep','unknown','stale','disconnected']){
+  const {h,app}=setup();if(state==='away-asleep')h.person('a',false,true);if(state==='unknown')h.person('a',null,true);
+  if(state==='stale'){h.person('a',true,true);h.snapshot.people.a.observedAt=h.now()-121000;}
+  if(state==='disconnected'){h.person('a',true,true);h.snapshot.connected=false;}
+  await assert.rejects(()=>app.setAlarmMode('partially_armed'),/hjemme og bekreftet sovende/);assert.equal(app.intrusion.state.mode,'disarmed');
+ }
+ const {h,app}=setup();h.person('a',true,true);await app.setAlarmMode('partially_armed');assert.equal(app.intrusion.state.mode,'partially_armed');
+ app.disarmAlarm();const adapter=new HomeyAdapter({app},()=>h.config);adapter.intrusion=app.intrusion;
+ adapter.snapshot=async()=>{h.person('a',false,true);return app.adapter.snapshot();};
+ await assert.rejects(()=>adapter.set(ID,'homealarm_state','partially_armed',()=>true,()=>{throw Error('must not dispatch');},{builtin:true,category:'alarm'}),/bekreftet sovende/);
+});
+
+test('Automatic disarming rechecks home presence at final dispatch',async()=>{
+ const {h,app}=setup();app.intrusion.mode('armed',h.snapshot);const adapter=new HomeyAdapter({app},()=>h.config);adapter.intrusion=app.intrusion;
+ adapter.snapshot=async()=>{h.person('a',false);h.person('b',false);return app.adapter.snapshot();};
+ await assert.rejects(()=>adapter.set(ID,'homealarm_state','disarmed',()=>true,()=>{throw Error('must not dispatch');},{builtin:true,category:'alarm',alarmAutomation:true}),/beboer er hjemme/);
+ assert.equal(app.intrusion.state.mode,'armed');
+});
+
+test('No sleepers cancels partial mode or exit before sensors run, but preserves an alarm already in progress',async()=>{
+ for(const state of ['partial','pending','entry','active']){
+  const {h,app}=setup();h.person('a',true,true);await app.refresh({initial:true});
+  if(state==='pending')h.config.security.intrusion.exitSeconds=30;
+  app.intrusion.mode('partially_armed',h.snapshot);
+  if(state==='entry')app.intrusion.state.entryAt=h.now()+30000;if(state==='active')app.intrusion.state.active=true;
+  h.person('a',true,false);h.device('door','alarm_contact',true);await app.refresh();
+  if(['partial','pending'].includes(state)){assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(app.intrusion.state.target,null);assert.equal(app.intrusion.state.active,false);}
+  else assert.equal(app.intrusion.state.mode,'partially_armed');
+ }
+});
+
+test('Last sleeper departure or reconnect replaces partial with full after normal delay without replaying extra actions',async()=>{
+ for(const reconnect of [false,true])for(const awayEnabled of [false,true]){
+  const {h,app}=setup();h.person('a',true,true);h.person('b',false);h.config.security.automation.away=awayEnabled;add(h.config,'away',[step('extra-away')]);
+  await app.refresh({initial:true});app.intrusion.mode('partially_armed',h.snapshot);h.person('a',false,true);
+  await app.refresh({reconnect});assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(app.intrusion.state.active,false);
+  h.engine.adapter=app.adapter;app.adapter.set=async(id,cap,value,guard,dispatch)=>{assert(guard());dispatch();app.intrusion.mode(value,h.snapshot);};
+  await h.engine.tick();assert.equal(app.intrusion.state.mode,'disarmed');h.advance(20000);await h.engine.tick();
+  assert.equal(app.intrusion.state.mode,'armed');
+  if(reconnect)assert(!h.engine.runs.some(r=>r.routineId==='away'));else assert(h.engine.runs.some(r=>r.routineId==='away'));
+  assert(!h.engine.runs.some(r=>r.routineId==='morning'));assert.equal(app.intrusion.disabledSensors.length,0);
+ }
+});
+
+test('Unknown current presence preserves established partial coverage and never arms full; a pending night is cancelled',async()=>{
+ for(const pending of [false,true]){
+  const {h,app}=setup();h.person('a',true,true);await app.refresh({initial:true});if(pending)h.config.security.intrusion.exitSeconds=30;
+  app.intrusion.mode('partially_armed',h.snapshot);h.person('a',null,null);await app.refresh();
+  assert.equal(app.intrusion.state.mode,pending?'disarmed':'partially_armed');assert.equal(app.intrusion.state.target,null);assert(!h.engine.runs.some(r=>r.routineId==='alarmPresence'));
+ }
+});
+
+test('A confirmed empty home restores full alarm on startup and after acknowledgement, with no old away extras',async()=>{
+ const {h,app}=setup();h.person('a',false);h.person('b',false);h.config.security.automation.away=false;add(h.config,'away',[step('old-extra')]);
+ h.engine.adapter=app.adapter;app.adapter.set=async(id,cap,value,guard,dispatch)=>{assert(guard());dispatch();app.intrusion.mode(value,h.snapshot);};
+ await app.refresh({initial:true});await app.refresh();assert.equal(h.engine.runs.filter(r=>r.routineId==='alarmPresence').length,1);assert(!h.engine.runs.some(r=>r.routineId==='away'));
+ h.advance(20000);await h.engine.tick();assert.equal(app.intrusion.state.mode,'armed');assert(!h.calls.some(c=>c[1]==='old-extra'));
+ await app.refresh();await app.setAlarmMode('disarmed');await app.refresh();h.advance(20000);await h.engine.tick();assert.equal(app.intrusion.state.mode,'armed');
+});
+
+test('Away coverage cancels on return or guests, ignores unknown presence and never retries failures on every poll',async()=>{
+ for(const change of ['home','guest','unknown','failure']){
+  const {h,app}=setup();h.person('a',false);h.person('b',false);h.engine.adapter=app.adapter;
+  app.adapter.set=async()=>{throw Error('Sensor unavailable');};await app.refresh({initial:true});
+  if(change==='home')h.person('a',true);if(change==='guest')h.engine.state.guest=true;if(change==='unknown')h.person('a',null);
+  await app.refresh();h.advance(20000);await h.engine.tick();await app.refresh();await app.refresh();
+  assert.equal(app.intrusion.state.mode,'disarmed');assert.equal(h.engine.runs.filter(r=>r.routineId==='alarmPresence').length,1);
+  const run=h.engine.runs.find(r=>r.routineId==='alarmPresence');assert.equal(run.actions[0].status,change==='failure'?'failed':'skipped');
+ }
+});
+
 test('Guest mode immediately disarms armed, pending or active alarms and prevents new manual arming',async()=>{
  for(const state of ['armed','pending','active']){
   const {h,app}=setup();h.config.people.notifications=['a'];h.adapter.direct={configured:true};add(h.config,'home',[step('unexpected-home')]);await app.refresh({initial:true});
@@ -70,6 +142,15 @@ test('Guest-model upgrade increments revision once and retains saved settings an
  class Adapter {constructor(){this.catalogue={devices:{}};}async connect(){}}
  const Upgrade=load('app.js',Adapter);const init=async()=>{const app=new Upgrade();app.log=()=>{};app.error=()=>{};app.registerCards=()=>{};app.refresh=async()=>{};app.homey={clock:{getTimezone:()=>'Europe/Oslo'},settings:{get:k=>store[k],set:(k,v)=>store[k]=v},setInterval:()=>1};await app.onInit();return app;};
  const app=await init();assert.equal(app.engine.config.revision,43);assert.equal(app.engine.config.guest.model,'presence');assert.deepEqual(app.engine.config.routines,old.routines);assert.equal(app.engine.config.guest.unlockOnEnable,true);assert.equal((await init()).engine.config.revision,43);
+});
+
+test('Name and presence-rule migration persists once without changing actions, sensor overrides or alarm fingerprint',async()=>{
+ const old=defaults();old.revision=71;old.observation=false;old.security.alarmDeviceId=ID;old.security.automation.away=false;old.morning.requireHome=false;
+ old.routines[0].name='Old renamed routine';old.routines[0].enabled=false;old.routines[0].actions=[step('keep')];
+ const before=structuredClone(old),alarm=new Intrusion({config:old,persist:()=>{}});alarm.state.mode='armed';let alarmStored;alarm.persist=s=>{alarmStored=s;};alarm.commit();
+ const store={'husmodus.config.v1':old,'houseguard.intrusion.v1':alarmStored};class Adapter{constructor(){this.catalogue={devices:{}};}async connect(){}}
+ const Upgrade=load('app.js',Adapter);const init=async()=>{const app=new Upgrade();app.log=()=>{};app.error=()=>{};app.registerCards=()=>{};app.refresh=async()=>{};app.homey={clock:{getTimezone:()=>'Europe/Oslo'},settings:{get:k=>store[k],set:(k,v)=>store[k]=v},setInterval:()=>1};await app.onInit();return app;};
+ const app=await init();assert.equal(app.engine.config.revision,72);assert.equal(app.engine.config.routines[0].name,'Siste person drar');assert.deepEqual(app.engine.config.routines[0].actions,before.routines[0].actions);assert.equal(app.engine.config.routines[0].enabled,false);assert(app.engine.config.morning.requireHome);assert(app.engine.config.security.automation.away);assert.equal(app.intrusion.state.mode,'armed');assert.equal((await init()).engine.config.revision,72);
 });
 test('Upgrade removes an external panel, old pending runs and alarm state, preserving other configuration',async()=>{
   const old=defaults();old.security.alarmDeviceId='old-panel';old.observation=false;old.people.presence=['resident'];old.security.lockDeviceId='lock';
@@ -125,12 +206,12 @@ test('Zero exit delay arms with an active delayed door excluded and queues the w
   const warning=h.engine.runs.find(r=>r.routineId==='activeSensor');assert.equal(warning.context.bypassed,true);assert.equal(warning.actions[0].kind,'notify');
 });
 test('Alarm panel shows latest state and cleans up without disarming when deleted',async()=>{
-  const {app}=setup(),Device=load('drivers/alarm-panel/device.js'),d=new Device(),timers=new Map();
+  const {h,app}=setup(),Device=load('drivers/alarm-panel/device.js'),d=new Device(),timers=new Map();
   d.homey={app,__:key=>key,setInterval:fn=>{timers.set(1,fn);return 1;},clearInterval:id=>timers.delete(id)};
   await app.refresh({initial:true});await d.onInit();assert.equal(d.values.alarm_status,'alarm.disarmed');assert.equal(d.listeners.homealarm_state,undefined);
   await app.setAlarmMode('armed');await d.sync();assert.equal(d.values.alarm_status,'alarm.armed');
   await d.listeners.button();assert.equal(d.values.alarm_status,'alarm.disarmed');assert.equal(app.intrusion.state.mode,'disarmed');
-  await app.setAlarmMode('partially_armed');await d.sync();d.onDeleted();assert.equal(app.intrusion.state.mode,'partially_armed');assert.equal(app.listenerCount('intrusion_changed'),0);assert.equal(timers.size,0);
+  h.person('a',true,true);await app.setAlarmMode('partially_armed');await d.sync();d.onDeleted();assert.equal(app.intrusion.state.mode,'partially_armed');assert.equal(app.listenerCount('intrusion_changed'),0);assert.equal(timers.size,0);
 });
 test('Disarm responds immediately during a blocked arm read, and the late result cannot re-arm',async()=>{
   const {h,app}=setup();await app.refresh({initial:true});let release,started;
@@ -157,6 +238,15 @@ test('Morning motion disarms before the same night sensor triggers, wakes all ho
  await h.engine.tick();assert.deepEqual(h.calls,[['person','c',false],['person','a',false]]);h.person('a',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','b',false]);h.person('b',true,false);await h.engine.tick();assert.deepEqual(h.calls.at(-1),['timeline','old-extra']);assert.equal(h.calls.filter(c=>c[0]==='person'&&c[1]==='c').length,1);
  await motion(false);await motion();assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
 });
+
+test('A robot sensor excluded from night alarm cannot start motion morning; full-only exclusion leaves night behavior intact',async()=>{
+ for(const mode of ['armed','partially_armed']){
+  const {h,app,motion}=await motionSetup();const sensor={deviceId:'kitchen',capability:'alarm_motion'};
+  require('../lib/sensor-flows').set(app.intrusion,sensor,mode,false);await motion();
+  assert.equal(h.engine.runs.some(r=>r.routineId==='morning'),mode==='armed');
+  assert.equal(app.intrusion.state.mode,mode==='armed'?'disarmed':'partially_armed');assert(!app.intrusion.state.active);
+ }
+});
 test('Disabled feature, outside window, no one home, observation and guest protection preserve alarm behavior',async()=>{
  for(const scenario of ['disabled','early','late','away','observation','guest','api']){
   const {h,app,motion}=await motionSetup();
@@ -167,7 +257,7 @@ test('Disabled feature, outside window, no one home, observation and guest prote
   if(scenario==='observation')h.config.observation=true;
   if(scenario==='guest')h.engine.state.guest=true;
   if(scenario==='api')app.adapter.direct.ready=false;
-  await motion();assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);assert.equal(app.intrusion.state.mode,scenario==='guest'?'disarmed':'partially_armed',scenario);
+  await motion();assert(!h.engine.runs.some(r=>r.routineId==='morning'),scenario);assert.equal(app.intrusion.state.mode,['guest','away'].includes(scenario)?'disarmed':'partially_armed',scenario);
  }
 });
 test('Full alarm, entry delay, existing alarm or simultaneous other sensor cannot be dismissed by morning motion',async()=>{

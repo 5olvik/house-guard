@@ -6,6 +6,8 @@
   <script src="/homey.js" data-origin="settings"></script>
   <link rel="stylesheet" href="style.css">
   <script src="setup-model.js" defer></script>
+  <script src="onboarding-model.js" defer></script>
+  <script src="setup-ui.js" defer></script>
   <script src="autosave.js" defer></script>
   <script src="alarm-ui.js" defer></script>
   <script src="ui.js" defer></script>
@@ -13,7 +15,7 @@
 <body>
 <div class="container">
   <header class="header-top">
-    <div class="header-title"><div class="eyebrow">ET HJEM SOM FØLGER DAGEN DIN</div><h1>House <span>Guard</span></h1><p class="subtitle">Dine personer. Dine rutiner. Full oversikt.</p></div>
+    <div class="header-title"><h1>House <span>Guard</span></h1><p class="subtitle">Oversikt over hjemmet ditt</p></div>
     <div class="header-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M12 47 50 14l38 33M22 39v44h20V61h16v22h20V39"/></svg></div>
     <span class="version" data-app-version></span>
   </header>
@@ -23,55 +25,70 @@
     <button class="tab-btn" data-tab="routines"><span aria-hidden="true">↻</span>Rutiner</button>
     <button class="tab-btn" data-tab="security"><span aria-hidden="true">◇</span>Alarm</button>
     <button class="tab-btn" data-tab="people"><span aria-hidden="true">♧</span>Personer</button>
-    <button class="tab-btn" data-tab="more"><span aria-hidden="true">•••</span>Mer</button>
+    <button class="tab-btn" data-tab="more"><span aria-hidden="true">•••</span>Innstillinger</button>
   </nav>
   <main>
     <section id="home" class="panel">
-      <div id="setup-intro" class="card setup-intro" hidden><div class="section-heading"><h2>Kom i gang med House Guard</h2><span class="badge ok">Velg dine Homey-flows</span></div><p>Velg hvem som bor her og hvilken Flow som skal starte når alle drar, noen kommer hjem eller nattmodus starter. Lag for eksempel «Slå av alle lys» i Homey og velg den i veiviseren.</p><div class="button-row"><button id="open-setup" class="primary">Åpne veiviseren</button></div><p class="hint">Veiviseren viser både Flow og Advanced Flow. Valgene lagres automatisk. Dine egne handlinger og valgt observasjonsmodus beholdes.</p></div>
-      <div class="card hero"><div class="section-heading"><span class="eyebrow">HUSET AKKURAT NÅ</span><span id="mode-badge" class="badge">Venter</span></div><div class="mode-line"><span id="mode-icon" aria-hidden="true">⌂</span><h2 id="mode-title">Ukjent</h2></div><p id="mode-reason">Venter på bekreftet tilstedeværelse.</p><div class="divider"></div><div class="row"><div><strong>Gjestemodus</strong><p class="hint">Gjester teller som hjemme. Alarmen holdes frakoblet, og borterutinen venter.</p></div><label class="switch"><input id="guest-toggle" type="checkbox" aria-label="Gjestemodus"><span></span></label></div><details><summary>Slik fungerer gjestemodus</summary><p class="hint">Er noen av dere hjemme, beholdes lysene som de er. Når dere drar, regnes huset fortsatt som bebodd. Slår du på gjestemodus mens alle er borte, brukes vanlig hjemkomst med valgte lys og automatisk opplåsing. Alarmen frakobles alltid.</p><p class="hint">Alle med «Motta pushvarsler» får beskjed når gjestemodus slås på, og når siste beboer drar. Nattmodus venter mens gjestene er hjemme. Slå av gjestemodus når gjestene drar; er ingen andre hjemme, starter vanlig borterutine.</p></details></div>
+      <div id="setup-intro" class="card setup-intro" hidden><h2>Velkommen til House Guard</h2><p>Vi hjelper deg med beboere, alarm og rutinene du ønsker. Du kan stoppe underveis og fortsette senere.</p><div class="button-row"><button id="open-setup" class="primary">Start oppsettet</button></div><p class="hint">Valgene dine lagres automatisk.</p></div>
+      <div class="card hero" id="home-overview"><div class="section-heading"><span class="eyebrow">HUSET AKKURAT NÅ</span><span id="mode-badge" class="badge">Venter</span></div><div class="mode-line"><span id="mode-icon" aria-hidden="true">⌂</span><h2 id="mode-title">Ukjent</h2></div><p id="mode-reason">Venter på bekreftet tilstedeværelse.</p><div class="divider"></div><div class="row"><div><strong>Gjestemodus</strong><p class="hint">Gjester teller som hjemme. Alarmen holdes frakoblet, og borterutinen venter.</p></div><label class="switch"><input id="guest-toggle" type="checkbox" aria-label="Gjestemodus"><span></span></label></div><details><summary>Slik fungerer gjestemodus</summary><p class="hint">Er noen av dere hjemme, beholdes lysene som de er. Når dere drar, regnes huset fortsatt som bebodd. Slår du på gjestemodus mens alle er borte, brukes vanlig hjemkomst med valgte lys og automatisk opplåsing. Alarmen frakobles alltid.</p><p class="hint">Alle med «Motta pushvarsler» får beskjed når gjestemodus slås på, og når siste beboer drar. Nattmodus venter mens gjestene er hjemme. Slå av gjestemodus når gjestene drar; er ingen andre hjemme, starter vanlig borterutine.</p></details></div>
       <div id="home-people" class="person-strip"></div>
       <div class="status-grid home-controls" id="security-status">
         <section class="status-box home-alarm" id="home-alarm"><div class="eyebrow">HOUSE GUARD-ALARM</div><strong id="home-alarm-phase" role="status">Venter på status</strong><p id="home-alarm-details" class="hint"></p><p id="home-alarm-bypassed" class="hint" hidden></p><button id="home-disarm" data-alarm="disarmed">Frakoble / avstill</button></section>
-        <section class="status-box"><div class="eyebrow">YTTERDØR</div><strong id="home-lock-state" role="status">Ukjent</strong><div class="button-row"><button data-control="lock" data-control-value="true">Lås</button><button data-control="lock" data-control-value="false">Lås opp</button></div><p id="lock-control-note" class="hint"></p></section>
-        <section class="status-box"><div class="eyebrow">GARASJEPORT</div><strong id="home-garage-state" role="status">Ukjent</strong><div class="button-row"><button data-control="garage" data-control-value="true">Åpne</button><button data-control="garage" data-control-value="false">Lukk</button></div><p id="garage-control-note" class="hint"></p></section>
+        <section class="status-box" id="home-lock"><div class="eyebrow">YTTERDØR</div><strong id="home-lock-state" role="status">Ukjent</strong><div class="button-row"><button data-control="lock" data-control-value="true">Lås</button><button data-control="lock" data-control-value="false">Lås opp</button></div><p id="lock-control-note" class="hint"></p></section>
+        <section class="status-box" id="home-garage"><div class="eyebrow">GARASJEPORT</div><strong id="home-garage-state" role="status">Ukjent</strong><div class="button-row"><button data-control="garage" data-control-value="true">Åpne</button><button data-control="garage" data-control-value="false">Lukk</button></div><p id="garage-control-note" class="hint"></p></section>
       </div>
-      <div id="home-attention" class="card row" hidden><strong id="home-attention-text"></strong><button id="show-system-status">Se status</button></div>
-      <div class="card"><h2>Gjør det nå</h2><p class="hint">Borte og hjemme endrer tilstedeværelsen i Homey for alle brukerne valgt under Personer. Alarm og rutiner følger innstillingene dine. Brukere som blir borte settes automatisk våkne. Natt og morgen styrer sovestatus for dem som er hjemme. GPS kan oppdatere tilstedeværelsen igjen senere.</p><div class="button-row"><button data-command="away">Start bortemodus</button><button data-command="home">Sett alle hjemme</button></div><p class="hint" id="manual-explanation"></p><div class="button-row"><button class="primary" data-command="night">☾ Start nattmodus</button><button data-command="morning">☀ Start morgen</button><button data-command="skip">Hopp over natt i natt</button></div><p id="skip-status" class="hint"></p></div>
+      <div id="home-attention" class="card row" hidden><div><strong id="home-attention-text"></strong><p id="home-attention-detail" class="hint"></p></div><button id="show-system-status">Se status</button></div>
+      <div class="card" id="manual-controls"><h2>Hurtigvalg</h2><p class="hint">Borte og hjemme gjelder alle valgte beboere. Alarm og rutiner følger oppsettet ditt.</p><div class="button-row"><button data-command="away">Start bortemodus</button><button data-command="home">Sett alle hjemme</button></div><div id="home-night-controls"><p class="hint" id="manual-explanation"></p><div class="button-row"><button data-command="night">☾ Start nattmodus</button><button data-command="morning">☀ Start morgen</button><button data-command="skip">Hopp over natt i natt</button></div><p id="skip-status" class="hint"></p></div><details id="night-command-help"><summary>Hva skjer med personene?</summary><p class="hint">Borte og hjemme endrer tilstedeværelsen i Homey. Bortreiste personer settes våkne. Aktivering - Deaktivering av nattalarm gjelder dem som er hjemme. Homeys GPS kan oppdatere tilstedeværelsen igjen senere.</p></details></div>
       <div id="question-card" class="card" hidden></div>
-      <div class="card"><div class="section-heading"><h2>Det som skjer videre</h2><span class="badge" id="pending-count">0</span></div><div id="pending-list" class="empty">Ingen handlinger venter.</div></div>
-      <div class="card"><h2>Siste hendelser</h2><div id="recent-log"></div></div>
+      <div class="card" id="home-pending"><div class="section-heading"><h2>Det som skjer videre</h2><span class="badge" id="pending-count">0</span></div><div id="pending-list" class="empty">Ingen handlinger venter.</div></div>
+      <div class="card" id="home-history"><h2>Siste hendelser</h2><div id="recent-log"></div></div>
       <div id="demo-panel" class="card" hidden><h2>Prøv et scenario</h2><p class="hint">Kun demodata i denne nettleservisningen. Ingen tilkobling til huset.</p><div class="button-row"><button data-scenario="away">Alle drar</button><button data-scenario="return">En kommer hjem</button><button data-scenario="sleep">Alle hjemme sover</button><button data-scenario="alarm">Alarm utløses</button><button data-scenario="alarmOff">Avstill alarm</button><button data-scenario="advance">Gå 60 sek frem</button></div></div>
     </section>
     <section id="routines" class="panel" hidden>
       <div class="intro"><div><h2>Rutiner som passer huset</h2><p>Velg hva som skal skje, og når. Alarm, lås og garasje settes opp under Alarm.</p></div><button id="new-routine">+ Egen rutine</button></div>
       <p class="hint">Tilkobling, frakobling og ventetid ved borte/hjemkomst velges under Alarm → Oversikt. Rutinevalgene nedenfor gjelder ekstra handlinger.</p>
-      <details class="card"><summary>Natt og morgen</summary><div class="details-body form-grid">
-        <label class="check"><input type="checkbox" data-bind="night.automatic">Tilby automatisk nattmodus</label>
-        <label>Sone som må være inaktiv<select data-bind="night.zoneId" data-source="zones"></select></label>
-        <label>Inaktiv i minutter<input type="number" min="1" max="240" data-bind="night.idleMinutes"></label>
-        <label>Nattvindu fra<input type="time" data-bind="night.start"></label><label>Nattvindu til<input type="time" data-bind="night.end"></label>
-        <label>Svarfrist i sekunder<input type="number" min="10" max="900" data-bind="night.answerSeconds"></label>
-        <label>Svarregel<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option></select></label>
-        <label class="check"><input type="checkbox" data-bind="night.markAsleep">Sett hjemmeværende i nattutvalget sovende</label>
-        <label class="check"><input type="checkbox" data-bind="night.wakeArrival">Sett bare den ankomne våken ved nattankomst</label>
-        <label class="check"><input type="checkbox" data-bind="morning.scheduled">Start morgen til fast tid</label>
-        <label>Morgentid / utløp for «hopp over»<input type="time" data-bind="morning.time"></label>
-        <label class="check"><input type="checkbox" data-bind="morning.requireHome">Morgen krever at noen er hjemme</label>
-        <fieldset class="full"><legend>Start morgen ved bevegelse</legend><div class="form-grid">
-          <label>Bevegelsessensor<select data-bind="morning.motion.deviceId" data-device="alarm_motion"></select></label>
-          <label>Bevegelsesfunksjon<select data-bind="morning.motion.capability" data-capabilities="morning.motion.deviceId" data-prefix="alarm_motion"></select></label>
-          <label>Fra og med<input type="time" data-bind="morning.motion.start"></label>
-          <label>Frem til<input type="time" data-bind="morning.motion.end"></label>
-          <label class="check full"><input type="checkbox" data-bind="morning.motion.enabled">Start morgen ved ny bevegelse i tidsrommet</label>
-          <p class="hint full">Når huset er i nattmodus og noen er hjemme: Frakoble nattalarmen, sett alle hjemmeværende i personutvalget våkne og kjør de vanlige morgenhandlingene. Dette valget inkluderer frakobling selv om vanlig morgenfrakobling er slått av under Alarm. Ingen ekstra Flow er nødvendig.</p>
-          <p class="hint full">Kjøres én gang per nattperiode, på ny bevegelse etter at sensoren har vært rolig. Bortealarm, allerede utløst alarm eller inngangsforsinkelse avbrytes ikke. Gjestemodus holder huset hjemme og starter ikke bevegelsesmorgen. Observasjon logger bare hendelsen. Krever klar API-forbindelse. Fast morgentid er et eget valg over.</p>
+      <details class="card" id="night-morning-settings"><summary>Aktivering - Deaktivering av nattalarm</summary><div class="details-body">
+        <fieldset><legend>Når starter natten?</legend>
+          <p class="hint">Du kan alltid starte nattmodus fra Hjem eller en egen Flow.</p>
+          <label class="check"><input type="checkbox" data-bind="night.automatic">Spør om nattmodus når huset er rolig</label>
+          <div class="form-grid" data-show-when="night.automatic">
+            <label>Sone som må være rolig<select data-bind="night.zoneId" data-source="zones"></select></label>
+            <label>Rolig i minst (minutter)<input type="number" min="1" max="240" data-bind="night.idleMinutes"></label>
+            <label>Spør tidligst klokken<input type="time" data-bind="night.start"></label>
+            <label>Spør senest klokken<input type="time" data-bind="night.end"></label>
+            <p class="hint full">Homeys soneaktivitet avgjør når huset er rolig. Velg hvem som skal få nattspørsmålet under Personer. Spørsmålet sendes bare når alarmen er frakoblet og huset er bekreftet våkent. Krever API-nøkkel under Innstillinger.</p>
+            <details class="full"><summary>Svar på nattspørsmålet</summary><div class="details-body form-grid">
+              <label>Svar innen (sekunder)<input type="number" min="10" max="900" data-bind="night.answerSeconds"></label>
+              <label>Når skal nattmodus starte?<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option></select></label>
+            </div></details>
+          </div>
+        </fieldset>
+        <fieldset><legend>Når starter morgenen?</legend><div class="form-grid">
+          <label class="check full"><input type="checkbox" data-bind="morning.scheduled">Start morgen til fast tid</label>
+          <label>Morgentid<input type="time" data-bind="morning.time"></label>
+          <p class="hint" data-show-when="morning.scheduled">På dette tidspunktet settes hjemmeværende i nattutvalget våkne, og morgenrutinen starter.</p>
+          <p class="hint full">Morgentiden avslutter også «Hopp over natt i natt». Når fast morgen er av, starter ikke dette klokkeslettet morgenrutinen.</p>
+          <p class="hint full">Morgen starter bare når en beboer er hjemme. Nattalarm krever noen hjemme som sover. Når alle drar, kobles full alarm til hvis alarmfunksjonen er slått på. Gjestemodus holder alarmen frakoblet.</p>
+          <details class="full" id="morning-motion-settings"><summary>Start morgen ved bevegelse (valgfritt)</summary><div class="details-body form-grid">
+            <p class="hint full">For eksempel: Start morgenen ved bevegelse på kjøkkenet etter klokken 06. Velg sensor og tidsrom før du slår på funksjonen.</p>
+            <label>Bevegelsessensor<select data-bind="morning.motion.deviceId" data-device="alarm_motion"></select></label>
+            <label>Bevegelsesfunksjon<select data-bind="morning.motion.capability" data-capabilities="morning.motion.deviceId" data-prefix="alarm_motion"></select></label>
+            <label>Fra og med<input type="time" data-bind="morning.motion.start"></label>
+            <label>Frem til<input type="time" data-bind="morning.motion.end"></label>
+            <label class="check full"><input type="checkbox" data-bind="morning.motion.enabled">Start morgen ved ny bevegelse i tidsrommet</label>
+            <p class="hint full">Når huset er i nattmodus og noen er hjemme, frakobles nattalarmen, hjemmeværende i personutvalget settes våkne og de vanlige morgenhandlingene kjøres. Ingen ekstra Flow er nødvendig.</p>
+            <details class="full"><summary>Slik fungerer bevegelsesmorgen</summary><p class="hint">Morgenen starter én gang per nattperiode, på ny bevegelse etter at sensoren har vært rolig. Dette inkluderer frakobling av nattalarmen selv om vanlig morgenfrakobling er slått av under Alarm.</p><p class="hint">Bortealarm, utløst alarm og inngangsforsinkelse avbrytes ikke. Bevegelsesmorgen starter ikke i gjestemodus. Krever API-nøkkel under Innstillinger. Fast morgentid er et eget valg.</p></details>
+          </div></details>
         </div></fieldset>
-        <p class="hint full">Soneaktivitet leses direkte fra Homey. Mobilspørsmål krever frakoblet alarm og bekreftet våkent hus. Nattspørsmål og sovestatus bruker API-forbindelsen under Mer.</p>
-        <p class="hint full">Fast morgentid setter hjemmeværende i nattutvalget våkne i Homey og starter morgenrutinen. Nattalarm kobles til når alle hjemme i nattutvalget sover, hvis skallsikring er valgt under Alarm.</p>
-        <details class="full"><summary>Bruk egne Flows for vekking</summary><p class="hint">For hele huset: Bruk House Guard → Sett modus i House Guard → Morgen i en Flow eller Advanced Flow. For individuell vekking: Bruk Homeys tilstedeværelseskort til å sette én person våken. House Guard følger sovestatusen og kan frakoble ved første oppvåkning, slik du velger under Alarm. Slå av fast morgentid her hvis dine egne Flows skal bestemme tidspunktet. Du kan også legge handlingen «Start eksisterende Flow» i morgenrutinen for lys, musikk og andre vekkehandlinger.</p></details>
+        <fieldset id="night-person-settings"><legend>Hva skjer med personene?</legend><div class="form-grid">
+          <label class="check"><input type="checkbox" data-bind="night.markAsleep">Sett hjemmeværende i nattutvalget sovende når natten starter</label>
+          <label class="check"><input type="checkbox" data-bind="night.wakeArrival">Sett bare den som kommer hjem om natten, til våken</label>
+          <p class="hint full">Nattutvalget velges under Personer. Nattalarm kan kobles til når alle hjemme i utvalget sover, hvis det er valgt under Alarm. Sovestatus oppdateres direkte i Homey og krever API-nøkkel under Innstillinger.</p>
+        </div></fieldset>
+        <details><summary>Bruk egne Flows for vekking</summary><p class="hint">For hele huset: Bruk House Guard → Sett modus i House Guard → Morgen i en Flow eller Advanced Flow. For individuell vekking: Bruk Homeys tilstedeværelseskort til å sette én person våken. House Guard følger sovestatusen og kan frakoble ved første oppvåkning, slik du velger under Alarm.</p><p class="hint">Slå av fast morgentid her hvis dine egne Flows skal bestemme tidspunktet. Du kan også legge handlingen «Start eksisterende Flow» i morgenrutinen for lys, musikk og andre vekkehandlinger.</p></details>
       </div></details>
       <div id="routine-list"></div>
-      <details class="card"><summary>Velkomstlys ved døren</summary><div class="details-body form-grid">
+      <details class="card"><summary>Velkomstlys</summary><div class="details-body form-grid">
         <label>Dørkontakt<select data-bind="welcome.doorDeviceId" data-device="alarm_contact"></select></label>
         <label>Lysmåler<select data-bind="welcome.luxDeviceId" data-device="measure_luminance"></select></label>
         <label>Under lux<input type="number" min="0" data-bind="welcome.threshold"></label>
@@ -91,26 +108,29 @@
         <button type="button" id="alarm-tab-advanced" role="tab" data-alarm-tab="advanced" aria-controls="alarm-panel-advanced" aria-selected="false" tabindex="-1">Avansert</button>
       </div>
       <div id="alarm-panel-overview" data-alarm-panel="overview" role="tabpanel" aria-labelledby="alarm-tab-overview" tabindex="0">
-      <div class="card"><h2>Alarm</h2><div class="form-grid"><label class="check"><input type="checkbox" data-bind="security.alarmDeviceId" data-checked-value="house-guard-internal-alarm">Bruk House Guard-alarm</label><label>Gjenta aktiv alarm hvert (sekunder)<input type="number" min="30" max="3600" data-bind="security.repeatSeconds"></label><label class="check"><input type="checkbox" data-bind="security.repeatEnabled">Gjenta varsling mens alarmen er bekreftet aktiv</label></div><p class="hint">House Guard overvåker valgte sensorer direkte. Velg sensorer, varsler, lyd og lys i underfanene. Push, kamera, lyd og alarmlys følger dette oppsettet automatisk. Legg inn API-nøkkelen under Mer for direkte levering.</p></div>
-      <div id="intrusion-settings" class="card" hidden><h2>House Guard-alarm</h2><p id="intrusion-status" role="status"></p><div class="button-row"><button data-alarm="disarmed">Frakoble og avstill</button><button data-alarm="partially_armed">Nattalarm</button><button data-alarm="armed">Bortealarm</button></div><p class="hint">I observasjon prøves bare appens interne alarm. Ingen varsler, lyd eller enhetskommandoer sendes. Frakoble alarmen før du endrer sensoroppsettet eller slår av observasjon.</p></div>
-      <details class="card"><summary>Automatisk tilkobling og frakobling</summary><div class="details-body">
-        <p class="hint">Disse valgene styrer alarmen direkte, også når en rutine er slått av eller fjernet. Krever at House Guard-alarmen er aktivert.</p>
+      <div class="card"><h2>Alarm</h2><div class="form-grid"><label class="check"><input type="checkbox" data-bind="security.alarmDeviceId" data-checked-value="house-guard-internal-alarm">Bruk House Guard-alarm</label></div><p class="hint">House Guard overvåker valgte sensorer direkte. Velg sensorer, varsler, lyd og lys i underfanene. Push, kamera, lyd og alarmlys følger oppsettet ditt.</p><div id="alarm-setup-checklist" class="setup-shortcuts"></div></div>
+      <div id="intrusion-settings" class="card" hidden><h2>House Guard-alarm</h2><p id="intrusion-status" role="status"></p><div class="button-row"><button data-alarm="disarmed">Frakoble og avstill</button><button data-alarm="partially_armed">Nattalarm</button><button data-alarm="armed">Bortealarm</button></div><p class="hint">Nattalarm krever at noen er hjemme og sover. Varsler kan prøves under Varsler uten å utløse alarmen.</p></div>
+      <details class="card" id="alarm-automation"><summary>Når skal alarmen være på?</summary><div class="details-body">
+        <p class="hint">Disse valgene styrer alarmen direkte. Avkryssingen under Rutiner gjelder bare ekstrahandlinger. Krever at House Guard-alarmen er aktivert.</p>
         <div class="form-grid">
-          <label class="check"><input type="checkbox" data-bind="security.automation.away">Aktiver bortealarm når alle valgte personer er borte</label>
-          <label class="check"><input type="checkbox" data-bind="security.automation.night">Aktiver skallsikring når nattmodus starter</label>
+          <p class="hint">Full bortealarm kobles alltid til når alle valgte beboere er bekreftet borte og gjestemodus er av. De vanlige forsinkelsene gjelder. «Start bortemodus» setter alle valgte beboere til borte. Etter avstilling kobles bortealarmen til igjen hvis huset fortsatt er tomt.</p>
+          <label class="check"><input type="checkbox" data-bind="security.automation.night">Aktiver nattalarm når nattmodus starter</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.home">Frakoble ved hjemkomst, også ved nattankomst</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.firstWake">Frakoble når første hjemmeværende våkner</label>
           <label class="check"><input type="checkbox" data-bind="security.automation.morning">Frakoble når morgenmodus starter</label>
           <label>Alle borte – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.away"></label>
           <label>Første hjemkomst – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.home"></label>
         </div>
-        <p class="hint">Personene velges under Personer. Skallsikring bruker sensorene merket «Natt» under Sensorer. Bekreftelsestiden gjelder også borte- og hjemkomsthandlingene. Alarmens inn-/utgangsforsinkelse velges under Sensorer. Ved nattankomst frakobles alarmen uten hjemkomstforsinkelse når «Sett bare den ankomne våken» er valgt. Andre personer beholder sovestatusen.</p>
-        <p class="hint">Endrede valg lagres automatisk og gjelder fra neste hendelse. De endrer ikke alarmmodus umiddelbart. Gjestemodus og observasjonsmodus gjelder fortsatt.</p>
+        <p class="hint">Personene velges under Personer. Nattalarm bruker sensorene merket «Natt» under Sensorer. Bekreftelsestiden gjelder også borte- og hjemkomsthandlingene. Alarmens inn-/utgangsforsinkelse velges under Sensorer. Ved nattankomst frakobles alarmen uten hjemkomstforsinkelse når «Sett bare den ankomne våken» er valgt. Andre personer beholder sovestatusen.</p>
+        <p class="hint">Endrede valg lagres automatisk og gjelder fra neste hendelse. De endrer ikke alarmmodus umiddelbart. Gjestemodus holder alltid alarmen frakoblet.</p>
       </div></details>
-      <details class="card"><summary>Alarmpanel i Homey</summary><p class="hint">Valgfritt: Legg til enheten med Legg til enhet → House Guard → Alarmpanel for å se status og slå alarmen av og på fra Homey. Alarmen fungerer også uten denne enheten. Prøveknappene under sensorene er bare tilgjengelige i observasjon og simulerer en aktiv sensor.</p></details>
+      <details class="card"><summary>Alarmpanel i Homey</summary><p class="hint">Valgfritt: Legg til enheten med Legg til enhet → House Guard → Alarmpanel for å se status og avstille alarmen fra Homey. Alarmen fungerer også uten denne enheten.</p></details>
       </div>
       <div id="alarm-panel-sensors" data-alarm-panel="sensors" role="tabpanel" aria-labelledby="alarm-tab-sensors" tabindex="0" hidden>
-      <div class="card"><h2>Sensorer og forsinkelser</h2><div class="form-grid"><label>Utgangsforsinkelse (sekunder)<input type="number" min="0" max="240" data-bind="security.intrusion.exitSeconds"></label><label>Inngangsforsinkelse (sekunder)<input type="number" min="0" max="240" data-bind="security.intrusion.entrySeconds"></label></div><details class="sensor-help"><summary>Slik fungerer sensorvalgene</summary><p class="hint">Velg hvilke sensorer som gjelder ved borte og natt. «Forsinket» gir tid til å gå ut og til å frakoble ved hjemkomst. Aktive sensorer ved tilkobling holdes midlertidig utenfor. Alarmen kobles til med resten av sensorene, og sender push om hvilke sensorer som venter. De tas automatisk med når de blir inaktive. Ukjente eller utilgjengelige sensorer hindrer tilkobling og vises som feil. Velg mottakere under Personer og legg inn API-nøkkel under Mer → Direkte forbindelse.</p></details><div id="intrusion-sensors"></div></div>
+      <div class="card"><h2>Alarmsensorer</h2><p id="sensor-counts" class="hint"></p><label>Søk etter sensor eller rom<input id="sensor-search" type="search" placeholder="For eksempel kjøkken"></label><div id="intrusion-sensors"></div></div>
+      <details class="card"><summary>Inn- og utgangsforsinkelse</summary><div class="details-body form-grid"><label>Tid til å gå ut (sekunder)<input type="number" min="0" max="240" data-bind="security.intrusion.exitSeconds"></label><label>Tid til å frakoble ved hjemkomst (sekunder)<input type="number" min="0" max="240" data-bind="security.intrusion.entrySeconds"></label></div><p class="hint">Sensorer merket «Forsinket» gir tid til å frakoble ved hjemkomst.</p></details>
+      <details class="card"><summary>Slik fungerer sensorvalgene</summary><p class="hint">Velg hvilke sensorer som gjelder ved borte og natt. Aktive sensorer ved tilkobling holdes midlertidig utenfor. Alarmen kobles til med resten av sensorene og sender push om hvilke sensorer som venter. De tas automatisk med når de blir inaktive. Ukjente eller utilgjengelige sensorer hindrer tilkobling og vises som feil.</p><p class="hint">Velg mottakere under Personer og koble til Homey under Innstillinger for pushvarsler.</p></details>
+      <details class="card"><summary>Robotstøvsuger og sensorunntak fra Flow</summary><p class="hint">Bruk House Guard → Deaktiver alarmsensor i en Flow før roboten starter, og Aktiver alarmsensor når den er ferdig. Velg full alarm (borte) eller delvis alarm (natt) i hvert kort. Valget gjelder til sensoren aktiveres igjen, også etter omstart. Grunnvalgene beholdes. Ved gjenaktivering venter sensoren på rolig/lukket tilstand.</p></details>
       </div>
       <div id="alarm-panel-notifications" data-alarm-panel="notifications" role="tabpanel" aria-labelledby="alarm-tab-notifications" tabindex="0" hidden>
       <div id="alarm-responses"></div>
@@ -134,20 +154,21 @@
 
       </div>
       <div id="alarm-panel-advanced" data-alarm-panel="advanced" role="tabpanel" aria-labelledby="alarm-tab-advanced" tabindex="0" hidden>
+      <details class="card"><summary>Gjentatt varsling</summary><div class="details-body form-grid"><label class="check"><input type="checkbox" data-bind="security.repeatEnabled">Gjenta varsling mens alarmen er aktiv</label><label data-show-when="security.repeatEnabled">Gjenta hvert (sekunder)<input type="number" min="30" max="3600" data-bind="security.repeatSeconds"></label></div></details>
       <details class="card"><summary>Ekstra alarmhandlinger</summary><p class="hint">Valgfritt for egne Flows og avanserte vilkår. Alarmens varsler, lyd og lys settes opp under Varsler og Lyd og lys.</p><div id="alarm-routine-list"></div><button id="add-alarm-extra">Legg til ekstra handling ved utløst alarm</button></details>
       </div>
     </section>
     <section id="people" class="panel" hidden>
-      <div class="intro"><div><h2>Hvem skal huset følge?</h2><p>Egne personvalg for tilstedeværelse, natt og mottakere.</p></div></div>
-      <div class="card"><h2>Velg roller</h2><p class="hint">Kryss av «Motta pushvarsler» for dem som skal få alle appens pushvarsler. Dette gjelder vanlig push, kritisk push og bildevarsler, uavhengig av om personen er hjemme. API-forbindelsen settes opp under Mer. Barn kan telle som hjemme uten å motta spørsmål eller push. Ingen er valgt som standard.</p><div id="people-selection"></div></div>
+      <div class="intro"><div><h2>Hvem skal huset følge?</h2><p>Velg beboere og hvem som skal motta varsler.</p></div></div>
+      <div class="card"><h2>Beboere og varsler</h2><p class="hint">Velg hvem som bor her og skal telle som hjemme. «Motta pushvarsler» gir alle appens pushvarsler, også kritisk push og kamerabilder, uansett hvor personen er. Nattutvalg og nattspørsmål er valgfrie.</p><div id="people-selection"></div></div>
     </section>
     <section id="more" class="panel" hidden>
-      <details class="card"><summary>Endre grunnoppsett</summary><div class="details-body"><p>Åpne veiviseren for å endre personer og Flow-valg for borte, hjemkomst og natt.</p><button id="reopen-setup">Åpne veiviseren</button></div></details>
-      <details class="card" id="direct-api-settings"><summary id="direct-api-heading">Direkte forbindelse</summary><div class="details-body"><p>Homey API-nøkkelen gir direkte tilgang til valgte Flows, varsler, Sonos og sovestatus.</p><p class="hint">Opprett nøkkelen i Homeys nettapp → Innstillinger → API-nøkler. Velg Flows med full Flow-tilgang, ikke bare visning eller start. Nøkkelen lagres automatisk når du limer den inn eller forlater feltet. Den vises aldri igjen og tas ikke med i eksport.</p><label>API-nøkkel<input id="direct-api-key" type="password" autocomplete="new-password" spellcheck="false" placeholder="Lim inn ny nøkkel"></label><p id="direct-api-status" role="status"></p><div class="button-row"><button id="direct-api-check">Kontroller forbindelse</button><button id="direct-api-remove">Fjern nøkkel</button></div><p class="hint">Tilgangskontrollen sender ingen varsler eller enhetskommandoer.</p></div></details>
-      <details class="card"><summary>Drift og testing</summary><div class="details-body"><label class="check"><input type="checkbox" data-bind="observation">Beregn og logg uten å styre huset</label><p class="hint">Sender ingen enhetskommandoer, varsler eller spørsmål. Endrer ingen personstatuser i Homey. Standard ved første oppstart og import. Endringer gjelder så snart de er lagret automatisk. Ventende rutiner avbrytes ved endret oppsett.</p><p class="hint" id="timezone"></p></div></details>
+      <details class="card"><summary>Endre grunnoppsett</summary><div class="details-body"><p>Gå gjennom forbindelse, beboere, alarm og rutiner. Eksisterende oppsett vises i veiviseren.</p><button id="reopen-setup">Åpne veiviseren</button></div></details>
+      <details class="card" id="direct-api-settings"><summary id="direct-api-heading">API-nøkkel</summary><div class="details-body"><p>Homey API-nøkkelen gir direkte tilgang til valgte Flows, varsler, Sonos og sovestatus.</p><p class="hint">Opprett nøkkelen i Homeys nettapp → Innstillinger → API-nøkler. Velg Flows med full Flow-tilgang, ikke bare visning eller start. Nøkkelen lagres automatisk når du limer den inn eller forlater feltet. Den vises aldri igjen og tas ikke med i eksport.</p><label>API-nøkkel<input id="direct-api-key" type="password" autocomplete="new-password" spellcheck="false" placeholder="Lim inn ny nøkkel"></label><p id="direct-api-status" role="status"></p><div class="button-row"><button id="direct-api-check">Kontroller forbindelse</button><button id="direct-api-remove">Fjern nøkkel</button></div><p class="hint">Tilgangskontrollen sender ingen varsler eller enhetskommandoer.</p></div></details>
+      <p class="hint" id="timezone"></p>
       <details class="card" id="system-status"><summary id="system-status-heading">Systemstatus</summary><div class="details-body"><div id="integration-list"></div><div class="button-row"><button id="refresh-catalog">Oppdater personer og enheter</button></div><p class="hint">Status for funksjonene du har valgt. Varsler kan testes under Alarm → Varsler.</p><div id="delivery-status"></div></div></details>
-      <details class="card"><summary>Sikkerhetskopi</summary><div class="details-body"><p class="hint">Eksport inneholder enhets- og person-ID-er, men ingen pålogging. Import erstatter oppsettet og lagres automatisk i observasjonsmodus.</p><div class="button-row"><button id="export-config">Eksporter oppsett</button><label class="file-button">Importer oppsett<input id="import-config" type="file" accept="application/json,.json"></label></div></div></details>
-      <details class="card"><summary>Hendelseslogg</summary><div class="details-body"><div class="section-heading"><h3>Vis hendelser</h3><select id="log-filter" aria-label="Filtrer logg"><option value="all">Alle hendelser</option><option value="failed">Feil / ukjent utfall</option><option value="observed">Observasjon</option><option value="skipped">Hoppet over</option><option value="info">Modus og oppsett</option></select></div><div id="full-log"></div><button id="export-log">Eksporter logg</button></div></details>
+      <details class="card"><summary>Sikkerhetskopi</summary><div class="details-body"><p class="hint">Eksport inneholder enhets- og person-ID-er, men ingen pålogging. Import erstatter oppsettet. Fullfør veiviseren for å ta det importerte oppsettet i bruk.</p><div class="button-row"><button id="export-config">Eksporter oppsett</button><label class="file-button">Importer oppsett<input id="import-config" type="file" accept="application/json,.json"></label></div></div></details>
+      <details class="card"><summary>Hendelseslogg</summary><div class="details-body"><div class="section-heading"><h3>Vis hendelser</h3><select id="log-filter" aria-label="Filtrer logg"><option value="all">Alle hendelser</option><option value="failed">Feil / ukjent utfall</option><option value="observed">Ikke utført under oppsett</option><option value="skipped">Hoppet over</option><option value="info">Modus og oppsett</option></select></div><div id="full-log"></div><button id="export-log">Eksporter logg</button></div></details>
       <p class="footnote">House Guard <span data-app-version></span> · GUI basert på Power Guard · GPL-3.0<br>Fysisk styring og mottak av meldinger må prøves ved overtakelse.</p>
     </section>
   </main>
@@ -183,5 +204,5 @@
   </div></details>
   <p class="hint full">Lås og port konfigureres under Alarm. Eksterne Flows kan styre flere enheter; velg dem bevisst. Ukjent levering gjentas ikke automatisk.</p>
   </div><p id="action-error-message" class="error" role="alert"></p><p class="hint" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</p><div class="button-row"><button type="submit" class="primary">Ferdig</button></div></form></dialog>
-<dialog id="setup-dialog" aria-labelledby="setup-title"><div class="dialog-heading"><h2 id="setup-title">Kom i gang</h2><button id="close-setup" aria-label="Lukk veiviseren">×</button></div><p id="setup-progress" class="hint"></p><div id="setup-body"></div><p id="setup-error" class="error" role="alert"></p><p class="hint" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</p><div class="button-row"><button id="setup-back">Tilbake</button><button id="setup-next" class="primary">Neste</button></div></dialog>
+<dialog id="setup-dialog" aria-labelledby="setup-title"><div class="dialog-heading"><h2 id="setup-title" tabindex="-1">Kom i gang</h2><button id="close-setup" aria-label="Lukk veiviseren">×</button></div><p id="setup-progress" class="hint"></p><div id="setup-body"></div><p id="setup-error" class="error" role="alert"></p><p class="hint" data-autosave-message role="status" aria-live="polite">Endringer lagres automatisk</p><div class="button-row"><button id="setup-back">Tilbake</button><button id="setup-next" class="primary">Neste</button></div></dialog>
 </body></html>

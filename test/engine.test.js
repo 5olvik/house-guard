@@ -40,8 +40,8 @@ test('Nattspørsmål: ja/nei, ja/timeout, timeout/timeout og feil/feil', async (
     answers.forEach((answer, i) => { if (answer) h.engine.answer(q.id, ['a', 'b'][i], answer); });
     await h.engine.tick(); assert.equal(h.calls.filter(c => c[0] === 'timeline').length, 0);
     h.advance(120000); await h.engine.tick();
-    // A configured alarm write is intentionally pending until actually confirmed.
-    if (answers[0] === 'yes' && !answers[1]) { assert.equal(q.decided, 'yes'); assert.equal(h.calls.filter(c => c[0] === 'set').length, 1); }
+    // A yes may start the night routine, but cannot replace actual sleeping status.
+    if (answers[0] === 'yes' && !answers[1]) { assert.equal(q.decided, 'yes'); assert.equal(h.calls.filter(c => c[0] === 'set').length, 0);assert.equal(h.calls.filter(c=>c[0]==='timeline').length,1); }
     else assert.equal(h.calls.filter(c => c[0] === 'set').length, 0);
     await h.engine.tick(); assert.ok(h.calls.filter(c => c[0] === 'set').length <= 1);
   }

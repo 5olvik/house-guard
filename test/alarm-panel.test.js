@@ -40,3 +40,9 @@ test('Dismiss uses app disarm path and updates the same panel; unpairing sends n
  const s=setup();s.state.active=true;await s.device.onInit();await s.device.listeners.button();assert.deepEqual(s.calls,['disarmed']);assert.equal(s.device.values.alarm_status,'Frakoblet');assert.equal(s.device.values.alarm_generic,false);
  s.device.onDeleted();assert.equal(s.app.listenerCount('intrusion_changed'),0);assert.equal(s.timers.size,0);assert.deepEqual(s.calls,['disarmed']);
 });
+
+test('Panel reports Flow exclusions for the current mode and warns when no sensor is monitored',async()=>{
+ const s=setup();s.state.disabledSensors=[{mode:'armed'},{mode:'partially_armed'}];s.state.sensorCounts={armed:1,partially_armed:0};await s.device.onInit();
+ assert.match(s.device.values.alarm_status,/1 sensor\(er\) deaktivert fra Flow/);assert.match(s.device.values.alarm_status,/Ingen sensorer overvåkes/);
+ s.state.mode='armed';await s.device.sync();assert(!s.device.values.alarm_status.includes('Ingen sensorer'));assert.deepEqual(s.calls,[]);s.device.onUninit();
+});

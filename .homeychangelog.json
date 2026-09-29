@@ -86,5 +86,17 @@
   "0.4.20": {
     "no": "Gjestemodus på og av har egne valgfrie rutiner for ekstrahandlinger. Gamle gjestehandlinger aktiveres ikke på nytt. Bortreiste brukere settes automatisk våkne hvis Homey fortsatt viser dem som sovende, uten å starte morgenrutinen eller vekke hjemmeværende.",
     "en": "Guest mode on and off have optional routines for custom actions. Legacy guest actions are not reactivated. Away users are automatically marked awake if Homey still reports them asleep, without starting morning routines or waking residents at home."
+  },
+  "0.4.21": {
+    "no": "Aktiver eller deaktiver en valgt alarmsensor fra Flow separat for full alarm og nattalarm. Unntak beholdes til gjenaktivering, også etter omstart, og vises i appen. Gjenaktiverte sensorer venter på rolig/lukket tilstand.",
+    "en": "Enable or disable a selected alarm sensor from Flow independently for full and partial alarm. Exclusions persist until re-enabled, including across restarts, and are visible in the app. Re-enabled sensors wait until inactive/closed."
+  },
+  "0.4.22": {
+    "no": "Enklere førstegangsoppsett med veiviser for Homey-forbindelse, beboere, alarm og rutiner, tydelig sjekkliste og valg av aktiv drift. Ryddigere forside, rutineoversikt og natt-/morgeninnstillinger. Søk i alarmsensorer og tydelige varselmottakere. Eksplisitte testvarsler kan sendes i testmodus uten å aktivere huset.",
+    "en": "Guided setup for the Homey connection, residents, alarm and routines, with a readiness checklist and explicit activation. Cleaner dashboard, routine overview and night/morning settings. Alarm sensor search and clear notification recipients. Explicit test notifications can be sent in test mode without enabling home automation."
+  },
+  "0.4.23": {
+    "no": "Ny veiviser og ryddigere innstillinger. Styr alarmsensorer fra Flow, separat for full alarm og nattalarm. Faste rutinenavn er låst, og testmodusvalget er fjernet. Full alarm kobles alltid til når alle beboere er borte og gjestemodus er av. Nattalarm krever noen hjemme som sover; morgen kan ikke frakoble et tomt hus.",
+    "en": "New setup wizard and clearer settings. Control alarm sensors from Flow separately for full and night alarm. Built-in routine names are fixed and the test mode switch is removed. Full alarm always arms when all residents are away and guest mode is off. Night alarm requires a sleeping resident at home; morning cannot disarm an empty home."
   }
 }

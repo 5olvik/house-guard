@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.4.20",
+  "version": "0.4.23",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [
@@ -515,6 +515,104 @@
         "titleFormatted": {
           "no": "Registrer leveringsresultat: [[delivery_id]] · [[recipient_id]] · [[result]] · [[detail]]",
           "en": "Record delivery result: [[delivery_id]] · [[recipient_id]] · [[result]] · [[detail]]"
+        }
+      },
+      {
+        "id": "disable_alarm_sensor",
+        "title": {
+          "no": "Deaktiver alarmsensor",
+          "en": "Disable alarm sensor"
+        },
+        "hint": {
+          "no": "Gjelder til sensoren aktiveres igjen, også etter omstart. En gjenaktivert sensor venter på rolig/lukket tilstand. Avstiller ikke en alarm eller påbegynt inngangsforsinkelse.",
+          "en": "Applies until re-enabled, including after restart. Re-enabled sensors wait until inactive/closed. Does not dismiss an alarm or an entry countdown."
+        },
+        "args": [
+          {
+            "name": "sensor",
+            "type": "autocomplete",
+            "title": {
+              "no": "Alarmsensor",
+              "en": "Alarm sensor"
+            }
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmmodus",
+              "en": "Alarm mode"
+            },
+            "values": [
+              {
+                "id": "armed",
+                "title": {
+                  "no": "Full alarm (borte)",
+                  "en": "Full alarm (away)"
+                }
+              },
+              {
+                "id": "partially_armed",
+                "title": {
+                  "no": "Delvis alarm (natt)",
+                  "en": "Partial alarm (night)"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Deaktiver alarmsensor: [[sensor]] · [[mode]]",
+          "en": "Disable alarm sensor: [[sensor]] · [[mode]]"
+        }
+      },
+      {
+        "id": "enable_alarm_sensor",
+        "title": {
+          "no": "Aktiver alarmsensor",
+          "en": "Enable alarm sensor"
+        },
+        "hint": {
+          "no": "Gjelder til sensoren aktiveres igjen, også etter omstart. En gjenaktivert sensor venter på rolig/lukket tilstand. Avstiller ikke en alarm eller påbegynt inngangsforsinkelse.",
+          "en": "Applies until re-enabled, including after restart. Re-enabled sensors wait until inactive/closed. Does not dismiss an alarm or an entry countdown."
+        },
+        "args": [
+          {
+            "name": "sensor",
+            "type": "autocomplete",
+            "title": {
+              "no": "Alarmsensor",
+              "en": "Alarm sensor"
+            }
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmmodus",
+              "en": "Alarm mode"
+            },
+            "values": [
+              {
+                "id": "armed",
+                "title": {
+                  "no": "Full alarm (borte)",
+                  "en": "Full alarm (away)"
+                }
+              },
+              {
+                "id": "partially_armed",
+                "title": {
+                  "no": "Delvis alarm (natt)",
+                  "en": "Partial alarm (night)"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Aktiver alarmsensor: [[sensor]] · [[mode]]",
+          "en": "Enable alarm sensor: [[sensor]] · [[mode]]"
         }
       }
     ],

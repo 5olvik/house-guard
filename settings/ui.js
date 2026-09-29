@@ -3,10 +3,10 @@
   const $ = id => document.getElementById(id);
   const labels = { alarm: 'Alarm', lights: 'Lys', av: 'Lyd og TV', ventilation: 'Ventilasjon', lock: 'Lås', garage: 'Garasjeport', notification: 'Varsler', people: 'Personstatus', other: 'Andre handlinger' };
   const kinds = { set: 'Sett enhet', flow: 'Start Flow', notify: 'Varsel', speak: 'Si tekst', sound: 'Spill lyd', timeline: 'Tidslinje', person: 'Sovestatus', garage: 'Lukk port', verify: 'Bekreft tilstand' };
-  const resultNames = { planned:'Ville utført', info:'Informasjon', pending: 'Venter', checking: 'Kontrollerer', dispatching: 'Klargjør sending', sent: 'Sendt', waiting: 'Venter på tilstand', accepted: 'Akseptert', confirmed: 'Bekreftet', observed: 'Observasjon', skipped: 'Hoppet over', cancelled: 'Avbrutt', failed: 'Feil', unknown: 'Ukjent utfall' };
+  const resultNames = { planned:'Ville utført', info:'Informasjon', pending: 'Venter', checking: 'Kontrollerer', dispatching: 'Klargjør sending', sent: 'Sendt', waiting: 'Venter på tilstand', accepted: 'Akseptert', confirmed: 'Bekreftet', observed: 'Ikke utført under oppsett', skipped: 'Hoppet over', cancelled: 'Avbrutt', failed: 'Feil', unknown: 'Ukjent utfall' };
   const modeNames = { home: 'Hjemme', away: 'Borte', night: 'Natt', unknown: 'Ukjent' };
   let data, config, dirty = false, homey, demo = false, actionRoutine, editedAction, toastTimer, autosave, actionChanged = false;
-  let setupStep = 0, setupOptions;
+  let wizard;
   const controlBusy = new Set(), controlErrors = {};
   let apiKeyBusy=false,apiKeyMessage='';
   function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
@@ -75,7 +75,7 @@
         document.querySelector('[data-bind="security.garage.enabled"]').checked = false;
       }
       if (input.dataset.device) fillSelects(); setDirty(event.type === 'change'); renderConnectionRecipes();
-      if(input.dataset.bind==='security.alarmDeviceId')renderIntrusion();
+      renderConditionalFields();renderAlarmChecklist();if(input.dataset.bind==='security.alarmDeviceId')renderIntrusion();
     };
     document.addEventListener('change', changed);
     document.addEventListener('input', event => { if (['text', 'number', 'time'].includes(event.target.type)) changed(event); });
@@ -93,12 +93,15 @@
   function renderStatus() {
     const s = data.status;
     renderIntrusionStatus();
-    $('connection').textContent = demo ? 'DEMO · Kun eksempeldata. Ingen tilkobling til Homey eller huset.' : !s.connected ? 'Homey-data er utilgjengelige. Handlinger krever fersk, bekreftet tilstand.' : s.observation ? 'OBSERVASJON · Beregner og logger. Ingen kommandoer, varsler eller spørsmål sendes.' : 'AKTIV · Valgte rutiner kan styre huset.';
-    $('connection').className = `banner ${!s.observation || !s.connected ? 'warning' : ''}`;
+    $('connection').textContent = demo ? 'DEMO · Kun eksempeldata. Ingen tilkobling til Homey eller huset.' : !s.connected ? 'Homey-data er utilgjengelige. Handlinger krever fersk, bekreftet tilstand.' : s.observation ? 'Fullfør oppsettet for å ta House Guard i bruk.' : '';
+    $('connection').hidden=!demo && s.connected && !s.observation;
+    $('connection').className = `banner ${!s.connected ? 'error' : s.observation ? 'warning' : 'ready'}`;
     $('mode-title').textContent = modeNames[s.mode] || 'Ukjent'; $('mode-reason').textContent = s.reason;
+    $('home-overview').hidden=!data.config.people.presence.length && !s.guest;
+    $('home-history').hidden=!data.config.people.presence.length && !data.config.setupCompleted;
     $('mode-icon').textContent = { home: '⌂', away: '↗', night: '☾', unknown: '?' }[s.mode];
-    $('mode-badge').textContent = s.observation ? 'Observasjon' : 'Aktiv'; $('mode-badge').className = `badge ${s.observation ? 'warn' : 'ok'}`;
-    $('guest-toggle').checked = s.guest;
+    $('mode-badge').hidden=true;
+    $('guest-toggle').checked = s.guest;$('guest-toggle').disabled=!!s.observation;
     const people = $('home-people'); people.replaceChildren();
     for (const id of data.config.people.presence) {
       const p = s.people[id] || data.catalog.people[id] || { name: `Mangler: ${id}`, available: false };
@@ -109,7 +112,7 @@
     if (!people.children.length) people.append(el('p', 'Velg personer i Personer-fanen for å beregne modus for huset.', 'empty'));
     renderHomeControls();
     const changed = data.config.night.markAsleep ? data.config.people.night.filter(id => s.people[id]?.present === true && s.people[id]?.available !== false).map(id => s.people[id]?.name || id) : [];
-    $('manual-explanation').textContent = changed.length ? `Nattmodus vil sette disse sovende: ${changed.join(', ')}.${s.observation ? ' I observasjon logges dette bare.' : ''}` : 'Ingen personstatuser vil endres av nattoppsettet.';
+    $('manual-explanation').textContent = changed.length ? `Nattmodus vil sette disse sovende: ${changed.join(', ')}.${s.observation ? ' Fullfør oppsettet først.' : ''}` : 'Ingen personstatuser vil endres av nattoppsettet.';
     $('skip-status').textContent = s.skipUntil > Date.now() ? `Automatisk natt hoppes over til ${new Date(s.skipUntil).toLocaleString('nb-NO', { timeZone: config.timeZone })}.` : '';
     const pending = $('pending-list'); pending.replaceChildren();
     let count = 0;
@@ -117,7 +120,7 @@
       count++; const row = el('div', undefined, 'action-row'); const copy = el('div', `${config.routines.find(r => r.id === run.routineId)?.name || run.routineId} · ${describeAction(a)}`, 'action-copy');
       copy.append(el('small', `${resultNames[a.status]} · ${new Date(run.dueAt + a.delaySeconds * 1000).toLocaleTimeString('nb-NO', { timeZone: config.timeZone })}`)); row.append(copy); pending.append(row);
     }
-    if (!count) pending.append(el('p', 'Ingen handlinger venter.', 'empty')); $('pending-count').textContent = count;
+    if (!count) pending.append(el('p', 'Ingen handlinger venter.', 'empty')); $('pending-count').textContent = count;$('home-pending').hidden=!count;
     renderLogs($('recent-log'), s.history.slice(-5));
     const filter = $('log-filter').value; renderLogs($('full-log'), s.history.filter(e => filter === 'all' || (filter === 'failed' ? ['failed', 'unknown'].includes(e.result) : e.result === filter)));
     $('question-card').hidden = !s.question || !!s.question.decided;
@@ -131,6 +134,15 @@
   function renderHomeControls() {
     const c=data.config.security,s=data.status,cap=(id,key)=>s.devices?.[id]?.available!==false?s.devices?.[id]?.capabilities?.[key]?.value:undefined;
     const locked=cap(c.lockDeviceId,'locked'),port=cap(c.garage.statusDeviceId,c.garage.statusCapability);
+    $('home-lock').hidden=!c.lockDeviceId;
+    $('home-garage').hidden=!c.garage.statusDeviceId && !c.garage.commandDeviceId;
+    $('home-alarm').hidden=!data.intrusion?.selected && !data.intrusion?.active && !data.intrusion?.target && !data.intrusion?.entryAt;
+    $('security-status').hidden=[...$('security-status').children].every(node=>node.hidden);
+    $('manual-controls').hidden=!data.config.people.presence.length || !!s.observation;
+    $('home-night-controls').hidden=!data.config.people.presence.length;
+    $('night-command-help').hidden=$('home-night-controls').hidden;
+    $('home-people').hidden=!data.config.people.presence.length;
+    document.querySelectorAll('[data-command="home"],[data-command="away"]').forEach(button=>{button.disabled=!!s.observation || !data.direct?.ready;button.title=button.disabled?'Koble til Homey under Innstillinger for å endre personstatus.':'';});
     $('home-lock-state').textContent=locked===true?'Låst':locked===false?'Ulåst':'Ukjent';
     $('home-garage-state').textContent=typeof port==='boolean'?(port===c.garage.openValue?'Åpen':'Lukket'):'Ukjent';
     for(const target of ['lock','garage']){
@@ -138,33 +150,29 @@
       const current=target==='lock'?locked:typeof port==='boolean'?port===c.garage.openValue:undefined;
       document.querySelectorAll('[data-control="'+target+'"]').forEach(button=>{
         const value=button.dataset.controlValue==='true',option=control?.options[String(value)];
-        button.disabled=!!pending || !option?.allowed || value===current;
+        button.disabled=!!s.observation || !!pending || !option?.allowed || value===current;
         button.title=pending?'Venter på bekreftet status':option?.reason || '';
       });
       const next=typeof current==='boolean'?String(!current):'true';
-      $(target+'-control-note').textContent=controlErrors[target] || (pending?'Kommando pågår – venter på bekreftet status.':control?.options[next]?.reason || (s.observation?'Observasjon: knappene logger bare ønsket handling.':'Status leses fra Homey.'));
+      $(target+'-control-note').textContent=controlErrors[target] || (pending?'Kommando pågår – venter på bekreftet status.':control?.options[next]?.reason || (s.observation?'Fullfør oppsettet før du styrer enheten.':'Status leses fra Homey.'));
     }
   }
   function renderPeople() {
-    $('people-selection').replaceChildren();
-    const ids = [...new Set([...Object.keys(data.catalog.people), ...Object.values(config.people).flat()])];
-    for (const id of ids) {
-      const p = data.catalog.people[id], row = el('div', undefined, 'person-config');
-      row.append(el('strong', p?.name || `Mangler: ${id}`, !p ? 'missing' : ''));
-      const roles = el('div', undefined, 'person-roles');
-      for (const [role, label] of [['presence', 'Teller som hjemme'], ['night', 'Nattutvalg'], ['questions', 'Nattspørsmål'], ['notifications', 'Motta pushvarsler']]) {
-        const wrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = config.people[role].includes(id);
-        check.addEventListener('change', () => {
-          config.people[role] = check.checked ? [...config.people[role], id] : config.people[role].filter(v => v !== id);
-          if (role === 'presence' && !check.checked) config.people.night = config.people.night.filter(v => v !== id);
-          if (role === 'night' && check.checked && !config.people.presence.includes(id)) config.people.presence.push(id);
-          setDirty(true); renderPeople();
-        });
-        wrap.append(check, document.createTextNode(label)); roles.append(wrap);
+    const container=$('people-selection');container.replaceChildren();
+    const ids=[...new Set([...Object.keys(data.catalog.people),...Object.values(config.people).flat()])];
+    for(const id of ids){
+      const p=data.catalog.people[id],row=el('div',undefined,'person-config');row.append(el('strong',p?.name || 'Utilgjengelig valgt person',!p?'missing':''));
+      const roles=el('div',undefined,'person-roles'),night=el('details');night.append(el('summary','Natt og spørsmål'));
+      for(const [role,title]of [['presence','Bor her / teller med'],['notifications','Motta pushvarsler'],['night','Teller med når huset går i nattmodus'],['questions','Motta spørsmål om nattmodus']]){
+        const label=el('label',undefined,'check'),check=el('input');check.type='checkbox';check.checked=config.people[role].includes(id);
+        check.onchange=()=>{config.people[role]=check.checked?[...new Set([...config.people[role],id])]:config.people[role].filter(v=>v!==id);if(role==='presence'&&!check.checked)config.people.night=config.people.night.filter(v=>v!==id);if(role==='night'&&check.checked&&!config.people.presence.includes(id))config.people.presence.push(id);setDirty(true);renderPeople();renderConditionalFields();};
+        label.append(check,document.createTextNode(title));(['presence','notifications'].includes(role)?roles:night).append(label);
       }
-      row.append(roles); $('people-selection').append(row);
+      night.open=config.people.night.includes(id)||config.people.questions.includes(id);
+      if(config.people.questions.includes(id)&&!config.night.automatic)night.append(el('p','Nattspørsmål er av. De kan aktiveres under Rutiner → Aktivering - Deaktivering av nattalarm.','hint'));
+      row.append(roles,night);container.append(row);
     }
-    if (!ids.length) $('people-selection').append(el('p', 'Ingen personer tilgjengelige. Kontroller Homey-tilkoblingen under Mer.', 'empty'));
+    if(!ids.length)container.append(el('p','Ingen personer funnet. Kontroller Homey-forbindelsen under Innstillinger.','empty'));
   }
   function describeAction(a) {
     const target = data.catalog.devices[a.deviceId]?.name || a.deviceId || data.catalog.people[a.personId]?.name || a.personId || data.catalog.flows.find(f => f.id === a.flowId)?.name || a.flowId || '';
@@ -173,23 +181,29 @@
     return `${kinds[a.kind] || a.kind}${target ? ` · ${target}` : ''}${a.value !== undefined ? ` → ${value}` : ''}${a.text ? ` · ${a.text}` : ''}`;
   }
   function renderRoutines() {
-    const list = $('routine-list'), alarmList = $('alarm-routine-list'); list.replaceChildren(); alarmList.replaceChildren();
+    const list=$('routine-list'),alarmList=$('alarm-routine-list');
+    const opened=new Set([...list.querySelectorAll('details[open]'),...alarmList.querySelectorAll('details[open]')].map(node=>node.dataset.routine).filter(Boolean));
+    const extrasOpen=!!$('extra-routine-events')?.open;
+    list.replaceChildren();alarmList.replaceChildren();
+    const extra=el('details',undefined,'card');extra.id='extra-routine-events';extra.open=extrasOpen;extra.append(el('summary','Legg til ekstrahandlinger når …'),el('p','Disse hendelsene er tilgjengelige når du trenger dem. Innebygde funksjoner følger fortsatt Alarm og Aktivering - Deaktivering av nattalarm.','hint'));
+    const extraList=el('div');extra.append(extraList);
+    const headingFor=(heading,routine)=>{heading.replaceChildren(el('span',routine.name));const count=routine.actions.length;heading.append(el('small',count?(routine.enabled?'':'Ekstrahandlinger på pause · ')+routine.actions.slice(0,2).map(describeAction).join(' · ')+(count>2?' · +'+(count-2)+' til':''):'Ingen ekstrahandlinger','routine-meta'));};
     for (const routine of config.routines) {
       if(['guestOn','guestOff'].includes(routine.id))continue;
       const custom=routine.id.startsWith('custom-');
       if(custom && routine.hidden)continue;
       const alarmEvent = ['alarm','arming','entryDelay','activeSensor','alarmOff'].includes(routine.id);
       const card = el('details', undefined, 'card'), heading = el('summary', routine.name), body = el('div', undefined, 'details-body');
-      card.open = routine.id === actionRoutine?.id;
-      const nameLabel = el('label', custom?'1. Gi rutinen et navn':'Rutinenavn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;nameInput.placeholder='For eksempel: Rolig kveld';
-      nameInput.oninput = () => { routine.name = nameInput.value; heading.textContent = routine.name; setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel);
+      card.dataset.routine=routine.id;card.open=opened.has(routine.id)||routine.id===actionRoutine?.id;headingFor(heading,routine);
+      if(custom){const nameLabel = el('label', '1. Gi rutinen et navn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;nameInput.placeholder='For eksempel: Rolig kveld';
+      nameInput.oninput = () => { routine.name = nameInput.value; headingFor(heading,routine); setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel); }
       const enabledWrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = routine.enabled;
-      check.onchange = () => { routine.enabled = check.checked;const run=body.querySelector('[data-routine-start]');if(run)run.disabled=!routine.enabled || !routine.actions.length;setDirty(true); }; enabledWrap.append(check, document.createTextNode(custom ? 'Rutinen er aktiv' : 'Ekstra handlinger er aktive'));
+      check.onchange = () => { routine.enabled = check.checked;headingFor(heading,routine);const run=body.querySelector('[data-routine-start]');if(run)run.disabled=!routine.enabled || !routine.actions.length;setDirty(true); }; enabledWrap.append(check, document.createTextNode(custom ? 'Rutinen er aktiv' : 'Ekstra handlinger er aktive'));
       const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
       execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap);
       if(custom){body.append(el('h3','2. Slik starter du rutinen'),el('p','Trykk «Start rutine» her, eller bruk Homey-kortet House Guard → Start navngitt rutine i en Flow. Velg denne rutinens navn i kortet.','hint'),el('h3','3. Velg hva som skal skje'),el('p','Legg til én eller flere handlinger, for eksempel slå på et lys, starte en Flow eller sende et varsel. Vilkår avgjør om en handling utføres når rutinen starter.','hint'));}
-      const orderLabel=el('label','Rekkefølge på handlingene');orderLabel.append(execution);body.append(orderLabel);
-      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Skallsikring velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const orderLabel=el('label','Rekkefølge på handlingene');orderLabel.append(execution);const advanced=el('details');advanced.append(el('summary','Avansert utførelse'),orderLabel);body.append(advanced);
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Nattalarm velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       if(['guestActivated','guestDeactivated'].includes(routine.id))body.append(el('p',routine.id==='guestActivated'?'Kjøres én gang når gjestemodus slås på. Legg til egne handlinger, for eksempel en Flow eller en talemelding. Det vanlige gjestevarselet og frakobling av alarmen er allerede innebygd.':'Kjøres én gang når gjestemodus slås av. Legg til egne handlinger etter behov. Vanlig borterutine starter automatisk hvis alle beboerne er borte.','hint'));
       const builtinList = el('div');
@@ -227,9 +241,13 @@
         const removeRoutine = el('button','Slett egen rutine');
         removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutines();};body.append(removeRoutine);
       }
-      if(!custom)body.append(el('p','Fast rutine i House Guard. Den kan ikke slettes. Krysset styrer bare ekstrahandlingene dine. Innebygde funksjoner følger fortsatt valgene under Alarm og Natt og morgen. Gjester holder huset hjemme og alarmen frakoblet.','hint'));
-      card.append(heading, body); (alarmEvent ? alarmList : list).append(card);
+      if(!custom)body.append(el('p','Fast hendelse. Krysset gjelder bare ekstrahandlingene dine.','hint'));
+      card.append(heading,body);
+      const optional=!custom&&!alarmEvent&&!routine.actions.length;
+      (alarmEvent?alarmList:optional?extraList:list).append(card);
+      if(optional&&card.open)extra.open=true;
     }
+    if(extraList.children.length)list.append(extra);
   }
   function renderIntegrations() {
     renderApiKey();
@@ -244,32 +262,70 @@
     const issues = active.filter(c => ['missing','review'].includes(c.level));
     for (const check of [...issues,...active.filter(c=>c.level==='ready')]) { const row = el('div', undefined, 'integration-row'), copy = el('div'); copy.append(el('strong',check.title),el('p',check.detail)); row.append(copy,el('span',names[check.level],`badge ${check.level === 'ready' ? 'ok' : 'warn'}`)); container.append(row); }
     const issueCount = issues.length + (data.catalog.errors || []).length;
-    $('home-attention').hidden = issueCount === 0;
-    $('home-attention-text').textContent = `${issueCount} ${issueCount===1?'punkt trenger':'punkter trenger'} oppfølging`;
+    const pending=HouseGuardOnboarding.checklist(config,data,HouseGuardOnboarding.inferFeatures(config)).filter(c=>c.required&&!c.ready),next=pending[0];
+    const attention=next || issues[0];
+    $('home-attention').hidden = !config.setupCompleted || (!attention && !config.observation && !issueCount);
+    $('home-attention-text').textContent = next ? next.title : attention ? attention.title : config.observation ? 'Fullfør oppsettet' : 'Kontroller Homey-forbindelsen';
+    $('home-attention-detail').textContent = next?.detail || attention?.detail || (config.observation?'Huset styres ikke automatisk. Se over oppsettet før du tar appen i bruk.':'Se systemstatus for mer informasjon.');
+    $('show-system-status').dataset.setupStep=next?.step || (!attention && config.observation?'finish':'');
+    $('show-system-status').textContent=next?'Fullfør oppsett':!attention && config.observation?'Se over og ta i bruk':'Se detaljer';
     $('system-status-heading').textContent = issueCount ? `Systemstatus · ${issueCount} å se over` : 'Systemstatus · Alt klart';
     const deliveries = $('delivery-status'); deliveries.replaceChildren(el('h3','Siste leveringsresultater'));
     const recent = data.readiness?.deliveries?.slice(-5) || [];
-    if (!recent.length) deliveries.append(el('p','Ingen leveringer er sendt. Observasjon sender ingen meldinger.','hint'));
+    if (!recent.length) deliveries.append(el('p','Ingen varsler er sendt ennå.','hint'));
     for (const d of recent.reverse()) deliveries.append(el('p',`${new Date(d.at).toLocaleString('nb-NO',{timeZone:config.timeZone})} · ${kinds[d.kind] || 'Nattspørsmål'} · ${resultNames[d.result]}${d.detail ? ` · ${d.detail}` : ''}`,'summary-line'));
     for (const error of data.catalog.errors || []) container.append(el('p', error, 'error'));
   }
   function renderApiKey() {
     const status=data?.direct || data?.catalog?.direct || {};
-    $('direct-api-heading').textContent = `Direkte forbindelse · ${status.ready?'Klar':status.configured?'Må kontrolleres':'Ikke satt opp'}`;
+    $('direct-api-heading').textContent = `API-nøkkel · ${status.ready?'Klar':status.configured?'Må kontrolleres':'Ikke satt opp'}`;
     const panel=$('direct-api-settings');
     if(!panel.dataset.initialized){panel.open=!status.ready;panel.dataset.initialized='true';}
-    $('direct-api-status').textContent=apiKeyMessage || (status.configured?(status.ready?'Direkte forbindelse er klar. Nøkkelen er lagret.':status.problem || 'Forbindelsen må kontrolleres.'):'Legg inn API-nøkkel for direkte Flow-start, push og Sonos.');
+    $('direct-api-status').textContent=apiKeyMessage || (status.configured?(status.ready?'API-nøkkel er klar. Nøkkelen er lagret.':status.problem || 'Forbindelsen må kontrolleres.'):'Legg inn API-nøkkel for direkte Flow-start, push og Sonos.');
     $('direct-api-key').disabled=apiKeyBusy || demo;
     $('direct-api-check').disabled=apiKeyBusy || demo || !status.configured;
     $('direct-api-remove').disabled=apiKeyBusy || demo || !status.configured;
   }
-  async function updateApiKey(body) {
+  async function updateApiKey(body,rethrow=false) {
     if(apiKeyBusy)return;apiKeyBusy=true;apiKeyMessage='Kontrollerer og lagrer …';renderApiKey();
     try{await flush();const result=await api('PUT','/api-key',body);$('direct-api-key').value='';data.direct=result;apiKeyMessage='';await load();}
-    catch(error){$('direct-api-key').value='';apiKeyMessage=error.message;}
+    catch(error){$('direct-api-key').value='';apiKeyMessage=error.message;if(rethrow)throw error;}
     finally{apiKeyBusy=false;renderApiKey();}
   }
-  function renderSetupEntry() { $('setup-intro').hidden = data.config.setupCompleted === true; }
+  function renderSetupEntry() {
+    $('setup-intro').hidden = config.setupCompleted === true;
+    $('open-setup').textContent = config.people.presence.length ? 'Fortsett oppsettet' : 'Start oppsettet';
+  }
+  function editConfig(change) {
+    const next=structuredClone(config);change(next);config=next;setDirty(true);renderConfig();
+  }
+  async function refreshSetup() {
+    await flush();const latest=await api('GET','/state');
+    if(autosave.observe(latest.config))config=structuredClone(latest.config);
+    data=latest;data.catalog=await api('GET','/catalog');renderConfig();renderStatus();
+  }
+  function navigateGuide(target) {
+    document.querySelector('[data-tab="'+target.tab+'"]').click();
+    if(target.alarmTab)document.querySelector('[data-alarm-tab="'+target.alarmTab+'"]').click();
+    if(target.id){const node=$(target.id);if(node){if(node.tagName==='DETAILS')node.open=true;node.scrollIntoView({block:'start'});}}
+    document.querySelectorAll('[data-guide-return]').forEach(node=>node.remove());
+    const note=el('div',undefined,'banner row');note.dataset.guideReturn='true';note.append(el('span','Endringene lagres automatisk. Fortsett i veiviseren når du er klar.'));
+    const back=el('button','Tilbake til veiviseren');back.onclick=()=>{note.remove();void openSetup(target.step);};note.append(back);$(target.tab).prepend(note);
+  }
+  function renderConditionalFields() {
+    document.querySelectorAll('[data-show-when]').forEach(node=>{node.hidden=!get(config,node.dataset.showWhen);});
+    $('night-person-settings').hidden=!config.people.night.length && !config.night.automatic && !config.night.wakeArrival && !config.morning.scheduled && !config.morning.motion.enabled;
+    const motion=$('morning-motion-settings');if(!motion.dataset.initialized){motion.open=!!config.morning.motion.enabled;motion.dataset.initialized='true';}
+  }
+  function renderAlarmChecklist() {
+    const root=$('alarm-setup-checklist');root.replaceChildren();
+    if(config.security.alarmDeviceId!=='house-guard-internal-alarm'){root.append(el('p','Velg alarmen over for å sette opp sensorer og automatikk.','hint'));return;}
+    for(const [title,copy,tab]of [
+      ['Sensorer',config.security.intrusion.sensors.length+' valgt · velg borte og natt','sensors'],
+      ['Automatikk','Velg når alarmen kobles til og fra','overview'],
+      ['Varsler og test',config.people.notifications.length+' mottakere · prøv varsling på telefonen','notifications']
+    ]){const button=el('button',undefined,'setup-shortcut');button.append(el('strong',title),el('small',copy));button.onclick=()=>{document.querySelector('[data-alarm-tab="'+tab+'"]').click();if(tab==='overview'){$('alarm-automation').open=true;$('alarm-automation').scrollIntoView({block:'start'});}};root.append(button);}
+  }
   function renderAlarmResponses() {
     for(const [id,section] of [['alarm-responses','notifications'],['alarm-audio-responses','audio']])
       HouseGuardAlarm.render({root:$(id),section,config,data,el,options,deviceItems,changed:setDirty,api,flush,demo});
@@ -289,32 +345,40 @@
       };
     });
   }
-  function renderConfig() { document.querySelectorAll('[data-app-version]').forEach(node=>node.textContent=data.version || ''); renderAlarmResponses(); renderSetupEntry(); fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); }
+  function renderConfig() { document.querySelectorAll('[data-app-version]').forEach(node=>node.textContent=data.version || ''); renderAlarmResponses(); renderSetupEntry(); fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); renderConditionalFields(); renderAlarmChecklist(); }
   function renderIntrusionStatus() {
     const s=data.intrusion;if(!s)return;
     const phase=s.active?'ALARM UTLØST':s.entryAt?'Inngangsforsinkelse':s.target?'Utgangsforsinkelse':{disarmed:'Frakoblet',armed:'Bortealarm tilkoblet',partially_armed:'Nattalarm tilkoblet'}[s.mode];
     const seconds=Math.max(0,Math.ceil(((s.entryAt || s.exitAt || 0)-Date.now())/1000));
-    $('intrusion-status').textContent=`${s.observation?'Observasjon · ':''}${phase}${s.entryAt || s.target?` · ${seconds} s`:''}${s.context && (s.active || s.entryAt)?` · ${s.context.zone} · ${s.context.reason}`:''}${s.faults.length?` · ${s.faults.join(' · ')}`:''}`;
+    const disabled=s.disabledSensors || [],modeName=mode=>mode==='armed'?'full alarm':'nattalarm';
+    const disabledText=disabled.length?'Deaktivert fra Flow: '+disabled.map(sensor=>`${data.catalog.devices[sensor.deviceId]?.name || sensor.name} (${modeName(sensor.mode)})`).join(', ')+'.':'';
+    const currentMode=s.target || s.mode,emptyWarning=currentMode!=='disarmed' && s.sensorCounts?.[currentMode]===0?'Ingen sensorer overvåkes i denne alarmmodusen.':'';
+    $('intrusion-status').textContent=`${s.observation?'Oppsett ikke fullført · ':''}${phase}${s.entryAt || s.target?` · ${seconds} s`:''}${s.context && (s.active || s.entryAt)?` · ${s.context.zone} · ${s.context.reason}`:''}${s.faults.length?` · ${s.faults.join(' · ')}`:''}`;
     $('home-alarm-phase').textContent=s.selected?phase:'Alarm ikke aktivert';
+    $('intrusion-status').textContent+=[disabledText,emptyWarning].filter(Boolean).map(text=>' · '+text).join('');
     $('home-alarm').classList.toggle('alarm-active',!!s.active);
     $('home-alarm-details').textContent=!s.selected?'Slå på House Guard-alarm under Alarm.':[
-      s.observation?'Observasjon – ingen varsler eller fysiske handlinger.':'',
+      s.observation?'Fullfør oppsettet for å bruke alarmen.':'',
       s.context && (s.active || s.entryAt)?s.context.zone+' · '+s.context.reason:'',
       s.target || s.entryAt?seconds+' sekunder igjen.':'',
       ...(s.faults || []),
+      disabledText,emptyWarning,
     ].filter(Boolean).join(' ');
     $('home-alarm-bypassed').hidden=!s.bypassed?.length;
     $('home-alarm-bypassed').textContent=s.bypassed?.length?'Venter på inaktive sensorer: '+s.bypassed.map(sensor=>sensor.name+' ('+sensor.zone+')').join(', ')+'. Resten av alarmen er tilkoblet.':'';
     $('home-disarm').disabled=!s.selected || (!s.active && !s.target && !s.entryAt && s.mode==='disarmed');
-    document.querySelectorAll('[data-alarm-test]').forEach(button=>{button.disabled=!data.config.observation || !s.selected || s.mode==='disarmed' || !!s.target;});
+    document.querySelectorAll('[data-alarm]').forEach(button=>{if(button.dataset.alarm!=='disarmed')button.disabled=!!data.config.observation;});
+    document.querySelectorAll('[data-sensor-flow-status]').forEach(node=>{const [id,cap]=JSON.parse(node.dataset.sensorFlowStatus),items=disabled.filter(d=>d.deviceId===id && d.capability===cap);node.textContent=items.length?'Deaktivert fra Flow: '+items.map(d=>modeName(d.mode)).join(' og ')+'. Bruk «Aktiver alarmsensor» for å ta den med igjen.':'';node.hidden=!items.length;});
   }
   function renderIntrusion() {
     $('intrusion-settings').hidden=config.security.alarmDeviceId!=='house-guard-internal-alarm' && !(data.intrusion?.selected && (data.intrusion.mode!=='disarmed' || data.intrusion.target || data.intrusion.active));
-    const wrap=$('intrusion-sensors');wrap.replaceChildren();
+    const wrap=$('intrusion-sensors'),query=$('sensor-search').value.toLocaleLowerCase('nb');wrap.replaceChildren();
     const sensors=config.security.intrusion.sensors, choices=new Map();
+    $('sensor-counts').textContent=`${sensors.filter(s=>s.full).length} valgt for bortealarm · ${sensors.filter(s=>s.partial).length} for nattalarm`;
     for(const d of Object.values(data.catalog.devices))for(const cap of ['alarm_contact','alarm_motion'])if(d.capabilities[cap])choices.set(`${d.id}:${cap}`,{d,cap});
     for(const sensor of sensors)if(!choices.has(`${sensor.deviceId}:${sensor.capability}`))choices.set(`${sensor.deviceId}:${sensor.capability}`,{d:{id:sensor.deviceId,name:'Mangler valgt sensor',zone:'',available:false,capabilities:{}},cap:sensor.capability});
     for(const {d,cap} of [...choices.values()].sort((a,b)=>a.d.name.localeCompare(b.d.name,'nb'))) {
+      if(!`${d.name} ${d.zone || ''}`.toLocaleLowerCase('nb').includes(query))continue;
       const row=el('div',undefined,'person-config');row.append(el('strong',`${d.name} · ${d.zone || 'Uten sone'} · ${cap==='alarm_contact'?'Dør/vindu':'Bevegelse'}${d.available===false?' · utilgjengelig':''}`));
       const selected=sensors.find(s=>s.deviceId===d.id && s.capability===cap),roles=el('div',undefined,'person-roles');
       for(const [key,title]of [['full','Borte'],['partial','Natt'],['delay','Forsinket']]) {
@@ -323,81 +387,15 @@
         label.append(check,document.createTextNode(title));roles.append(label);
       }
       row.append(roles);
-      if(selected) {const button=el('button','Prøv sensor i observasjon');button.dataset.alarmTest='true';button.onclick=async()=>{try{await flush();await api('POST','/command',{type:'alarm-test',deviceId:d.id,capability:cap});await load();}catch(error){toast(error.message);}};row.append(button);}
+      if(selected){const status=el('p','','hint');status.dataset.sensorFlowStatus=JSON.stringify([d.id,cap]);row.append(status);}
       wrap.append(row);
     }
-    if(!choices.size)wrap.append(el('p','Ingen dør- eller bevegelsessensorer funnet. Oppdater enheter under Mer.','hint'));
+    if(!wrap.children.length)wrap.append(el('p',choices.size?'Ingen sensorer passer søket.':'Ingen dør- eller bevegelsessensorer funnet. Oppdater enheter under Innstillinger.','hint'));
     renderIntrusionStatus();
   }
   function renderConnectionRecipes() {}
-  async function openSetup() {
-    $('open-setup').disabled=true; $('reopen-setup').disabled=true;
-    try {
-      data.catalog=await api('GET','/catalog');
-      setupStep=0;setupOptions={people:[...config.people.presence],useNightPeople:config.people.presence.length > 0 && config.people.presence.every(id=>config.people.night.includes(id)),flows:HouseGuardSetup.selections(config)};
-      renderSetup();$('setup-dialog').showModal();
-    } catch(error) { toast(`Kunne ikke oppdatere Flow-listen: ${error.message}`); }
-    finally { $('open-setup').disabled=false; $('reopen-setup').disabled=false; }
-  }
-  function setupChange(patch) {
-    try {
-      config = HouseGuardSetup.change(config, patch, data.catalog);
-      setupOptions.people = [...config.people.presence]; setupOptions.flows = HouseGuardSetup.selections(config);
-      setupOptions.useNightPeople = config.people.presence.length > 0 && config.people.presence.every(id=>config.people.night.includes(id));
-      setDirty(true); renderConfig(); $('setup-error').textContent = '';
-    } catch(error) { renderSetup(); $('setup-error').textContent = error.message; }
-  }
-  function renderSetup() {
-    const titles=['Hvem bor her?','Hvilke flows skal huset starte?','Velg det du trenger','Se over grunnoppsettet'];
-    $('setup-title').textContent=titles[setupStep];$('setup-progress').textContent=`Steg ${setupStep+1} av 4`;
-    $('setup-back').hidden=setupStep===0;$('setup-next').textContent=setupStep===3?'Ferdig':'Neste';$('setup-error').textContent='';
-    const body=$('setup-body');body.replaceChildren();
-    function choice(parent,text,checked,change) {const label=el('label',undefined,'check'),input=el('input');input.type='checkbox';input.checked=checked;input.onchange=()=>change(input.checked);label.append(input,document.createTextNode(text));parent.append(label);}
-    if(setupStep===0) {
-      body.append(el('p','Velg personene som teller som hjemme. Tilstedeværelsen hentes fra Homey.','hint'));
-      for(const p of Object.values(data.catalog.people).filter(p=>p.available!==false)) choice(body,p.name,setupOptions.people.includes(p.id),checked=>setupChange({people:checked?[...setupOptions.people,p.id]:setupOptions.people.filter(id=>id!==p.id)}));
-      if(!Object.keys(data.catalog.people).length)body.append(el('p','Ingen personer er tilgjengelige. Oppdater personer og enheter under Mer.','error'));
-    } else if(setupStep===1) {
-      body.append(el('p','Lag for eksempel «Slå av alle lys» i Homey og velg den under «Når alle drar». Med API-nøkkel starter House Guard den direkte. Legg inn nøkkelen under Mer → Direkte forbindelse.','hint'));
-      const flows=HouseGuardSetup.flowChoices(data.catalog);
-      for(const [id,title] of [['away','Når alle drar'],['home','Når første person kommer hjem'],['night','Når nattmodus starter']]) {
-        const label=el('label',title,'setup-flow'),select=el('select');
-        select.id=`setup-flow-${id}`;select.add(new Option('Ingen Flow', ''));
-        for(const flow of flows) {
-          const option=new Option(`${flow.name} · ${flow.type==='advanced'?'Advanced Flow':'Flow'}${flow.reason?` · ${flow.reason}`:''}`,flow.key);
-          option.disabled=!flow.selectable;select.add(option);
-        }
-        const selected=setupOptions.flows[id];
-        if(selected && !flows.some(flow=>flow.key===selected)) {
-          const missing=new Option('Tidligere valgt Flow finnes ikke – velg på nytt',selected);missing.disabled=true;select.add(missing);
-        }
-        select.value=selected;select.onchange=()=>setupChange({flows:{[id]:select.value}});
-        label.append(select);body.append(label);
-        const routine=config.routines.find(r=>r.id===id);
-        const oldLights=routine?.actions.filter(a=>a.setupManaged===true && a.kind==='set').length;
-        if(oldLights)body.append(el('p',`${oldLights} tidligere lysvalg fra veiviseren erstattes når du endrer dette valget.`,'hint'));
-      }
-      if(!flows.length)body.append(el('p','Ingen flows funnet. Lag en Flow i Homey og oppdater listen. Du kan også fortsette med Ingen Flow.','hint'));
-      body.append(el('p','Alle flows vises. Deaktiverte flows og flows med feil kan ikke velges. Advanced Flow trenger et Start-kort. Flows som krever en tagg, kan ikke startes her.','hint'));
-      body.append(el('p','Egne handlinger under Rutiner beholdes. Velger du en Flow som allerede er lagt til, opprettes den ikke en gang til.','hint'));
-      const refresh=el('button','Oppdater Flow-listen');refresh.type='button';
-      refresh.onclick=async()=>{refresh.disabled=true;try{data.catalog=await api('GET','/catalog');renderSetup();}catch(error){$('setup-error').textContent=error.message;}finally{refresh.disabled=false;}};
-      body.append(refresh);
-    } else if(setupStep===2) {
-      choice(body,'Ta med alle valgte personer i nattutvalget',setupOptions.useNightPeople,checked=>setupChange({useNightPeople:checked}));
-      body.append(el('p','Nattmodus kan startes fra Hjem. Mobilspørsmål velges separat under Rutiner.','hint'));
-      body.append(el('h3','Gjestemodus uten Flow'),el('p','I Homey: Legg til enhet → House Guard → Gjestemodus. Bryteren følger samme gjestemodus som appen.','hint'));
-      body.append(el('h3','Utvid senere'),el('p','Alarm og dørlås velges under Alarm. Varsler, tale og mobilspørsmål trenger egne koblinger. Veiviseren slår ikke på disse funksjonene.','hint'));
-    } else {
-      body.append(el('p',`Personer: ${setupOptions.people.map(id=>data.catalog.people[id]?.name || 'Utilgjengelig').join(', ')}.`,'summary-line'));
-      const flows=HouseGuardSetup.flowChoices(data.catalog);
-      for(const [id,label] of [['away','Når alle drar'],['home','Ved hjemkomst'],['night','Ved nattmodus']]) {
-        const selected=setupOptions.flows[id],flow=flows.find(f=>f.key===selected);
-        body.append(el('p',`${label}: ${selected ? (flow ? `${flow.name}${flow.reason?` (${flow.reason})`:''}` : 'Flow mangler – velg på nytt') : 'Ingen Flow fra veiviseren'}.`,'summary-line'));
-      }
-      body.append(el('p',setupOptions.useNightPeople?'Hjemmeværende valgte personer tas med i nattutvalget.':'Nattutvalget beholdes for dem som fortsatt teller som hjemme.','summary-line'));
-      body.append(el('p',`Trykk Ferdig for å skjule veiviseren fra forsiden. Den kan åpnes igjen under Mer. Valgene lagres automatisk. ${config.observation ? 'Observasjonsmodus er på.' : 'Aktiv styring er på.'} Dine øvrige handlinger og sikkerhetsvalg beholdes.`,'hint'));
-    }
+  async function openSetup(target) {
+    try {await wizard.open(typeof target==='string'?target:undefined);}catch(error){toast(error.message);}
   }
   async function load(initial = false) {
     try {
@@ -469,27 +467,22 @@
   }
   async function initialize() {
     initializeAlarmTabs();
+    wizard=HouseGuardWizard.create({el,api,flush,demo,read:()=>({config,data}),change:editConfig,replace:next=>{config=next;setDirty(true);renderConfig();},refresh:refreshSetup,reload:load,key:body=>updateApiKey(body,true),navigate:navigateGuide});
     bindEvents(); await load(true); if (homey) homey.ready();
-    $('open-setup').onclick=openSetup; $('reopen-setup').onclick=openSetup;$('close-setup').onclick=()=>$('setup-dialog').close();
-    $('setup-back').onclick=()=>{setupStep--;renderSetup();};
-    $('setup-next').onclick=async()=>{
-      $('setup-next').disabled=true;
-      try {
-        if(setupStep===0 && !setupOptions.people.length)throw new Error('Velg minst én person.');
-        await flush();
-        if(setupStep<3){setupStep++;renderSetup();return;}
-        config.setupCompleted = true; setDirty(true); await flush();
-        $('setup-dialog').close();
-      }catch(error){$('setup-error').textContent=error.message;}finally{$('setup-next').disabled=false;}
+    $('open-setup').onclick=openSetup;$('reopen-setup').onclick=()=>openSetup('features');
+    $('sensor-search').oninput=renderIntrusion;
+    $('show-system-status').onclick=()=>{
+      const step=$('show-system-status').dataset.setupStep;
+      if(step){void openSetup(step);return;}
+      document.querySelector('[data-tab=more]').click();$('system-status').open=true;$('system-status-heading').focus();$('system-status').scrollIntoView({block:'start'});
     };
-    $('show-system-status').onclick=()=>{document.querySelector('[data-tab=more]').click();$('system-status').open=true;$('system-status-heading').focus();$('system-status').scrollIntoView({block:'start'});};
     document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { if(button.dataset.tab==='security')renderAlarmResponses(); document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
     document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
       const buttons=[...document.querySelectorAll('[data-command]')],mode=button.dataset.command;
       buttons.forEach(b=>b.disabled=true);
       try { await flush(); await api('POST', '/command', ['home','away'].includes(mode) ? {type:'presence',present:mode==='home'} : mode === 'skip' ? { type: 'skip' } : { type: 'mode', mode }); await load(); toast('Kommando behandlet. Se status og logg.'); }
       catch (error) { toast(error.message);await load().catch(()=>{}); }
-      finally {buttons.forEach(b=>b.disabled=false);}
+      finally {buttons.forEach(b=>b.disabled=false);renderHomeControls();}
     });
     document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}});
     document.querySelectorAll('[data-control]').forEach(button=>button.onclick=async()=>{
@@ -547,7 +540,7 @@
     $('export-config').onclick = () => download('house-guard-oppsett.json', config);
     $('export-log').onclick = () => download('house-guard-logg.json', data.status.history);
     $('import-config').onchange = async event => {
-      try { const file = event.target.files[0]; if (!file || file.size > 1000000) throw new Error('Velg en JSON-fil under 1 MB.'); await flush(); const imported = JSON.parse(await file.text()); config = await api('POST', '/validate', { ...imported, observation: true, revision: config.revision }); setDirty(true); renderConfig(); await flush(); toast('Oppsett importert og lagret i observasjon.'); }
+      try { const file = event.target.files[0]; if (!file || file.size > 1000000) throw new Error('Velg en JSON-fil under 1 MB.'); await flush(); const imported = JSON.parse(await file.text()); config = await api('POST', '/validate', { ...imported, setupCompleted:false, observation: true, revision: config.revision }); setDirty(true); renderConfig(); await flush(); toast('Oppsett importert. Fullfør veiviseren for å ta det i bruk.'); }
       catch (error) { toast(`Import feilet: ${error.message}`); }
     };
     window.addEventListener('online', () => { flush().catch(()=>{}); });

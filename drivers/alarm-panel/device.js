@@ -16,7 +16,8 @@ module.exports=class AlarmPanelDevice extends Homey.Device {
       if(this.stopped)return;const s=this.homey.app.getAlarmStatus();
       if(!s.selected){await this.setUnavailable(this.homey.__('alarm.not_selected'));return;}
       const phase=s.active?'triggered':s.entryAt?'entry':s.target?'exit':s.mode;
-      const status=`${s.observation?this.homey.__('alarm.observation')+' · ':''}${this.homey.__('alarm.'+phase)}${s.active && s.context?' · '+s.context.reason:''}${s.bypassed?.length?' · Venter på: '+s.bypassed.map(x=>x.name).join(', '):''}${s.faults.length?' · '+s.faults.join(' · '):''}`;
+      const disabled=s.disabledSensors?.filter(sensor=>sensor.mode===(s.target || s.mode)).length || 0;
+      const status=`${s.observation?this.homey.__('alarm.observation')+' · ':''}${this.homey.__('alarm.'+phase)}${s.active && s.context?' · '+s.context.reason:''}${s.bypassed?.length?' · Venter på: '+s.bypassed.map(x=>x.name).join(', '):''}${disabled?' · '+disabled+' sensor(er) deaktivert fra Flow':''}${s.mode!=='disarmed' && s.sensorCounts?.[s.mode]===0?' · Ingen sensorer overvåkes':''}${s.faults.length?' · '+s.faults.join(' · '):''}`;
       for(const [id,value]of [['alarm_generic',s.active],['alarm_status',status]])if(this.getCapabilityValue(id)!==value)await this.setCapabilityValue(id,value);
       if(!this.stopped)await this.setAvailable();
     });return this.queue;

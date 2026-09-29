@@ -81,7 +81,7 @@ async function start() {
         engine.ingest(await snapshot()); await engine.tick(); output = engine.status();
       } else {
         const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        if (!['index.html', 'ui.js', 'alarm-ui.js', 'style.css', 'setup-model.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
+        if (!['index.html', 'ui.js', 'alarm-ui.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
         if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end('/* Local preview: Homey bridge intentionally absent. */'); return; }
         const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[path.extname(filename)];
         res.setHeader('Content-Type', `${mime}; charset=utf-8`); res.setHeader('Cache-Control', 'no-store');

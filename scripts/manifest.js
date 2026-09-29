@@ -54,6 +54,7 @@ const manifest = {
   },
 };
 manifest.flow.triggers.push(...require('../lib/simple-flows').definitions());
+manifest.flow.actions.push(...require('../lib/sensor-flows').definitions());
 for (const cards of Object.values(manifest.flow)) for (const card of cards) {
   if (['integration_event','zone_idle','night_answer','delivery_result','delivery_matches','delivery_requested'].includes(card.id)) card.deprecated = true;
 }

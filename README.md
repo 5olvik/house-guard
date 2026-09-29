@@ -1,17 +1,19 @@
 # House Guard
 
-House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Velg personer og Homey-flows i en veiviser, og utvid med innebygd alarm, dørlås, varsler og lyd etter behov.
+House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.20 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Appen starter i observasjonsmodus: planlagte handlinger vises uten å styre enheter eller sende meldinger. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.20 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Nyere lokal kildekode har veiviser som fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.20**, med gjestemodus som ekstra tilstedeværelse, valgfrie gjesterutiner og automatisk våkenstatus for bortreiste brukere. Versjon **0.4.20** er publisert i Homey App Stores testkanal (bygg 8). Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md).
+Kildekoden her er versjon **0.4.23**, med låste standardnavn og faste tilstedeværelsesregler for alarm. Den beholder Flow-kortene fra 0.4.21 for å aktivere og deaktivere alarmsensorer separat for bortealarm og nattalarm. Versjon **0.4.20** er fortsatt publisert i Homey App Stores testkanal (bygg 8). Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert lokalt.
 
 ## Funksjoner
 
 - Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
-- Veiviser med personvalg og valg av én Flow for avreise, hjemkomst og natt.
+- Veiviser med funksjonsvalg, API-forbindelse, beboere og mottakere, relevante innstillinger og kontroll før aktivering. Oppsettet kan gjenopptas.
+- Forside med status for funksjonene som er satt opp og konkrete snarveier når noe mangler.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
-- Faste rutiner beholdes; avkrysningen styrer bare ekstrahandlingene. Egne rutiner kan deaktiveres eller slettes.
+- Faste rutiner kan ikke endre navn eller slettes; avkrysningen styrer bare ekstrahandlingene. Tomme faste rutiner er samlet under «Legg til ekstrahandlinger når …». Egne rutiner kan deaktiveres eller slettes.
+- Natt og morgen er delt etter når natten og morgenen starter, og hva som skjer med personene. Tilleggsvalg vises ved behov.
 - Valgfri morgenstart ved bevegelse i et valgt tidsrom: frakobler nattalarm og setter hjemmeværende våkne.
 - Gjestemodus som egen av/på-enhet i Homey: gjester holder huset hjemme og alarmen frakoblet. Vanlige hjemkomst-/borterutiner gjenbrukes, med innebygde pushvarsler.
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
@@ -20,7 +22,7 @@ Kildekoden her er versjon **0.4.20**, med gjestemodus som ekstra tilstedeværels
 - Nattspørsmål med svarfrist og nei-veto.
 - Direkte mobilvarsler, nattspørsmål og Sonos med Homey API-nøkkel, uten hjelpeflows.
 - Manuelle knapper som setter alle valgte brukere hjemme eller borte, også uten GPS.
-- Forhåndsvisning, konfigurasjonskontroll, import/eksport og observasjonslogg.
+- Forhåndsvisning, konfigurasjonskontroll og import/eksport. Eksplisitte normal-, kritisk- og bildetestvarsler kan sendes før grunnoppsettet er fullført.
 - Kontroll av bekreftet lås-/porttilstand og avbrudd ved endret oppsett eller tilstedeværelse.
 
 Alle som har «Motta pushvarsler» under Personer, er mottakere for alle appens pushvarsler. Vanlig push, kritisk push og bildevarsel beholdes. Hver varselhandling kan i tillegg velge «Vis også i Homeys tidslinje». Dette er en valgfri kopi, ikke erstatning for alarmvarsling.
@@ -48,11 +50,19 @@ npx homey select
 npx homey app install
 ```
 
-Ved oppdatering: installer uten `--clean` for å beholde innstillinger og paringer. Åpne **House Guard → Hjem → Åpne veiviseren** og gjennomgå oppsettet i observasjon før styring aktiveres. Nye brukere velger sine egne personer og enheter.
+Ved oppdatering: installer uten `--clean` for å beholde innstillinger og paringer. Nytt oppsett starter under **House Guard → Hjem → Start oppsettet**. Veiviseren kan åpnes igjen under **Innstillinger → Endre grunnoppsett** og viser eksisterende valg.
+
+1. Velg hvilke funksjoner du ønsker: alarm, lys/rutiner og natt/morgen.
+2. Sett opp direkte forbindelse med en [Homey API-nøkkel](docs/API-KEY.md) for funksjonene som trenger det.
+3. Velg beboere og hvem som skal motta pushvarsler.
+4. Gå gjennom de relevante stegene for alarm, eksisterende Homey-Flows og nattutvalg.
+5. Se over kontrollpunktene, send ønskede testvarsler og trykk **Ta i bruk House Guard**, eller **Fortsett senere** for å beholde oppsettet uferdig.
+
+Valg lagres underveis. Veiviserens funksjonsvalg bestemmer hvilke steg du får se; de slår ikke av et eksisterende oppsett. Vanlig, kritisk og bilde-testpush er uttrykkelige prøvehandlinger. De endrer ikke alarmmodus eller aktiverer rutiner.
 
 Gjestebryteren legges til med **Legg til enhet → House Guard → Gjestemodus**. Alarmpanelet legges til samme sted med **Alarmpanel**.
 
-Velg House Guard-alarm under **Sikkerhet**, velg sensorer for Borte/Natt og merk bare inngangssensorer som Forsinket. Test i observasjon først. Oppgradering fra et eksternt alarmpanel setter appen i observasjon og tømmer alarmsensorutvalget. Den separate gamle alarmappen avinstalleres ikke automatisk. Se [alarmoppsett](docs/NATIVE-ALARM.md).
+Velg House Guard-alarm under **Alarm**, velg sensorer for Borte/Natt og merk bare inngangssensorer som Forsinket. Kontroller sensoroppsettet før bruk. Oppgradering fra et eksternt alarmpanel krever fullføring av nytt alarmoppsett og tømmer alarmsensorutvalget. Den separate gamle alarmappen avinstalleres ikke automatisk. Se [alarmoppsett](docs/ALARM-SETUP.md).
 
 Endringer i innstillinger, handlinger og veiviseren lagres automatisk. Tekstfelt lagres etter en kort skrivepause; brytere og lister lagres med en gang. Statusfeltet viser om lagringen er ferdig. Ved ugyldige felt eller forbindelsesfeil vises «Ikke lagret», og det sist lagrede oppsettet gjelder. Rett feilen før du lukker siden. Ved konflikt med en annen visning kan du forkaste lokale endringer og laste inn det lagrede oppsettet. Ventende rutiner avbrytes når oppsettet endres.
 
@@ -66,15 +76,16 @@ npm run preview
 
 ## Status og begrensninger
 
-118 automatiserte tester og lokal Homey-validering på nivå `publish` består. Dette er ikke en App Store-godkjenning eller en fullstendig fysisk funksjonstest. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Visuell kontroll av den nye veiviseren og testing med nye brukere gjenstår.
+284 automatiserte tester, kodekontroll av 80 JavaScript-filer og lokal Homey-validering på nivå `publish` består for 0.4.22. Dette er ikke en App Store-publisering. Den nye veiviseren er kontrollert i lokal nettleserdemo ved 390 px mobilbredde og vanlig skrivebordsbredde, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Den er ennå ikke prøvd i fysisk Homey-GUI eller av en uavhengig førstegangsbruker. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
 
-Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Et oppsett med mange varseltyper, mottakere og høyttalere trenger flere koblinger. Ikke aktiver overlappende rutiner i House Guard og eksisterende flows uten å gjennomgå hvem som styrer hva.
+Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Med klar API-forbindelse trenger push, Sonos og start av valgte Flows ingen hjelpeflows. Gjennomgå overlappende rutiner i House Guard og eksisterende Flows før aktivering.
 
 ## Dokumentasjon
 
 - [Innebygd alarm og overgang fra eldre oppsett](docs/NATIVE-ALARM.md)
-- [Vurdering av færre Flow-koblinger](docs/FLOW-SIMPLIFICATION.md)
-- [Integrasjoner og nødvendige Flow-koblinger](docs/INTEGRATIONS.md)
+- [Direkte forbindelse med API-nøkkel](docs/API-KEY.md)
+- [Tidligere vurdering av Flow-koblinger](docs/FLOW-SIMPLIFICATION.md)
+- [Integrasjoner og eldre Flow-koblinger](docs/INTEGRATIONS.md)
 - [Tester og kjente begrensninger](docs/TEST-REPORT.md)
 - [Arkitektur](docs/ARCHITECTURE.md)
 - [Videre arbeid](docs/ROADMAP.md)
@@ -89,4 +100,4 @@ Prosjektet bruker **GPL-3.0-only**. Innstillingssidens visuelle utforming bygger
 
 Den tekniske app-ID-en `no.husmodus` beholdes for oppdateringskompatibilitet. Navnet i brukergrensesnittet er House Guard.
 
-Lokal 0.4.6 støtter direkte API-nøkkel for Flow-start, mobilvarsler, nattspørsmål, Sonos og sovestatus. Se [oppsett av API-nøkkel](docs/API-KEY.md). Direkte kortkjøring og vanlig Flow-start er verifisert på Homey. Vanlig push, kritisk push og bildevarsel er bekreftet på brukerens telefon. Alarmens kamera, varsler, Sonos og lys velges under Alarm. Se [alarmoppsett og teststatus](docs/ALARM-SETUP.md).
+Direkte Flow-start, vanlig push, kritisk push og bildevarsel er tidligere prøvd på Homey, med varsler og bilde bekreftet på brukerens telefon. Det er historiske leveringsprøver; de erstatter ikke kontroll av eget oppsett eller fysisk prøving av den nye veiviseren. Alarmens kamera, varsler, Sonos og lys velges under Alarm. Se [alarmoppsett](docs/ALARM-SETUP.md).

@@ -1,3 +1,33 @@
+# Navn og alarmregler 0.4.23 – lokal testversjon
+
+Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.23 er installert på Solviks Homey**, uten GitHub- eller App Store-publisering. Etterkontrollen bekrefter revisjon115: bare de tidligere tilpassede standardnavnene for natt og morgen er gjenopprettet. Handlinger, avkrysninger, øvrige innstillinger, Flow-ID-er, sensorunntak, gjestestatus og tilkoblet full alarm er bevart. API-forbindelsen er klar.
+
+Faste rutinenavn låses også ved lagring/import. Natt/morgen-oppsettet heter «Aktivering - Deaktivering av nattalarm», dørlysdelen «Velkomstlys» og forbindelsesdelen «API-nøkkel». Testmodus/aktiv styring er fjernet som brukervalg. Nytt/importert eller tidligere pauset oppsett må fortsatt fullføres i veiviseren; ingen automatisk aktivering av et slikt utkast. Varselprøver beholdes. Visuell lokal kontroll bekrefter navn, fravær av navnefelt i faste rutiner, fjernet modusdel og mobilvisning ved390px.
+
+Full alarm er en fast regel med vanlige forsinkelser når den innebygde alarmen er valgt, alle beboere er bekreftet borte og gjestemodus er av. Morgen krever en hjemmeværende beboer. Delvis tilkobling krever bekreftet hjemmeværende sovende også ved siste kontroll før sending. Nattalarm uten sovende korrigeres før sensorbehandling; en allerede utløst alarm eller inngangsforsinkelse avstilles ikke automatisk. Ukjente persondata brukes ikke til å koble til full alarm eller frakoble etablert dekning. Tester dekker omstart, avstilling, forsinkelser, hjemkomst, gjester, gamle valg/import, feil uten gjentatte forsøk ved hver polling og migrering uten tap av handlinger eller alarmtilstand.
+
+Ingen fysisk alarmprøve eller live push er sendt i denne runden. App Stores testkanal er fortsatt **0.4.20, bygg8**. Tidligere versjoners kontroller følger nedenfor.
+
+# GUI 0.4.22 – lokal testversjon
+
+Kontrollert 29. september 2026. **284 automatiserte tester består**, kodekontroll av **80 JavaScript-filer** består, og Homey-validering på nivå `publish` er godkjent. **0.4.22 er installert lokalt på Solviks Homey.** Etterkontroll bekrefter identisk konfigurasjon med revisjon 114, uendret bortemodus og tilkoblet bortealarm, klar direkte API-forbindelse og uendrede Flow-ID-er og sensorunntak. Versjonen er ikke publisert til GitHub eller App Store. App Stores testkanal er fortsatt **0.4.20, bygg 8**.
+
+Veiviseren går fra funksjonsvalg via direkte forbindelse og beboere/varselmottakere til relevante steg for alarm, Flows og natt, før kontroll og eksplisitt aktivering. Hjem viser valgte funksjoner og konkrete oppfølgingspunkter. Innstillinger erstatter fanen Mer. Tomme faste rutiner ligger samlet; avkrysningen gjelder fortsatt bare ekstrahandlinger. Natt og morgen er delt i tydelige grupper med innstillinger som vises ved behov.
+
+Automatiserte kontroller dekker gjenbruk av eksisterende oppsett, relevante steg og manglende forutsetninger før aktivering. Vanlig, kritisk og bilde-testpush kan utføres eksplisitt i testmodus. Prøvene bruker valgte mottakere og konfigurerte kameraer, med uendret køsperre, ventetid, API-kontroll og avbrudd ved endret oppsett. Ekte adapter mot falsk API bekrefter at vanlige rutinevarsler og lyd fortsatt blokkeres i testmodus. Ingen live push er sendt i denne GUI-runden.
+
+Visuell kontroll i lokal nettleserdemo ved **390 px mobilbredde og vanlig skrivebordsbredde** bekrefter veiviseren, gjenopptakelse og bevarte person-, sensor- og Flow-valg. Fysisk Homey-GUI og bruk av en uavhengig førstegangsbruker er ikke prøvd. Automatiserte leveringsprøver bekrefter ikke faktisk telefonmottak eller enhetenes fysiske oppførsel.
+
+# Historikk
+
+Avsnittene nedenfor beskriver kontroller og publiseringsstatus på tidspunktet for hver tidligere versjon. Testantall, åpne oppgaver og installasjonsutsagn gjelder den oppgitte versjonen, ikke dagens kildekode.
+
+## Lokal testversjon 0.4.21 – alarmsensorer fra Flow
+
+Nye tester dekker uavhengig full-/nattstyring, endring mens tilkoblet, gjenaktivering med aktiv eller ukjent sensor, bevaring gjennom frakobling og omstart, idempotente kort, inngangs-/utgangsforsinkelse, allerede utløst alarm, alle sensorer deaktivert, slettede sensorer og ugyldige kortvalg. Grunnoppsettet beholdes. Morgen ved bevegelse ignorerer en sensor deaktivert for nattalarm. Alarmpanel viser unntak og null aktive sensorvalg. Lokal nettleserdemo bekrefter merking på Hjem, alarmoversikten og hver sensor.
+
+265 tester består. Kodekontroll av 77 JavaScript-filer, Homey-validering på publiseringsnivå og offentlig filskann er godkjent. Installert lokalt på Solviks Homey. Hele konfigurasjonen, revisjonen, alarmmodus og eksisterende Flow-IDer er bevart. Homey bekrefter begge nye handlingskort, og sensorlistene for hver modus stemmer med valgt oppsett. Ingen sensorer ble deaktivert i huset under etterkontrollen. Versjonen er ikke publisert til GitHub eller App Store.
+
 # Lokal testversjon 0.4.20 – gjesterutiner og våken ved avreise
 
 253 tester består. Nye tester dekker tomme og beskyttede gjesterutiner, bevarte eldre handlinger uten gjenaktivering, én kjøring per gjesteendring, avkrysning uten å deaktivere innebygde varsler og avbrudd ved raske av/på-endringer.

@@ -12,7 +12,7 @@ module.exports = class HouseGuard extends Homey.App {
     const storedConfig = this.homey.settings.get(CONFIG_KEY);
     try { config = validate(storedConfig || defaults()); validStored = !!storedConfig; }
     catch (error) { config = defaults(); this.error('Ugyldig lagret oppsett – starter i observasjon', error); }
-    if (validStored && (['guestActivated','guestDeactivated'].some(id=>!storedConfig.routines?.some(r=>r.id===id)) || storedConfig.guest?.model!=='presence' || !storedConfig.security?.responses || !storedConfig.security?.automation || ['temperatureDeviceId','temperatureCapability','maxAgeSeconds'].some(key=>Object.hasOwn(storedConfig.security.garage || {},key)) || Object.values(storedConfig.security.responses).some(r=>r.imageDeviceIds===undefined || r.imageOnRepeat===undefined))) {
+    if (validStored && (storedConfig.security?.automation?.away!==true || storedConfig.morning?.requireHome!==true || storedConfig.routines?.some(r=>require('./lib/config').ROUTINES[r.id] && r.name!==require('./lib/config').ROUTINES[r.id]) || ['guestActivated','guestDeactivated'].some(id=>!storedConfig.routines?.some(r=>r.id===id)) || storedConfig.guest?.model!=='presence' || !storedConfig.security?.responses || !storedConfig.security?.automation || ['temperatureDeviceId','temperatureCapability','maxAgeSeconds'].some(key=>Object.hasOwn(storedConfig.security.garage || {},key)) || Object.values(storedConfig.security.responses).some(r=>r.imageDeviceIds===undefined || r.imageOnRepeat===undefined))) {
       config.revision++;
       this.homey.settings.set(CONFIG_KEY, config);
     }
@@ -82,6 +82,7 @@ module.exports = class HouseGuard extends Homey.App {
       if(generation!==(this.alarmCommandGeneration || 0))throw Error('Tilkobling avbrutt ved frakobling.');
       if(revision!==this.engine.config.revision)throw Error('Oppsettet ble endret. Prøv igjen.');
       if(this.engine.state.guest)throw Error('Gjestemodus holder alarmen frakoblet.');
+      const reason=require('./lib/alarm-presence').armReason(this.engine,mode,snapshot);if(reason)throw Error(reason);
       this.intrusion.mode(mode,snapshot);await this.refresh();return this.getAlarmStatus();
     });return this.alarmCommands;
   }
@@ -150,6 +151,7 @@ module.exports = class HouseGuard extends Homey.App {
         if (revision !== this.engine.config.revision) { this.refreshOptions.reconnect = true; this.refreshAgain = true; continue; }
         const flags = this.refreshOptions; this.refreshOptions = {};
         this.maintainGuestAlarm();
+        require('./lib/alarm-presence').reconcile(this,snapshot);
         const reconnect = !!flags.reconnect || (this.engine.started && !this.engine.snapshot.connected && snapshot.connected);
         const motionMorning=require('./lib/motion-morning'),events=(this.sensorEvents || []).splice(0);
         let morningStarted=false;
@@ -165,6 +167,7 @@ module.exports = class HouseGuard extends Homey.App {
           this.intrusion.update(snapshot);snapshot.devices[ALARM_ID]=this.intrusion.device();
         }
         this.engine.ingest(snapshot, { initial: !!flags.initial, reconnect, morningStarted });
+        require('./lib/alarm-presence').ensureAway(this,snapshot);
         if (Date.now() - this.adapter.catalogueAt > 300000) await this.adapter.catalog();
       } while (this.refreshAgain);
     })().finally(() => { this.refreshing = null; });
@@ -223,6 +226,7 @@ module.exports = class HouseGuard extends Homey.App {
     require('./lib/simple-flows').register(this);
     require('./lib/scene-flows').register(this);
     require('./lib/sleep-flows').register(this);
+    require('./lib/sensor-flows').register(this);
 
     this.homey.flow.getActionCard('check_integration_access').registerRunListener(async () => {this.integrationTestCount=(this.integrationTestCount||0)+1;return true;});
     this.homey.flow.getActionCard('set_mode').registerRunListener(async ({ mode }) => { await this.engine.manual(mode); return true; });
