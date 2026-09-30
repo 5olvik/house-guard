@@ -2,13 +2,13 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.28 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.29 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.29**, installert lokalt med bevart oppsett og alarmstatus. Velkomstlys kan bruke dørkontakt eller bevegelse, med luxmåler eller solnedgang. Forsiden viser tydeligere lås- og portstatus. **0.4.28 er fortsatt siste versjon i Homey App Stores testkanal (bygg 10)**; publisering av 0.4.29 er under arbeid. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Kildekoden her er versjon **0.4.29**, publisert på GitHub og i Homey App Stores testkanal som **bygg 11**. Versjonen er også installert lokalt med bevart oppsett og alarmstatus. Velkomstlys kan bruke dørkontakt eller bevegelse, med luxmåler eller solnedgang. Forsiden viser tydeligere lås- og portstatus. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
-Nytt i lokalt installert 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med luxmåler eller perioden fra solnedgang til soloppgang. Forsiden har tydeligere lås- og portstatus. Sanntidshendelser for velkomstsensoren bevares, og en rask reserveavlesning erstatter mulig 30-sekunders venting ved tapte meldinger. Se [teststatus](docs/TEST-REPORT.md).
+Nytt i 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med luxmåler eller perioden fra solnedgang til soloppgang. Forsiden har tydeligere lås- og portstatus. Sanntidshendelser for velkomstsensoren bevares, og en rask reserveavlesning erstatter mulig 30-sekunders venting ved tapte meldinger. Se [teststatus](docs/TEST-REPORT.md).
 
 - Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
 - Veiviser med funksjonsvalg, API-forbindelse, beboere og mottakere, relevante innstillinger og kontroll før aktivering. Oppsettet kan gjenopptas.
