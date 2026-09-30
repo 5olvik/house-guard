@@ -2,9 +2,9 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.23 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.28 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.28**, med innstillinger og handlinger samlet etter funksjon, separate kort for nattaktivering og deaktivering av alarm og tydelig valg av handlingsrekkefølge. Mobilmenyen beholder appens stil når Homeys stilark lastes, og Personer og Alarm har tydeligere ikoner. Gjestemodus anbefaler egen Homey-enhet, med innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Versjon **0.4.23** er publisert i Homey App Stores testkanal (bygg 9), bekreftet 29. september 2026. 0.4.28 er foreløpig en lokal oppdatering. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Kildekoden her er versjon **0.4.28**, med innstillinger og handlinger samlet etter funksjon, separate kort for nattaktivering og deaktivering av alarm og tydelig valg av handlingsrekkefølge. Mobilmenyen beholder appens stil når Homeys stilark lastes, og Personer og Alarm har tydeligere ikoner. Gjestemodus anbefaler egen Homey-enhet, med innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. **0.4.28 er publisert på GitHub og i Homey App Stores testkanal (bygg 10)**, bekreftet 30. september 2026. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
