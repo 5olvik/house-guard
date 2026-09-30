@@ -14,4 +14,8 @@ Optional morning start on motion within a chosen time window disarms night prote
 
 Each function groups its settings and actions in one place. Night activation and alarm deactivation have separate sections, and actions have clear sequential or parallel choices. The mobile menu has people and siren icons and fits narrow screens.
 
+Welcome lights can start on door opening or motion after the first arrival home. Choose a lux sensor or the period from sunset to sunrise. Sunset uses Homey's location and requires an API key, with no lux sensor needed. Routine and action delays are added and displayed together; 0 adds no waiting in the app. Short sensor events are preserved, with faster fallback checks when a real-time message is missed.
+
+The dashboard shows larger lock and garage status indicators with text, icons and colors: Locked/Unlocked, Closed/Open or Unknown status.
+
 Guest mode counts as someone staying home: departure routines wait and the alarm stays disarmed. Turning it on while residents are home leaves lights unchanged; turning it on in an empty house uses the configured homecoming routine. We recommend adding the Guest mode device in Homey for on/off control. Built-in push notifications announce activation, deactivation and when guests are left alone, using the recipients selected under People. Optional guest mode on/off routines let you add custom actions; no notification action is required. Away residents still marked asleep are automatically marked awake without waking people at home or starting the morning routine.

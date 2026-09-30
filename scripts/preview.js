@@ -37,7 +37,7 @@ devices['demo-extra-light'] = require('../lib/homey-adapter').normalizedDevice({
 for(const [id,name,zone] of [['demo-camera-1','Garasje','Garasje'],['demo-camera-2','Inngang','Entré'],['demo-camera-3','Hage','Ute']])devices[id]={id,name,zone,class:'camera',available:true,capabilities:{},images:[{id:'snapshot',type:'camera'}]};
 const catalogue = { people, devices, zones: { 'demo-living': { id: 'demo-living', name: 'Stue' } }, flows: [{ id:'demo-scene', name:'Velkomstlys', type:'normal', enabled:true, triggerable:true }, { id:'demo-lights-off', name:'Slå av alle lys', type:'normal', enabled:true, triggerable:true }, { id:'demo-night', name:'God natt', type:'advanced', enabled:true, triggerable:true }, { id:'demo-no-start', name:'Bevegelseslys', type:'advanced', enabled:true, triggerable:false }], errors: [] };
 let intrusion;
-const snapshot = async () => { if(intrusion)devices[ALARM_ID]=intrusion.device(); for (const p of Object.values(people)) p.observedAt = clock(); return structuredClone({ connected: true, people, devices }); };
+const snapshot = async () => { if(intrusion)devices[ALARM_ID]=intrusion.device(); for (const p of Object.values(people)) p.observedAt = clock(); return structuredClone({ connected: true, people, devices, sun:{available:true,dark:true,observedAt:clock()} }); };
 const reject = async () => { throw new Error('Demomodus har ingen sideeffekter'); };
 const engine = new Engine({ config, clock, adapter: { snapshot, set: reject, setAsleep: reject, emit: reject, timeline: reject, startFlow: reject } });
 intrusion=new Intrusion({config:engine.config,clock,emit:(type,payload)=>{engine.snapshot.devices[ALARM_ID]=intrusion.device();engine.event(type,payload);}});

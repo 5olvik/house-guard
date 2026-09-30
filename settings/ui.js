@@ -44,7 +44,7 @@
       }).sort((a, b) => a.label.localeCompare(b.label, 'nb'));
   }
   function fillSelects() {
-    document.querySelectorAll('select[data-device]').forEach(s => options(s, deviceItems(s.dataset.device), get(config, s.dataset.bind)));
+    document.querySelectorAll('select[data-device]').forEach(s => options(s, deviceItems(s.dataset.device==='welcome-trigger'?(config.welcome.sensorType==='motion'?'alarm_motion':'alarm_contact'):s.dataset.device), get(config, s.dataset.bind)));
     document.querySelectorAll('select[data-capabilities]').forEach(s => {
       const d = data.catalog.devices[get(config, s.dataset.capabilities)];
       const items = Object.entries(d?.capabilities || {}).filter(([id, c]) => (!s.dataset.prefix || id===s.dataset.prefix || id.startsWith(s.dataset.prefix+'.')) && (!s.dataset.write || c.setable) && (!s.dataset.capType || c.type === s.dataset.capType)).map(([id, c]) => ({ id, label: `${c.title || id} (${id})` }));
@@ -70,6 +70,13 @@
         config.morning.motion.capability=Object.keys(data.catalog.devices[value]?.capabilities || {}).find(id=>id==='alarm_motion' || id.startsWith('alarm_motion.')) || 'alarm_motion';
         if(!value){config.morning.motion.enabled=false;document.querySelector('[data-bind="morning.motion.enabled"]').checked=false;}
       }
+      if(['welcome.sensorType','welcome.doorDeviceId'].includes(input.dataset.bind)) {
+        const prefix=config.welcome.sensorType==='motion'?'alarm_motion':'alarm_contact';
+        const matching=Object.keys(data.catalog.devices[config.welcome.doorDeviceId]?.capabilities || {}).find(id=>id===prefix || id.startsWith(prefix+'.'));
+        config.welcome.doorCapability=matching || prefix;
+        if(!matching)config.welcome.doorDeviceId='';
+        fillSelects();
+      }
       if (input.dataset.bind.startsWith('security.garage.') && !['security.garage.enabled', 'security.garage.validated'].includes(input.dataset.bind)) {
         config.security.garage.validated = false; config.security.garage.enabled = false;
         document.querySelector('[data-bind="security.garage.validated"]').checked = false;
@@ -77,6 +84,7 @@
       }
       if (input.dataset.device) fillSelects(); setDirty(event.type === 'change'); renderConnectionRecipes();
       renderConditionalFields();renderAlarmChecklist();if(input.dataset.bind==='security.alarmDeviceId')renderIntrusion();
+      if(input.dataset.bind==='welcome.delaySeconds')renderRoutines();
     };
     document.addEventListener('change', changed);
     document.addEventListener('input', event => { if (['text', 'number', 'time'].includes(event.target.type)) changed(event); });
@@ -148,8 +156,10 @@
     $('night-command-help').hidden=$('home-night-controls').hidden;
     $('home-people').hidden=!data.config.people.presence.length;
     document.querySelectorAll('[data-command="home"],[data-command="away"]').forEach(button=>{button.disabled=!!s.observation || !data.direct?.ready;button.title=button.disabled?'Koble til Homey under Innstillinger for å endre personstatus.':'';});
-    $('home-lock-state').textContent=locked===true?'Låst':locked===false?'Ulåst':'Ukjent';
-    $('home-garage-state').textContent=typeof port==='boolean'?(port===c.garage.openValue?'Åpen':'Lukket'):'Ukjent';
+    $('home-lock-state').textContent=locked===true?'Låst':locked===false?'Ulåst':'Ukjent status';
+    $('home-lock-status').dataset.state=locked===true?'closed':locked===false?'open':'unknown';
+    $('home-garage-state').textContent=typeof port==='boolean'?(port===c.garage.openValue?'Åpen':'Lukket'):'Ukjent status';
+    $('home-garage-status').dataset.state=typeof port==='boolean'?(port===c.garage.openValue?'open':'closed'):'unknown';
     for(const target of ['lock','garage']){
       const control=data.controls?.[target],pending=controlBusy.has(target) || control?.pending;
       const current=target==='lock'?locked:typeof port==='boolean'?port===c.garage.openValue:undefined;
@@ -231,7 +241,8 @@
       if (!routine.actions.length) body.append(el('p',custom?'Trykk «Legg til handling» for å velge hva rutinen skal gjøre.':alarmEvent?'Ingen egne handlinger valgt.':'Ingen ekstra handlinger valgt.', 'empty'));
       routine.actions.forEach((a, index) => {
         const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy');
-        copy.append(el('small', `${a.delaySeconds} s · ${labels[a.category]} · ${a.when || 'Rutinens vilkår'}${a.condition ? ' · med enhetsvilkår' : ''}${a.requireConfirmed ? ' · krever bekreftet avhengighet' : ''}`));
+        const delay=routine.id==='welcome'?`Samlet ventetid: ${config.welcome.delaySeconds+a.delaySeconds} s (${config.welcome.delaySeconds} + ${a.delaySeconds})`:`${a.delaySeconds} s`;
+        copy.append(el('small', `${delay} · ${labels[a.category]} · ${a.when || 'Rutinens vilkår'}${a.condition ? ' · med enhetsvilkår' : ''}${a.requireConfirmed ? ' · krever bekreftet avhengighet' : ''}`));
         const remove = el('button', '×', 'icon-button'); remove.setAttribute('aria-label', `Fjern ${describeAction(a)}`); remove.onclick = () => {
           if (routine.actions.some(other => other.dependsOn === a.id)) { toast('Fjern avhengige handlinger først.'); return; }
           routine.actions.splice(index, 1); setDirty(true); renderRoutineViews();
@@ -333,6 +344,13 @@
   function renderConditionalFields() {
     document.querySelectorAll('[data-show-when]').forEach(node=>{node.hidden=!get(config,node.dataset.showWhen);});
     const motion=$('morning-motion-settings');if(!motion.dataset.initialized){motion.open=!!config.morning.motion.enabled;motion.dataset.initialized='true';}
+    const sunset=config.welcome.lightMode==='sunset',welcomeMotion=config.welcome.sensorType==='motion';
+    document.querySelectorAll('[data-welcome-lux]').forEach(node=>{node.hidden=sunset;});
+    $('welcome-sensor-label').textContent=welcomeMotion?'Bevegelsessensor':'Dørkontakt';
+    $('welcome-delay-label').textContent=welcomeMotion?'Vent etter bevegelse (sekunder)':'Vent etter døråpning (sekunder)';
+    $('welcome-sunset-help').hidden=!sunset;
+    const warning=$('welcome-sunset-warning');warning.hidden=!sunset || !!data.direct?.ready || demo;
+    warning.textContent='Legg inn eller kontroller API-nøkkelen under Innstillinger før velkomstlys etter solnedgang kan brukes.';
   }
   function renderAlarmChecklist() {
     const root=$('alarm-setup-checklist');root.replaceChildren();

@@ -34,4 +34,11 @@ input[type=password],input[type=search]{width:100%;min-width:0;background:var(--
 .night-section{border:1px solid var(--border-light);border-radius:12px;padding:16px;margin:14px 0}.night-section h3{margin-bottom:12px}.night-section>.form-grid{margin-top:12px}
 .routine-settings fieldset{border:1px solid var(--border-color);border-radius:12px;padding:16px;margin:18px 0}.routine-settings legend{font-weight:650;padding:0 6px}#alarm-responses .details-body>details{margin:15px 0}#alarm-responses>.card>button{margin-right:8px}
 #home-attention{align-items:flex-start}#home-attention>.hint{margin-bottom:0}#manual-controls details{margin-top:14px;font-size:12px}
+.home-controls .home-state{display:flex;align-items:center;gap:10px;border:1px solid var(--border-color);border-radius:10px;padding:12px 10px;margin-top:12px;background:var(--bg-surface);color:var(--text-muted);min-width:0}
+.home-controls .home-state strong{font-size:20px;line-height:1.3;margin:0;overflow-wrap:anywhere}
+.home-state svg{width:30px;height:30px;flex:0 0 30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.home-state[data-state=closed]{color:#256341;background:#edf8f1;border-color:#c4e2cf}.home-state[data-state=open]{color:#865012;background:#fff5e8;border-color:#eed5ac}
+.home-state .unknown-icon{display:none;width:30px;height:30px;flex:0 0 30px;border:2px solid currentColor;border-radius:50%;text-align:center;font-size:20px;line-height:27px;font-weight:700}
+.home-state[data-state=unknown] svg,.home-state[data-state=closed] .lock-open,.home-state[data-state=closed] .gate-open,.home-state[data-state=open] .lock-closed,.home-state[data-state=open] .gate-closed{display:none}.home-state[data-state=unknown] .unknown-icon{display:block}
+@media(max-width:400px){.home-controls .home-state{gap:7px;padding:10px 8px}.home-controls .home-state strong{font-size:18px}}
 @media(max-width:560px){.header-top{padding:14px 18px}.header-top h1{font-size:25px}.header-mark{width:45px}.tab-btn{font-size:10px}.setup-shortcuts{grid-template-columns:1fr}.setup-checklist li{flex-wrap:wrap}.setup-checklist li>div{flex-basis:calc(100% - 40px)}.setup-checklist button{margin-left:32px}.setup-sensors{max-height:300px}#home-attention{flex-direction:column}.night-section{padding:13px}dialog{padding:18px}}

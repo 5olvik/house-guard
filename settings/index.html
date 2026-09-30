@@ -34,8 +34,8 @@
       <div id="home-people" class="person-strip"></div>
       <div class="status-grid home-controls" id="security-status">
         <section class="status-box home-alarm" id="home-alarm"><div class="eyebrow">HOUSE GUARD-ALARM</div><strong id="home-alarm-phase" role="status">Venter på status</strong><p id="home-alarm-details" class="hint"></p><p id="home-alarm-bypassed" class="hint" hidden></p><button id="home-disarm" data-alarm="disarmed">Frakoble / avstill</button></section>
-        <section class="status-box" id="home-lock"><div class="eyebrow">YTTERDØR</div><strong id="home-lock-state" role="status">Ukjent</strong><div class="button-row"><button data-control="lock" data-control-value="true">Lås</button><button data-control="lock" data-control-value="false">Lås opp</button></div><p id="lock-control-note" class="hint"></p></section>
-        <section class="status-box" id="home-garage"><div class="eyebrow">GARASJEPORT</div><strong id="home-garage-state" role="status">Ukjent</strong><div class="button-row"><button data-control="garage" data-control-value="true">Åpne</button><button data-control="garage" data-control-value="false">Lukk</button></div><p id="garage-control-note" class="hint"></p></section>
+        <section class="status-box" id="home-lock"><div class="eyebrow">YTTERDØR</div><div id="home-lock-status" class="home-state" data-state="unknown"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="14" width="20" height="15" rx="3"/><path class="lock-closed" d="M10 14V9a6 6 0 0 1 12 0v5"/><path class="lock-open" d="M22 14V9a6 6 0 0 0-12 0"/><path d="M16 20v4"/></svg><span class="unknown-icon" aria-hidden="true">?</span><strong id="home-lock-state" role="status">Ukjent status</strong></div><div class="button-row"><button data-control="lock" data-control-value="true">Lås</button><button data-control="lock" data-control-value="false">Lås opp</button></div><p id="lock-control-note" class="hint"></p></section>
+        <section class="status-box" id="home-garage"><div class="eyebrow">GARASJEPORT</div><div id="home-garage-status" class="home-state" data-state="unknown"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 29V11L16 3l13 8v18M8 29V13h16v16"/><path class="gate-closed" d="M8 18h16M8 23h16M8 28h16"/><path class="gate-open" d="M8 15h16"/></svg><span class="unknown-icon" aria-hidden="true">?</span><strong id="home-garage-state" role="status">Ukjent status</strong></div><div class="button-row"><button data-control="garage" data-control-value="true">Åpne</button><button data-control="garage" data-control-value="false">Lukk</button></div><p id="garage-control-note" class="hint"></p></section>
       </div>
       <div id="home-attention" class="card row" hidden><div><strong id="home-attention-text"></strong><p id="home-attention-detail" class="hint"></p></div><button id="show-system-status">Se status</button></div>
       <div class="card" id="manual-controls"><h2>Hurtigvalg</h2><p class="hint">Borte og hjemme gjelder alle valgte beboere. Alarm og rutiner følger oppsettet ditt.</p><div class="button-row"><button data-command="away">Start bortemodus</button><button data-command="home">Sett alle hjemme</button></div><div id="home-night-controls"><p class="hint" id="manual-explanation"></p><div class="button-row"><button data-command="night">☾ Start nattmodus</button><button data-command="morning">☀ Start morgen</button><button data-command="skip">Hopp over natt i natt</button></div><p id="skip-status" class="hint"></p></div><details id="night-command-help"><summary>Hva skjer med personene?</summary><p class="hint">Borte og hjemme endrer tilstedeværelsen i Homey. Bortreiste personer settes våkne. Natt og morgen gjelder dem som er hjemme. Homeys GPS kan oppdatere tilstedeværelsen igjen senere.</p></details></div>
@@ -95,14 +95,19 @@
         <details><summary>Bruk egne Flows for vekking</summary><p class="hint">For hele huset: Bruk House Guard → Sett modus i House Guard → Morgen i en Flow eller Advanced Flow. For individuell vekking: Bruk Homeys tilstedeværelseskort til å sette én person våken. House Guard følger sovestatusen og kan frakoble ved første oppvåkning, slik du velger under Alarm.</p><p class="hint">Slå av fast morgentid her hvis dine egne Flows skal bestemme tidspunktet. Du kan også legge handlingen «Start eksisterende Flow» i morgenrutinen for lys, musikk og andre vekkehandlinger.</p></details>
       </div></details>
       <details class="card" id="welcome-settings"><summary>Velkomstlys</summary><div class="details-body">
-        <p class="hint">Når ytterdøren åpnes innen ti minutter etter første hjemkomst, kan House Guard starte handlingene nedenfor hvis det er mørkt nok.</p>
+        <p class="hint">Velg døråpning eller bevegelse for å tenne velkomstlyset. Sensoren må reagere innen ti minutter etter første hjemkomst. Lyset tennes én gang hvis det er mørkt nok.</p>
         <div class="form-grid">
-        <label>Dørkontakt<select data-bind="welcome.doorDeviceId" data-device="alarm_contact"></select></label>
-        <label>Lysmåler<select data-bind="welcome.luxDeviceId" data-device="measure_luminance"></select></label>
-        <label>Under lux<input type="number" min="0" data-bind="welcome.threshold"></label>
-        <label>Vent etter døråpning (sekunder)<input type="number" min="0" max="300" data-bind="welcome.delaySeconds"></label>
-        <label>Maks alder på lysmåling (sekunder)<input type="number" data-bind="welcome.maxAgeSeconds"></label>
-        <p class="hint full">Manglende eller gammel lysmåling gir ingen lyskommando.</p>
+        <label>Start ved<select data-bind="welcome.sensorType"><option value="contact">Døren åpnes</option><option value="motion">Bevegelse oppdages</option></select></label>
+        <label><span id="welcome-sensor-label">Dørkontakt</span><select data-bind="welcome.doorDeviceId" data-device="welcome-trigger"></select></label>
+        <label class="full">Når skal lyset tennes?<select data-bind="welcome.lightMode"><option value="lux">Når lysmåleren viser mørkt</option><option value="sunset">Etter solnedgang</option></select></label>
+        <label data-welcome-lux>Lysmåler<select data-bind="welcome.luxDeviceId" data-device="measure_luminance"></select></label>
+        <label data-welcome-lux>Under lux<input type="number" min="0" data-bind="welcome.threshold"></label>
+        <label class="full"><span id="welcome-delay-label">Vent etter døråpning (sekunder)</span><input type="number" min="0" max="300" data-bind="welcome.delaySeconds"></label>
+        <p class="hint full">0 betyr ingen ekstra ventetid her. En forsinkelse på selve handlingen legges til.</p>
+        <label data-welcome-lux>Maks alder på lysmåling (sekunder)<input type="number" min="10" max="86400" data-bind="welcome.maxAgeSeconds"></label>
+        <p class="hint full" data-welcome-lux>Manglende eller gammel lysmåling gir ingen lyskommando.</p>
+        <p class="hint full" id="welcome-sunset-help" hidden>Gjelder fra solnedgang til soloppgang, også etter midnatt. Bruker Homeys plassering. Ingen lysmåler er nødvendig. API-nøkkelen må være klar under Innstillinger.</p>
+        <p class="hint full" id="welcome-sunset-warning" hidden></p>
         </div>
         <div data-routine-slot="welcome"></div>
       </div></details>

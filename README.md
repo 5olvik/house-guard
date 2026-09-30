@@ -4,9 +4,11 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veivi
 
 **Versjon 0.4.28 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.28**, med innstillinger og handlinger samlet etter funksjon, separate kort for nattaktivering og deaktivering av alarm og tydelig valg av handlingsrekkefølge. Mobilmenyen beholder appens stil når Homeys stilark lastes, og Personer og Alarm har tydeligere ikoner. Gjestemodus anbefaler egen Homey-enhet, med innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. **0.4.28 er publisert på GitHub og i Homey App Stores testkanal (bygg 10)**, bekreftet 30. september 2026. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Kildekoden her er versjon **0.4.29**, installert lokalt med bevart oppsett og alarmstatus. Velkomstlys kan bruke dørkontakt eller bevegelse, med luxmåler eller solnedgang. Forsiden viser tydeligere lås- og portstatus. **0.4.28 er fortsatt siste versjon i Homey App Stores testkanal (bygg 10)**; publisering av 0.4.29 er under arbeid. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
+
+Nytt i lokalt installert 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med luxmåler eller perioden fra solnedgang til soloppgang. Forsiden har tydeligere lås- og portstatus. Sanntidshendelser for velkomstsensoren bevares, og en rask reserveavlesning erstatter mulig 30-sekunders venting ved tapte meldinger. Se [teststatus](docs/TEST-REPORT.md).
 
 - Automatisk lagring uten lagreknapp eller ekstra bekreftelsesdialog.
 - Veiviser med funksjonsvalg, API-forbindelse, beboere og mottakere, relevante innstillinger og kontroll før aktivering. Oppsettet kan gjenopptas.
@@ -77,7 +79,7 @@ npm run preview
 
 ## Status og begrensninger
 
-300 automatiserte tester, kodekontroll av 82 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.28. Versjonen er installert lokalt med bevart oppsett. Veiviseren og de samlede innstillingene er kontrollert i lokal nettleserdemo, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Mobilmenyen er prøvd ved 320 og 390 px med Homeys faktiske stilark. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
+319 automatiserte tester, kodekontroll av 84 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.29. Versjonen er installert lokalt med bevart oppsett. Veiviseren og de samlede innstillingene er kontrollert i lokal nettleserdemo, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Mobilmenyen og de nye velkomstvalgene er prøvd ved 320 og 390 px med Homeys faktiske stilark. Testerens konkrete 30-sekunders forsinkelse er ikke gjenskapt på testerens Homey; faktisk lysrespons må bekreftes i eget oppsett. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
 
 Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Med klar API-forbindelse trenger push, Sonos og start av valgte Flows ingen hjelpeflows. Gjennomgå overlappende rutiner i House Guard og eksisterende Flows før aktivering.
 

@@ -10,4 +10,8 @@ Aktiver eller deaktiver valgte alarmsensorer fra Flow, separat for full alarm og
 
 Hver funksjon samler innstillinger og handlinger på ett sted. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm. Handlingene har tydelige valg for rekkefølge eller parallellkjøring. Mobilmenyen har personer- og sireneikon og er tilpasset smale skjermer.
 
+Velkomstlys kan starte ved døråpning eller bevegelse etter første hjemkomst. Velg luxmåler eller perioden fra solnedgang til soloppgang. Solnedgang bruker Homeys plassering og krever API-nøkkel, men ingen luxsensor. Ventetiden på rutinen og handlingen summeres og vises samlet; 0 betyr ingen ekstra venting i appen. Raske sensorhendelser bevares, med rask reserveavlesning hvis sanntidsmeldingen uteblir.
+
+Forsiden viser større lås- og portstatus med tekst, ikon og farge: Låst/Ulåst, Lukket/Åpen eller Ukjent status.
+
 Gjestemodus teller som at noen er hjemme: borterutinen venter og alarmen holdes frakoblet. Påslag mens beboere er hjemme endrer ikke lysene; påslag i tomt hus bruker vanlig hjemkomst. Vi anbefaler å legge til enheten Gjestemodus i Homey for av/på-styring. Innebygde pushvarsler gir beskjed ved påslag, avslag og når gjestene er alene, til mottakerne valgt under Personer. Under Rutiner kan du legge til egne ekstrahandlinger for gjestemodus på og av; varselhandlinger er ikke nødvendig. Bortreiste brukere som fortsatt står som sovende settes automatisk våkne, uten å vekke hjemmeværende eller starte morgenrutinen.
