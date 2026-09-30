@@ -115,6 +115,10 @@
     "no": "Menyknappene bruker appens egne stiler også når Homeys standardstil lastes. Rettet knapp utenfor rammen. Personer har ikon med to personer, og Alarm har et sireneikon.",
     "en": "Menu buttons retain their custom styling when Homey's default stylesheet loads. Fixed menu overflow. People now shows two people and Alarm shows a siren icon."
   },
+  "0.4.30": {
+    "no": "Faste rutiner heter nå Siste Person forlater, Første Person som ankommer, Aktivering av Nattmodus og Deaktivering av Nattmodus. Ekstra handlinger ved morgenstart har en egen seksjon utenfor bevegelsesinnstillingene. Henvisninger i oppsettet er oppdatert. Eksisterende handlinger og funksjoner beholdes.",
+    "en": "Renamed built-in routines for the last person leaving, first person arriving, night mode activation and night mode deactivation. Extra morning actions have a separate section outside the motion settings. Updated setup references while preserving existing actions and behavior."
+  },
   "0.4.29": {
     "no": "Velkomstlys kan starte ved døråpning eller bevegelse, med luxmåler eller etter solnedgang frem til soloppgang. Raske sensorhendelser bevares og velkomstlys har raskere reserveavlesning. Samlet ventetid vises tydelig. Forsiden har større lås- og portstatus med ikon og farge. Eksisterende oppsett beholdes.",
     "en": "Welcome lights can start on door opening or motion, using a lux sensor or the period from sunset to sunrise. Short sensor events are preserved and welcome lights use faster fallback checks. The combined delay is shown clearly. Larger lock and garage status indicators use icons and colors. Existing settings are preserved."
@@ -122,5 +126,9 @@
   "0.4.28": {
     "no": "Innstillinger og handlinger er samlet per funksjon. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm, med tydelig valg av handlingsrekkefølge. Alarmens varsler, kamera, lyd, lys og egne handlinger er samlet per hendelse. Mobilmenyen er rettet for Homeys stilark, med nye personer- og alarmikoner. Gjestemodus anbefaler egen Homey-enhet og har innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Eksisterende oppsett beholdes.",
     "en": "Settings and actions are grouped by function. Night activation and alarm deactivation have separate sections with explicit action order choices. Alarm notifications, cameras, sound, lights and custom actions are grouped by event. Fixed mobile menu overflow caused by Homey's stylesheet and added people and siren icons. Guest mode recommends a Homey device and includes built-in push notices when enabled, disabled and when guests are left alone. Existing settings are preserved."
+  },
+  "0.4.31": {
+    "no": "Nytt nattvalg: Ja eller ingen svar ved fristen. Ett nei avbryter, og noen må fortsatt være hjemme. Hjemmeværende i nattutvalget settes alltid sovende; avkrysningen er fjernet fra Rutiner og veiviseren. Faste rutinenavn er oppdatert, og ekstra morgenhandlinger har en egen seksjon. Eksisterende nattvalg og handlinger beholdes.",
+    "en": "New night decision: at least one yes or nobody answering by the deadline. Any no cancels, and someone must still be home. Residents at home in the night selection are always marked asleep; removed the optional switch from routines and setup. Updated built-in routine names and added a separate section for extra morning actions. Existing rules and actions are preserved."
   }
 }

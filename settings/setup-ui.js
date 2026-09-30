@@ -100,10 +100,10 @@ window.HouseGuardWizard = (() => {
         body.append(el('p','Velg hvem som skal telle med når huset går i nattmodus. Bare de som er hjemme settes sovende.','hint'));
         for(const id of config.people.presence)choice(body,data.catalog.people[id]?.name || 'Utilgjengelig person',config.people.night.includes(id),value=>update(c=>{c.people.night=value?[...new Set([...c.people.night,id])]:c.people.night.filter(x=>x!==id);},false));
         body.append(el('h3','Hva skal skje?'));
-        choice(body,'Sett disse personene sovende når nattmodus starter',config.night.markAsleep,value=>update(c=>{c.night.markAsleep=value;},false));
+        body.append(el('p','Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter.','hint'));
         choice(body,'Ved nattankomst: sett bare den som kommer hjem våken',config.night.wakeArrival,value=>update(c=>{c.night.wakeArrival=value;},false));
-        body.append(el('p','Natt og morgen kan startes fra Hjem eller egne Homey-Flows. Under Rutiner setter du opp nattspørsmål i Aktivering av natt, og morgenstart, bevegelse og oppvåkning i Deaktivering av alarm.','hint'));
-        for(const [title,id] of [['Aktivering av natt','night-activation-settings'],['Deaktivering av alarm','alarm-deactivation-settings']])button(body,'Åpne '+title,()=>{remember();$('setup-dialog').close();ctx.navigate({tab:'routines',id,step:'night'});});
+        body.append(el('p','Natt og morgen kan startes fra Hjem eller egne Homey-Flows. Under Rutiner setter du opp nattspørsmål i Aktivering av Nattmodus, og morgenstart, bevegelse og oppvåkning i Deaktivering av Nattmodus.','hint'));
+        for(const [title,id] of [['Aktivering av Nattmodus','night-activation-settings'],['Deaktivering av Nattmodus','alarm-deactivation-settings']])button(body,'Åpne '+title,()=>{remember();$('setup-dialog').close();ctx.navigate({tab:'routines',id,step:'night'});});
       }else renderFinish(body,config,data);
     }
     function renderSensors(body,config,data){

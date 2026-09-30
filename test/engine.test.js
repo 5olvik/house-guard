@@ -2,7 +2,7 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const { harness, step, add } = require('./helpers');
 
-test('Siste person drar: én rutine etter 20 sekunder', async () => {
+test('Siste Person forlater: én rutine etter 20 sekunder', async () => {
   const h = harness(c => add(c, 'away', [step()])); h.ingest(); h.person('a', false); h.person('b', false); h.ingest(); h.ingest();
   await h.engine.tick(); assert.equal(h.calls.length, 0);
   h.advance(20000); await h.engine.tick(); await h.engine.tick(); assert.deepEqual(h.calls, [['timeline', 'test']]);
@@ -23,7 +23,7 @@ test('Fersk lesing før handling blokkerer retur som ennå ikke er mottatt som h
   const h = harness(c => add(c, 'away', [step()])); h.ingest(); h.person('a', false); h.person('b', false); h.ingest(); h.advance(20000); h.person('a', true); await h.engine.tick(); assert.equal(h.calls.length, 0);
 });
 test('Nattankomst endrer bare den ankomnes sovestatus', async () => {
-  const h = harness(c => { c.night.wakeArrival = true; c.night.markAsleep = false; }); h.person('a', false); h.person('b', true, true); h.ingest(); h.person('a', true, true); h.ingest(); await h.engine.tick();
+  const h = harness(c => { c.night.wakeArrival = true; }); h.person('a', false); h.person('b', true, true); h.ingest(); h.person('a', true, true); h.ingest(); await h.engine.tick();
   assert.deepEqual(h.calls, [['person', 'a', false]]);
 });
 test('Manuell natt endrer ikke sovestatus for borte personer', async () => {
@@ -35,20 +35,26 @@ test('Observasjonsmodus har null sideeffekter for alle handlingstyper', async ()
 });
 test('Nattspørsmål: ja/nei, ja/timeout, timeout/timeout og feil/feil', async () => {
   for (const answers of [['yes', 'no'], ['yes', null], [null, null], ['error', 'error']]) {
-    const h = harness(c => { c.night.automatic = true; c.night.markAsleep = false; c.security.alarmDeviceId = 'alarm'; c.bridges.questions = true; add(c, 'night', [step('night')]); });
+    const h = harness(c => { c.night.automatic = true; c.security.alarmDeviceId = 'alarm'; c.bridges.questions = true; add(c, 'night', [step('night')]); });
     h.device('alarm', 'homealarm_state', 'disarmed'); h.ingest(); await h.engine.requestNight(); const q = h.engine.state.question;
     answers.forEach((answer, i) => { if (answer) h.engine.answer(q.id, ['a', 'b'][i], answer); });
     await h.engine.tick(); assert.equal(h.calls.filter(c => c[0] === 'timeline').length, 0);
     h.advance(120000); await h.engine.tick();
-    // A yes may start the night routine, but cannot replace actual sleeping status.
-    if (answers[0] === 'yes' && !answers[1]) { assert.equal(q.decided, 'yes'); assert.equal(h.calls.filter(c => c[0] === 'set').length, 0);assert.equal(h.calls.filter(c=>c[0]==='timeline').length,1); }
-    else assert.equal(h.calls.filter(c => c[0] === 'set').length, 0);
-    await h.engine.tick(); assert.ok(h.calls.filter(c => c[0] === 'set').length <= 1);
+    // Night always requests sleeping, and arming waits for the actual sleep confirmation.
+    if (answers[0] === 'yes' && !answers[1]) {
+      assert.equal(q.decided, 'yes');assert.deepEqual(h.calls.filter(c=>c[0]==='person'),[['person','a',true]]);
+      assert.equal(h.calls.filter(c=>c[0]==='set'||c[0]==='timeline').length,0);
+      h.person('a',true,true);await h.engine.tick();h.person('b',true,true);await h.engine.tick();
+      assert.equal(h.calls.filter(c=>c[0]==='set'&&c[3]==='partially_armed').length,1);
+      h.device('alarm','homealarm_state','partially_armed');await h.engine.tick();
+      assert.equal(h.calls.filter(c=>c[0]==='timeline').length,1);
+    } else assert.equal(h.calls.filter(c=>c[0]==='set'||c[0]==='person').length,0);
+    await h.engine.tick();assert.ok(h.calls.filter(c=>c[0]==='set').length<=1);
   }
 });
 test('Hopp over overlever restart; manuell natt virker fortsatt', async () => {
   const h = harness(); h.ingest(); h.engine.skipNight(); const saved = h.saved();
-  const other = harness(c => { c.night.markAsleep = false; add(c, 'night', [step('manual')]); }, saved); other.ingest(); assert.equal(other.engine.state.skipUntil, saved.skipUntil);
+  const other = harness(c => { add(c, 'night', [step('manual')]); }, saved); other.person('a',true,true);other.person('b',true,true);other.ingest(); assert.equal(other.engine.state.skipUntil, saved.skipUntil);
   await other.engine.manual('night'); await other.engine.tick(); assert.deepEqual(other.calls, [['timeline', 'manual']]);
   other.advance(saved.skipUntil - other.now()); assert.equal(other.engine.state.skipUntil > other.now(), false);
 });
@@ -98,7 +104,7 @@ test('Avhengighet krever faktisk bekreftelse og endret konfig avbryter', async (
 });
 
 test('Nattankomnes automatiske våkenstatus starter ikke morgenrutinen', async () => {
-  const h = harness(c => { c.night.wakeArrival = true; c.night.markAsleep = false; add(c, 'morning', [step('wrong-morning')]); });
+  const h = harness(c => { c.night.wakeArrival = true; add(c, 'morning', [step('wrong-morning')]); });
   h.person('a', false, true); h.person('b', true, true); h.ingest(); h.person('a', true, true); h.ingest(); await h.engine.tick();
   h.person('a', true, false); h.ingest(); await h.engine.tick();
   assert.equal(h.calls.some(c => c[0] === 'timeline'), false); assert.equal(h.snapshot.people.b.asleep, true);

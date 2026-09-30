@@ -124,7 +124,7 @@
     }
     if (!people.children.length) people.append(el('p', 'Velg personer i Personer-fanen for å beregne modus for huset.', 'empty'));
     renderHomeControls();
-    const changed = data.config.night.markAsleep ? data.config.people.night.filter(id => s.people[id]?.present === true && s.people[id]?.available !== false).map(id => s.people[id]?.name || id) : [];
+    const changed = data.config.people.night.filter(id => s.people[id]?.present === true && s.people[id]?.available !== false).map(id => s.people[id]?.name || id);
     $('manual-explanation').textContent = changed.length ? `Nattmodus vil sette disse sovende: ${changed.join(', ')}.${s.observation ? ' Fullfør oppsettet først.' : ''}` : 'Ingen personstatuser vil endres av nattoppsettet.';
     $('skip-status').textContent = s.skipUntil > Date.now() ? `Automatisk natt hoppes over til ${new Date(s.skipUntil).toLocaleString('nb-NO', { timeZone: config.timeZone })}.` : '';
     const pending = $('pending-list'); pending.replaceChildren();
@@ -184,7 +184,7 @@
         label.append(check,document.createTextNode(title));(['presence','notifications'].includes(role)?roles:night).append(label);
       }
       night.open=config.people.night.includes(id)||config.people.questions.includes(id);
-      if(config.people.questions.includes(id)&&!config.night.automatic)night.append(el('p','Nattspørsmål er av. De kan aktiveres under Rutiner → Aktivering av natt.','hint'));
+      if(config.people.questions.includes(id)&&!config.night.automatic)night.append(el('p','Nattspørsmål er av. De kan aktiveres under Rutiner → Aktivering av Nattmodus.','hint'));
       row.append(roles,night);container.append(row);
     }
     if(!ids.length)container.append(el('p','Ingen personer funnet. Kontroller Homey-forbindelsen under Innstillinger.','empty'));
@@ -206,7 +206,7 @@
       const slot=slots.get(routine.id);
       const target=slot || $(['away','home'].includes(routine.id)?'presence-routines':['nightArrival','firstWake'].includes(routine.id)?'wake-routines':['guestActivated','guestDeactivated'].includes(routine.id)?'guest-routine-list':'routine-list');
       const editing=$('action-dialog').open && routine.id===actionRoutine?.id;
-      target.append(renderRoutine(routine,{inline:!!slot,open:opened.has(routine.id)||editing,executionOpen:executionOpened.has(routine.id),title:slot?{welcome:'Hva skal skje?',night:'Ekstra handlinger ved nattmodus',morning:'Ekstra handlinger om morgenen',nightArrival:'Ekstra handlinger ved nattankomst'}[routine.id]:undefined}));
+      target.append(renderRoutine(routine,{inline:!!slot,open:opened.has(routine.id)||editing,executionOpen:executionOpened.has(routine.id),title:slot?{welcome:'Hva skal skje?',night:'Ekstra handlinger ved nattmodus',morning:'Ekstra handlinger',nightArrival:'Ekstra handlinger ved nattankomst'}[routine.id]:undefined}));
       if(editing)revealSettings($('routine-'+routine.id));
     }
     if(!list.children.length)list.append(el('p','Lag en egen rutine hvis du trenger flere handlinger som kan startes manuelt eller fra en Homey Flow.','hint'));
@@ -232,7 +232,7 @@
         radio.onchange=()=>{if(!radio.checked)return;routine.execution=value;executionTitle();setDirty(true);};
       }
       advanced.append(executionHeading,executionChoices);
-      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Nattalarm velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Valget over bestemmer om den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget settes sovende. Nattalarm velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Valget over bestemmer om den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
       const alarmRule={away:'alarm-away-delay',home:'alarm-home-rule',night:'alarm-night-rule',morning:'alarm-morning-rule',nightArrival:'alarm-home-rule',firstWake:'alarm-wake-rule'}[routine.id];
       if(alarmRule){const link=el('button','Alarmvalg for denne hendelsen','settings-link');link.onclick=()=>navigateSettings({tab:'security',alarmTab:'overview',id:alarmRule});body.append(link);}
@@ -343,6 +343,7 @@
   }
   function renderConditionalFields() {
     document.querySelectorAll('[data-show-when]').forEach(node=>{node.hidden=!get(config,node.dataset.showWhen);});
+    $('night-rule-help').hidden=config.night.rule!=='auto-no-answer';
     const motion=$('morning-motion-settings');if(!motion.dataset.initialized){motion.open=!!config.morning.motion.enabled;motion.dataset.initialized='true';}
     const sunset=config.welcome.lightMode==='sunset',welcomeMotion=config.welcome.sensorType==='motion';
     document.querySelectorAll('[data-welcome-lux]').forEach(node=>{node.hidden=sunset;});

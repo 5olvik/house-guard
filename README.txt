@@ -14,6 +14,8 @@ Optional morning start on motion within a chosen time window disarms night prote
 
 Each function groups its settings and actions in one place. Night activation and alarm deactivation have separate sections, and actions have clear sequential or parallel choices. The mobile menu has people and siren icons and fits narrow screens.
 
+Night questions can start night mode at the deadline if nobody answers and someone is still home. Any no cancels. Home residents in the night selection are always marked asleep when night mode starts.
+
 Welcome lights can start on door opening or motion after the first arrival home. Choose a lux sensor or the period from sunset to sunrise. Sunset uses Homey's location and requires an API key, with no lux sensor needed. Routine and action delays are added and displayed together; 0 adds no waiting in the app. Short sensor events are preserved, with faster fallback checks when a real-time message is missed.
 
 The dashboard shows larger lock and garage status indicators with text, icons and colors: Locked/Unlocked, Closed/Open or Unknown status.

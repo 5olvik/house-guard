@@ -4,7 +4,7 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veivi
 
 **Versjon 0.4.29 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.29**, publisert på GitHub og i Homey App Stores testkanal som **bygg 11**. Versjonen er også installert lokalt med bevart oppsett og alarmstatus. Velkomstlys kan bruke dørkontakt eller bevegelse, med luxmåler eller solnedgang. Forsiden viser tydeligere lås- og portstatus. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Den lokale kildekoden er versjon **0.4.31**, installert på Solviks Homey med nytt nattvalg «Ja eller ingen svar ved fristen». Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Rutinenavnene og den separate seksjonen for ekstra morgenhandlinger fra 0.4.30 er beholdt. Handlinger, innstillinger og alarmstatus er bevart. **0.4.29 er fortsatt siste versjon publisert på GitHub og i Homey App Stores testkanal (bygg 11)**. 0.4.31 er ikke publisert. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
@@ -15,14 +15,14 @@ Nytt i 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med lux
 - Forside med status for funksjonene som er satt opp og konkrete snarveier når noe mangler.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
 - Faste rutiner kan ikke endre navn eller slettes; avkrysningen styrer bare ekstrahandlingene. Hver funksjon har fast plass med både innstillinger og handlinger. Egne rutiner kan deaktiveres eller slettes.
-- Velkomstlys og gjestemodus har hvert sitt samlede oppsett. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm. Tilleggsvalg vises ved behov.
+- Velkomstlys og gjestemodus har hvert sitt samlede oppsett. Natt og morgen er delt i Aktivering av Nattmodus og Deaktivering av Nattmodus. Tilleggsvalg vises ved behov.
 - Alarmens push, kamera, lyd, lys og egne handlinger er samlet per hendelse under Varsler og handlinger.
 - Valgfri morgenstart ved bevegelse i et valgt tidsrom: frakobler nattalarm og setter hjemmeværende våkne.
 - Gjestemodus som egen av/på-enhet i Homey: gjester holder huset hjemme og alarmen frakoblet. Vanlige hjemkomst-/borterutiner gjenbrukes, med innebygde pushvarsler.
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
 - Alarmpanel som egen Homey-enhet med status og avstilling. Ingen separat alarmapp eller alarmbroflows.
 - Direkte styring av kompatible låseenheter, inkludert Yale.
-- Nattspørsmål med svarfrist og nei-veto.
+- Nattspørsmål med svarfrist og nei-veto, med valgfri automatisk start hvis ingen svarer og noen fortsatt er hjemme.
 - Direkte mobilvarsler, nattspørsmål og Sonos med Homey API-nøkkel, uten hjelpeflows.
 - Manuelle knapper som setter alle valgte brukere hjemme eller borte, også uten GPS.
 - Forhåndsvisning, konfigurasjonskontroll og import/eksport. Eksplisitte normal-, kritisk- og bildetestvarsler kan sendes før grunnoppsettet er fullført.
@@ -79,7 +79,7 @@ npm run preview
 
 ## Status og begrensninger
 
-319 automatiserte tester, kodekontroll av 84 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.29. Versjonen er installert lokalt med bevart oppsett. Veiviseren og de samlede innstillingene er kontrollert i lokal nettleserdemo, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Mobilmenyen og de nye velkomstvalgene er prøvd ved 320 og 390 px med Homeys faktiske stilark. Testerens konkrete 30-sekunders forsinkelse er ikke gjenskapt på testerens Homey; faktisk lysrespons må bekreftes i eget oppsett. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
+339 automatiserte tester, kodekontroll av 85 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.31. Versjonen er installert lokalt med helt uendret oppsett. Tester dekker nattfrist, nei-veto, fersk hjemme-status, avbrudd ved morgenstart/ny tilkobling og oppgradering av gammel sovestatus-avkrysning. Nytt nattvalg er kontrollert i isolert mobilvisning ved 320 og 390 px med Homeys faktiske stilark; ingen overflyt, og automatisk lagring bevares ved omlasting. Veiviseren, ekstra morgenhandlinger og person-, sensor- og Flow-valg er tidligere kontrollert i lokal demo. Testerens konkrete 30-sekunders forsinkelse er ikke gjenskapt på testerens Homey; faktisk lysrespons må bekreftes i eget oppsett. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
 
 Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Med klar API-forbindelse trenger push, Sonos og start av valgte Flows ingen hjelpeflows. Gjennomgå overlappende rutiner i House Guard og eksisterende Flows før aktivering.
 

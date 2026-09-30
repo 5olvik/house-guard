@@ -33,7 +33,7 @@
       const selected = key ? choices.find(flow=>flow.key===key) : null;
       if(key && (!selected || !selected.selectable)) throw new Error('Valgt Flow mangler, er deaktivert, har feil eller kan ikke startes direkte. Oppdater Flow-listen.');
       let routine=next.routines.find(r=>r.id===routineId);
-      if(!routine) {routine={id:routineId,name:{away:'Siste person drar',home:'Første hjemkomst',night:'Nattmodus'}[routineId],enabled:true,execution:'sequential',actions:[]};next.routines.push(routine);}
+      if(!routine) {routine={id:routineId,name:{away:'Siste Person forlater',home:'Første Person som ankommer',night:'Aktivering av Nattmodus'}[routineId],enabled:true,execution:'sequential',actions:[]};next.routines.push(routine);}
       const matches = a => selected && a.kind==='flow' && a.flowId===selected.id && a.flowType===selected.type;
       // Reuse a matching custom action instead of starting the same Flow twice.
       const keep = routine.actions.find(a=>a.setupManaged!==true && matches(a)) || routine.actions.find(matches);

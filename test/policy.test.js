@@ -30,6 +30,62 @@ test('Nattspørsmål avgjøres ikke før fristen; ett nei har veto', () => {
   q.answers = { a: 'error', b: 'error' }; assert.equal(decideQuestion(q, 100), 'no');
   q.answers = { a: 'yes' }; q.rule = 'all-yes'; assert.equal(decideQuestion(q, 100), 'no');
 });
+
+test('Automatisk nattmodus venter til fristen og godtar ingen svar eller ja med manglende svar', () => {
+  const q = { recipients: ['a', 'b'], answers: {}, deadline: 100, rule: 'auto-no-answer' };
+  for (const answers of [{}, { a: 'yes' }, { a: 'yes', b: 'yes' }]) {
+    q.answers = answers;
+    assert.equal(decideQuestion(q, 99), null);
+    assert.equal(decideQuestion(q, 100), 'yes');
+    assert.equal(decideQuestion(q, 101), 'yes');
+  }
+});
+
+test('Ett eksplisitt nei avbryter også automatisk nattmodus før fristen', () => {
+  const q = { recipients: ['a', 'b'], deadline: 100, rule: 'auto-no-answer' };
+  for (const answers of [{ a: 'no' }, { a: 'yes', b: 'no' }]) {
+    q.answers = answers;
+    assert.equal(decideQuestion(q, 1), 'no');
+    assert.equal(decideQuestion(q, 100), 'no');
+  }
+  q.decided = 'no';
+  assert.equal(decideQuestion(q, 100), null);
+});
+
+test('Automatisk nattmodus godtar ikke tom mottakerliste eller bare mislykkede spørsmål', () => {
+  const q = { recipients: [], answers: {}, deadline: 100, rule: 'auto-no-answer' };
+  assert.equal(decideQuestion(q, 99), null);
+  assert.equal(decideQuestion(q, 100), 'no');
+  q.recipients = ['a', 'b'];
+  for (const answers of [{ a: 'error' }, { a: 'error', b: 'error' }]) {
+    q.answers = answers;
+    assert.equal(decideQuestion(q, 100), 'no');
+  }
+  q.answers = { a: 'yes', b: 'error' };
+  assert.equal(decideQuestion(q, 100), 'yes');
+});
+
+test('Svar fra personer utenfor mottakerlisten påvirker ikke nattspørsmålet', () => {
+  const q = { recipients: ['a'], answers: { outsider: 'no' }, deadline: 100, rule: 'auto-no-answer' };
+  assert.equal(decideQuestion(q, 100), 'yes');
+  q.recipients = [];
+  q.answers = { outsider: 'yes' };
+  assert.equal(decideQuestion(q, 100), 'no');
+});
+
+test('Eksisterende nattregler beholder kravene til ja-svar ved fristen', () => {
+  const q = { recipients: ['a', 'b'], answers: {}, deadline: 100 };
+  for (const rule of ['veto', 'all-yes']) {
+    q.rule = rule;
+    assert.equal(decideQuestion(q, 100), 'no');
+    q.answers = { a: 'yes' };
+    assert.equal(decideQuestion(q, 100), rule === 'veto' ? 'yes' : 'no');
+    q.answers = { a: 'yes', b: 'yes' };
+    assert.equal(decideQuestion(q, 99), null);
+    assert.equal(decideQuestion(q, 100), 'yes');
+    q.answers = {};
+  }
+});
 test('Port krever kjent status og bekreftet våkent hus, uavhengig av temperatur', () => {
   const good = { open: true, temperature: 6, temperatureFresh: true, nobodyAsleep: true, validated: true, commandType: 'pulse' };
   assert.equal(garageDecision(good), null);

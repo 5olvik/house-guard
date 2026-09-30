@@ -43,7 +43,11 @@ Under **Alarm → Lås og port → Garasjeport** kan «Tillat automatisk lukking
 
 ## Morgen og egne Flows
 
-Under **Rutiner → Aktivering av natt** finner du nattspørsmål, sovestatus og nattens ekstrahandlinger. **Rutiner → Deaktivering av alarm** samler morgenstart, nattankomst og første oppvåkning. Personvalgene og ekstrahandlingene ligger ved den tilhørende hendelsen. Innstillinger for automatisk nattspørsmål vises når funksjonen velges. Bevegelsesmorgen har en egen sammenleggbar del, der sensor og tidsrom velges før funksjonen slås på. De to kortene starter sammenfoldet. Valgene og den eksisterende oppførselen er bevart.
+Under **Rutiner → Aktivering av Nattmodus** finner du nattspørsmål, sovestatus og nattens ekstrahandlinger. **Rutiner → Deaktivering av Nattmodus** samler morgenstart, nattankomst og første oppvåkning. Personvalgene og ekstrahandlingene ligger ved den tilhørende hendelsen. Innstillinger for automatisk nattspørsmål vises når funksjonen velges. Bevegelsesmorgen har en egen sammenleggbar del, der sensor og tidsrom velges før funksjonen slås på. De to kortene starter sammenfoldet. Valgene og den eksisterende oppførselen er bevart.
+
+Under **Svar på nattspørsmålet → Når skal nattmodus starte?** kan du fra 0.4.31 velge **Ja eller ingen svar ved fristen**. Nattmodus starter da ved fristen hvis minst én svarer ja eller ingen svarer. Ett nei avbryter alltid. Noen må fortsatt være bekreftet hjemme, og øvrige nattvilkår gjelder. Feil ved sending av spørsmål regnes ikke som et ubesvart spørsmål. Start morgen og ny tilkobling avbryter ventende automatisk start. Eksisterende regel beholdes ved oppdatering; velg den nye regelen hvis du ønsker denne oppførselen.
+
+Når nattmodus starter, settes hjemmeværende i nattutvalget alltid sovende i Homey. Den tidligere avkrysningen er fjernet både fra Rutiner og veiviseren. Nattutvalget velges under Personer; bortreiste personer settes ikke sovende.
 
 Fast morgentid starter morgenrutinen og setter hjemmeværende i nattutvalget våkne i Homey. Det er en statusendring; lys, musikk eller annen fysisk vekking legges til som handlinger. Frakobling følger valget under Alarm.
 
@@ -63,7 +67,7 @@ Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. A
 
 ## Morgen ved bevegelse
 
-Åpne **Rutiner → Deaktivering av alarm → Start morgen ved bevegelse**. Velg for eksempel kjøkkensensoren, sett tidsrommet 06:00–12:00 og slå på «Start morgen ved ny bevegelse i tidsrommet». Alt lagres automatisk. Funksjonen er avslått ved oppgradering. Eksisterende rutiner, personutvalg og innstillinger endres ikke.
+Åpne **Rutiner → Deaktivering av Nattmodus → Start morgen ved bevegelse**. Velg for eksempel kjøkkensensoren, sett tidsrommet 06:00–12:00 og slå på «Start morgen ved ny bevegelse i tidsrommet». Alt lagres automatisk. Funksjonen er avslått ved oppgradering. Eksisterende rutiner, personutvalg og innstillinger endres ikke.
 
 Huset må være i nattmodus med bekreftet hjemmeværende, og sensoren må gå fra rolig til aktiv innenfor tidsrommet (fra er inkludert, til er ekskludert, i Homeys tidssone). Funksjonen frakobler nattalarmen før den samme bevegelsen vurderes som alarm, og setter alle hjemmeværende i tilstedeværelsesutvalget våkne. Dette gjelder også personer utenfor nattutvalget. Egne handlinger i Morgen-rutinen kjører som før hvis rutinen er aktivert. Den nye funksjonens frakobling og vekking er innebygd og gjelder også når ekstra morgenhandlinger er deaktivert. Vanlig manuell/planlagt morgen beholder de tidligere person- og alarmvalgene.
 
@@ -79,7 +83,7 @@ Velg **+ Egen rutine**, gi rutinen et navn og legg til handlinger. Velg for ekse
 
 Under hver rutines handlinger viser **Handlingene kjøres i rekkefølge/parallelt** det lagrede utførelsesvalget. Åpne delen for å velge **I rekkefølge** eller **Parallelt**. Valget lagres automatisk. Delen holder seg åpen når handlinger legges til, redigeres eller fjernes.
 
-Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Deaktivering av alarm som beskrevet ovenfor.
+Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Deaktivering av Nattmodus som beskrevet ovenfor.
 
 ## Gjestemodus – gjester teller som hjemme
 

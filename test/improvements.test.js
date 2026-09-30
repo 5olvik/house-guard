@@ -29,7 +29,7 @@ test('Adapter stopper også ukjent låseenhet via annen capability før sending'
 test('Direkte Yale-låsing i borte/natt uten integrasjonshendelse',async()=>{
   const h=harness(c=>{c.security.lockDeviceId='lock';c.security.lockOnArming=true;}); h.device('lock','locked',false);h.person('a',false);h.person('b',false);h.ingest();
   h.engine.start('away');await h.engine.tick();assert.deepEqual(h.calls,[['set','lock','locked',true]]);
-  const n=harness(c=>{c.security.lockDeviceId='lock';c.security.lockOnArming=true;c.night.markAsleep=false;});n.device('lock','locked',false);n.ingest();await n.engine.manual('night');await n.engine.tick();assert.deepEqual(n.calls,[['set','lock','locked',true]]);
+  const n=harness(c=>{c.security.lockDeviceId='lock';c.security.lockOnArming=true;});n.person('a',true,true);n.person('b',true,true);n.device('lock','locked',false);n.ingest();await n.engine.manual('night');await n.engine.tick();assert.deepEqual(n.calls,[['set','lock','locked',true]]);
 });
 test('Eksplisitt trygg refresh utløser ikke gammel ankomst eller opplåsing',async()=>{
   const h=harness(c=>{c.security.autoUnlock=true;c.security.lockDeviceId='lock';});h.person('a',false);h.person('b',false);h.ingest();h.person('a',true);

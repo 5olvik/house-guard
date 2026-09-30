@@ -47,7 +47,7 @@
     <section id="routines" class="panel" hidden>
       <div class="intro"><div><h2>Rutiner som passer huset</h2><p>Åpne en funksjon for å se innstillingene og velge hva som skal skje.</p></div></div>
       <div id="presence-routines" data-routine-list></div>
-      <details class="card routine-settings" id="night-activation-settings"><summary>Aktivering av natt</summary><div class="details-body">
+      <details class="card routine-settings" id="night-activation-settings"><summary>Aktivering av Nattmodus</summary><div class="details-body">
         <fieldset><legend>Når starter natten?</legend>
           <p class="hint">Du kan alltid starte nattmodus fra Hjem eller en egen Flow.</p>
           <label class="check"><input type="checkbox" data-bind="night.automatic">Spør om nattmodus når huset er rolig</label>
@@ -59,15 +59,15 @@
             <p class="hint full">Homeys soneaktivitet avgjør når huset er rolig. Velg hvem som skal få nattspørsmålet under Personer. Spørsmålet sendes bare når alarmen er frakoblet og huset er bekreftet våkent. Krever API-nøkkel under Innstillinger.</p>
             <details class="full"><summary>Svar på nattspørsmålet</summary><div class="details-body form-grid">
               <label>Svar innen (sekunder)<input type="number" min="10" max="900" data-bind="night.answerSeconds"></label>
-              <label>Når skal nattmodus starte?<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option></select></label>
+              <label>Når skal nattmodus starte?<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option><option value="auto-no-answer">Ja eller ingen svar ved fristen</option></select></label>
+              <p class="hint full" id="night-rule-help" hidden>Automatisk start krever noen hjemme. Ett nei avbryter.</p>
             </div></details>
           </div>
-          <label class="check"><input type="checkbox" data-bind="night.markAsleep">Sett hjemmeværende i nattutvalget sovende når natten starter</label>
-          <p class="hint">Nattutvalget velges under Personer. Sovestatus oppdateres direkte i Homey.</p>
+          <p class="hint">Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Nattutvalget velges under Personer.</p>
           <div data-routine-slot="night"></div>
         </fieldset>
       </div></details>
-      <details class="card routine-settings" id="alarm-deactivation-settings"><summary>Deaktivering av alarm</summary><div class="details-body">
+      <details class="card routine-settings" id="alarm-deactivation-settings"><summary>Deaktivering av Nattmodus</summary><div class="details-body">
         <p class="hint">Velg hvordan morgenen starter og hva som skal skje når noen våkner eller kommer hjem om natten.</p>
         <fieldset><legend>Når starter morgenen?</legend><div class="form-grid">
           <label class="check full"><input type="checkbox" data-bind="morning.scheduled">Start morgen til fast tid</label>
@@ -85,7 +85,8 @@
             <p class="hint full">Når huset er i nattmodus og noen er hjemme, frakobles nattalarmen, hjemmeværende i personutvalget settes våkne og de vanlige morgenhandlingene kjøres. Ingen ekstra Flow er nødvendig.</p>
             <details class="full"><summary>Slik fungerer bevegelsesmorgen</summary><p class="hint">Morgenen starter én gang per nattperiode, på ny bevegelse etter at sensoren har vært rolig. Dette inkluderer frakobling av nattalarmen selv om vanlig morgenfrakobling er slått av under Alarm.</p><p class="hint">Bortealarm, utløst alarm og inngangsforsinkelse avbrytes ikke. Bevegelsesmorgen starter ikke i gjestemodus. Krever API-nøkkel under Innstillinger. Fast morgentid er et eget valg.</p></details>
           </div></details>
-        </div><div data-routine-slot="morning"></div></fieldset>
+        </div></fieldset>
+        <div data-routine-slot="morning"></div>
         <details class="card routine-section" id="night-arrival-settings"><summary>Ankomst om natten</summary><div class="details-body">
           <label class="check"><input type="checkbox" data-bind="night.wakeArrival">Sett bare den som kommer hjem om natten, til våken</label>
           <p class="hint">De som allerede er hjemme, beholder sovestatusen. Frakobling ved hjemkomst velges under Alarm.</p>
@@ -141,11 +142,11 @@
           <label class="check" id="alarm-wake-rule"><input type="checkbox" data-bind="security.automation.firstWake">Frakoble når første hjemmeværende våkner</label>
           <label class="check" id="alarm-morning-rule"><input type="checkbox" data-bind="security.automation.morning">Frakoble når morgenmodus starter</label>
           <label id="alarm-away-delay">Alle borte – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.away"></label>
-          <label>Første hjemkomst – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.home"></label>
+          <label>Første Person som ankommer – bekreft etter sekunder<input type="number" min="0" max="300" data-bind="delays.home"></label>
         </div>
         <p class="hint">Personene velges under Personer. Nattalarm bruker sensorene merket «Natt» under Sensorer. Bekreftelsestiden gjelder også borte- og hjemkomsthandlingene. Alarmens inn-/utgangsforsinkelse velges under Sensorer. Ved nattankomst frakobles alarmen uten hjemkomstforsinkelse når «Sett bare den ankomne våken» er valgt. Andre personer beholder sovestatusen.</p>
         <p class="hint">Endrede valg lagres automatisk og gjelder fra neste hendelse. De endrer ikke alarmmodus umiddelbart. Gjestemodus holder alltid alarmen frakoblet.</p>
-        <div class="button-row"><button type="button" data-settings-target="night-activation-settings" data-settings-tab="routines">Åpne Aktivering av natt</button><button type="button" data-settings-target="alarm-deactivation-settings" data-settings-tab="routines">Åpne Deaktivering av alarm</button></div>
+        <div class="button-row"><button type="button" data-settings-target="night-activation-settings" data-settings-tab="routines">Åpne Aktivering av Nattmodus</button><button type="button" data-settings-target="alarm-deactivation-settings" data-settings-tab="routines">Åpne Deaktivering av Nattmodus</button></div>
       </div></details>
       <details class="card"><summary>Alarmpanel i Homey</summary><p class="hint">Valgfritt: Legg til enheten med Legg til enhet → House Guard → Alarmpanel for å se status og avstille alarmen fra Homey. Alarmen fungerer også uten denne enheten.</p></details>
       </div>

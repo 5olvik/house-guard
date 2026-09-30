@@ -8,7 +8,9 @@ Alarmoppsettet samler varsler, kamera, lyd, lys og egne handlinger per hendelse.
 
 Aktiver eller deaktiver valgte alarmsensorer fra Flow, separat for full alarm og nattalarm, for eksempel mens robotstøvsugeren går. Faste rutiner har låste navn og kan ikke slettes; avkrysningen gjelder bare egne ekstrahandlinger. Egne rutiner kan navngis og slettes.
 
-Hver funksjon samler innstillinger og handlinger på ett sted. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm. Handlingene har tydelige valg for rekkefølge eller parallellkjøring. Mobilmenyen har personer- og sireneikon og er tilpasset smale skjermer.
+Hver funksjon samler innstillinger og handlinger på ett sted. Natt og morgen er delt i Aktivering av Nattmodus og Deaktivering av Nattmodus. Handlingene har tydelige valg for rekkefølge eller parallellkjøring. Mobilmenyen har personer- og sireneikon og er tilpasset smale skjermer.
+
+Nattspørsmålet kan starte nattmodus ved svarfristen hvis ingen svarer og noen fortsatt er hjemme. Ett nei avbryter. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter.
 
 Velkomstlys kan starte ved døråpning eller bevegelse etter første hjemkomst. Velg luxmåler eller perioden fra solnedgang til soloppgang. Solnedgang bruker Homeys plassering og krever API-nøkkel, men ingen luxsensor. Ventetiden på rutinen og handlingen summeres og vises samlet; 0 betyr ingen ekstra venting i appen. Raske sensorhendelser bevares, med rask reserveavlesning hvis sanntidsmeldingen uteblir.
 

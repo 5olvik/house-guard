@@ -15,8 +15,9 @@ test('Morning cannot run in an empty home or with guests alone, even with a lega
  }
 });
 test('Manual night cannot arm if marking residents asleep fails; a confirmed sleeper is required',async()=>{
- const h=harness(c=>{c.security.alarmDeviceId=ID;c.night.markAsleep=false;});h.device(ID,'homealarm_state','disarmed');h.ingest();
+ const h=harness(c=>{c.security.alarmDeviceId=ID;});h.adapter.setAsleep=async()=>{throw Error('Homey rejected sleep status');};h.device(ID,'homealarm_state','disarmed');h.ingest();
  await h.engine.manual('night');await h.engine.tick();assert(!h.calls.some(c=>c[3]==='partially_armed'));
+ assert.equal(h.engine.runs.find(r=>r.routineId==='night').actions.filter(a=>a.kind==='person'&&a.status==='failed').length,2);
  h.person('a',true,true);h.engine.start('night');await h.engine.tick();assert(h.calls.some(c=>c[3]==='partially_armed'));
 });
 test('Optional alarm automation switches control only their own mode change',()=>{
