@@ -104,7 +104,7 @@
       const flow = list(catalog.flows).find(f => f.id === action.flowId && f.type === action.flowType);
       const reason = !flow ? 'Flow-en mangler.' : flow.enabled === false ? 'Flow-en er deaktivert.' : flow.broken ? 'Flow-en har feil.' : flow.triggerable === false ? (flow.type === 'advanced' ? 'Advanced Flow trenger et Start-kort.' : 'Flow-en kan ikke startes direkte uten en tagg.') : flow.triggerable !== true ? 'Oppdater Flow-listen for å kontrollere om den kan startes.' : '';
       const alarmEvent = alarmEvents.includes(routine.id);
-      const target = alarmEvent ? { tab:'security', alarmTab:'advanced', id:'alarm-routine-list' } : !['away','home','night'].includes(routine.id) ? { tab:'routines', id:'routine-list' } : undefined;
+      const target = alarmEvent ? { tab:'security', alarmTab:'notifications', id:'routine-'+routine.id } : !['away','home','night'].includes(routine.id) ? { tab:'routines', id:'routine-'+routine.id } : undefined;
       add(`flow-${routine.id}-${action.id}`, `${routine.name || 'Rutine'}: ${flow?.name || 'Valgt Flow'}`, !reason,
         reason || 'Flow-en er tilgjengelig og kan startes direkte.', alarmEvent ? 'alarm' : 'routines', true, target);
     }
@@ -114,7 +114,7 @@
         recipients.length ? 'Valgte mottakere må være tilgjengelige Homey-brukere.' : 'Velg hvem som skal få spørsmål om å starte natten.', 'night', true, { tab:'people', id:'people-selection' });
       const zone = status.zones?.[config.night.zoneId] || catalog.zones?.[config.night.zoneId];
       add('night-zone', 'Sone for nattspørsmål', !!zone && (status.zones === undefined || typeof zone.active === 'boolean'),
-        'Velg en sone med kjent aktivitet. Nattspørsmålet sendes etter at sonen har vært rolig.', 'night', true, { tab:'routines', id:'night-morning-settings' });
+        'Velg en sone med kjent aktivitet. Nattspørsmålet sendes etter at sonen har vært rolig.', 'night', true, { tab:'routines', id:'night-activation-settings' });
     }
     return checks;
   }

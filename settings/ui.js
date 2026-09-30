@@ -5,6 +5,7 @@
   const kinds = { set: 'Sett enhet', flow: 'Start Flow', notify: 'Varsel', speak: 'Si tekst', sound: 'Spill lyd', timeline: 'Tidslinje', person: 'Sovestatus', garage: 'Lukk port', verify: 'Bekreft tilstand' };
   const resultNames = { planned:'Ville utført', info:'Informasjon', pending: 'Venter', checking: 'Kontrollerer', dispatching: 'Klargjør sending', sent: 'Sendt', waiting: 'Venter på tilstand', accepted: 'Akseptert', confirmed: 'Bekreftet', observed: 'Ikke utført under oppsett', skipped: 'Hoppet over', cancelled: 'Avbrutt', failed: 'Feil', unknown: 'Ukjent utfall' };
   const modeNames = { home: 'Hjemme', away: 'Borte', night: 'Natt', unknown: 'Ukjent' };
+  const alarmRoutineIds = ['alarm','arming','entryDelay','activeSensor','alarmOff'];
   let data, config, dirty = false, homey, demo = false, actionRoutine, editedAction, toastTimer, autosave, actionChanged = false;
   let wizard;
   const controlBusy = new Set(), controlErrors = {};
@@ -55,7 +56,7 @@
   function fillBindings() {
     fillSelects();
     document.querySelectorAll('[data-bind]').forEach(input => { const v = get(config, input.dataset.bind); if (input.type === 'checkbox') input.checked = input.dataset.checkedValue ? v === input.dataset.checkedValue : !!v; else input.value = String(v ?? ''); });
-    $('timezone').textContent = `Tidssone: ${config.timeZone}. Bruker Homeys tidssone når appen er installert.`;
+    $('timezone').textContent = `Tidssone: ${config.timeZone}. Følger Homeys innstilling.`;
   }
   function bindEvents() {
     const changed = event => {
@@ -79,6 +80,10 @@
     };
     document.addEventListener('change', changed);
     document.addEventListener('input', event => { if (['text', 'number', 'time'].includes(event.target.type)) changed(event); });
+    document.addEventListener('click', event => {
+      const button=event.target.closest('[data-settings-target]');
+      if(button)navigateSettings({tab:button.dataset.settingsTab,id:button.dataset.settingsTarget,alarmTab:button.dataset.settingsAlarmTab});
+    });
   }
   function renderLogs(container, entries) {
     container.replaceChildren();
@@ -169,7 +174,7 @@
         label.append(check,document.createTextNode(title));(['presence','notifications'].includes(role)?roles:night).append(label);
       }
       night.open=config.people.night.includes(id)||config.people.questions.includes(id);
-      if(config.people.questions.includes(id)&&!config.night.automatic)night.append(el('p','Nattspørsmål er av. De kan aktiveres under Rutiner → Aktivering - Deaktivering av nattalarm.','hint'));
+      if(config.people.questions.includes(id)&&!config.night.automatic)night.append(el('p','Nattspørsmål er av. De kan aktiveres under Rutiner → Aktivering av natt.','hint'));
       row.append(roles,night);container.append(row);
     }
     if(!ids.length)container.append(el('p','Ingen personer funnet. Kontroller Homey-forbindelsen under Innstillinger.','empty'));
@@ -181,45 +186,55 @@
     return `${kinds[a.kind] || a.kind}${target ? ` · ${target}` : ''}${a.value !== undefined ? ` → ${value}` : ''}${a.text ? ` · ${a.text}` : ''}`;
   }
   function renderRoutines() {
-    const list=$('routine-list'),alarmList=$('alarm-routine-list');
-    const opened=new Set([...list.querySelectorAll('details[open]'),...alarmList.querySelectorAll('details[open]')].map(node=>node.dataset.routine).filter(Boolean));
-    const extrasOpen=!!$('extra-routine-events')?.open;
-    list.replaceChildren();alarmList.replaceChildren();
-    const extra=el('details',undefined,'card');extra.id='extra-routine-events';extra.open=extrasOpen;extra.append(el('summary','Legg til ekstrahandlinger når …'),el('p','Disse hendelsene er tilgjengelige når du trenger dem. Innebygde funksjoner følger fortsatt Alarm og Aktivering - Deaktivering av nattalarm.','hint'));
-    const extraList=el('div');extra.append(extraList);
-    const headingFor=(heading,routine)=>{heading.replaceChildren(el('span',routine.name));const count=routine.actions.length;heading.append(el('small',count?(routine.enabled?'':'Ekstrahandlinger på pause · ')+routine.actions.slice(0,2).map(describeAction).join(' · ')+(count>2?' · +'+(count-2)+' til':''):'Ingen ekstrahandlinger','routine-meta'));};
+    const root=$('routines'),list=$('routine-list');
+    const opened=new Set([...root.querySelectorAll('[data-routine][open]')].map(node=>node.dataset.routine));
+    const executionOpened=new Set([...root.querySelectorAll('[data-execution][open]')].map(node=>node.dataset.execution));
+    const slots=new Map([...root.querySelectorAll('[data-routine-slot]')].map(node=>[node.dataset.routineSlot,node]));
+    root.querySelectorAll('[data-routine-list],[data-routine-slot]').forEach(node=>node.replaceChildren());
     for (const routine of config.routines) {
-      if(['guestOn','guestOff'].includes(routine.id))continue;
-      const custom=routine.id.startsWith('custom-');
-      if(custom && routine.hidden)continue;
-      const alarmEvent = ['alarm','arming','entryDelay','activeSensor','alarmOff'].includes(routine.id);
-      const card = el('details', undefined, 'card'), heading = el('summary', routine.name), body = el('div', undefined, 'details-body');
-      card.dataset.routine=routine.id;card.open=opened.has(routine.id)||routine.id===actionRoutine?.id;headingFor(heading,routine);
+      if(['guestOn','guestOff',...alarmRoutineIds].includes(routine.id)||(routine.id.startsWith('custom-')&&routine.hidden))continue;
+      const slot=slots.get(routine.id);
+      const target=slot || $(['away','home'].includes(routine.id)?'presence-routines':['nightArrival','firstWake'].includes(routine.id)?'wake-routines':['guestActivated','guestDeactivated'].includes(routine.id)?'guest-routine-list':'routine-list');
+      const editing=$('action-dialog').open && routine.id===actionRoutine?.id;
+      target.append(renderRoutine(routine,{inline:!!slot,open:opened.has(routine.id)||editing,executionOpen:executionOpened.has(routine.id),title:slot?{welcome:'Hva skal skje?',night:'Ekstra handlinger ved nattmodus',morning:'Ekstra handlinger om morgenen',nightArrival:'Ekstra handlinger ved nattankomst'}[routine.id]:undefined}));
+      if(editing)revealSettings($('routine-'+routine.id));
+    }
+    if(!list.children.length)list.append(el('p','Lag en egen rutine hvis du trenger flere handlinger som kan startes manuelt eller fra en Homey Flow.','hint'));
+  }
+  function renderRoutineViews() { renderRoutines();renderAlarmResponses(); }
+  function renderRoutine(routine,{inline=false,open=false,title,onEnabledChange,executionOpen=false}={}) {
+      const custom=routine.id.startsWith('custom-'),alarmEvent=alarmRoutineIds.includes(routine.id);
+      const card=el(inline?'section':'details',undefined,inline?'routine-actions':'card'),heading=el(inline?'h3':'summary'),body=el('div',undefined,inline?'routine-body':'details-body');
+      const headingFor=(heading,routine)=>{heading.replaceChildren(el('span',title || routine.name));if(inline)return;const count=routine.actions.length;heading.append(el('small',count?(routine.enabled?'':'Ekstrahandlinger på pause · ')+routine.actions.slice(0,2).map(describeAction).join(' · ')+(count>2?' · +'+(count-2)+' til':''):'Ingen ekstrahandlinger','routine-meta'));};
+      card.dataset.routine=routine.id;card.id='routine-'+routine.id;card.setAttribute('aria-label',routine.name);if(!inline)card.open=open;headingFor(heading,routine);
       if(custom){const nameLabel = el('label', '1. Gi rutinen et navn'), nameInput = el('input'); nameInput.type = 'text'; nameInput.value = routine.name;nameInput.placeholder='For eksempel: Rolig kveld';
       nameInput.oninput = () => { routine.name = nameInput.value; headingFor(heading,routine); setDirty(); }; nameLabel.append(nameInput); body.append(nameLabel); }
       const enabledWrap = el('label', undefined, 'check'), check = el('input'); check.type = 'checkbox'; check.checked = routine.enabled;
-      check.onchange = () => { routine.enabled = check.checked;headingFor(heading,routine);const run=body.querySelector('[data-routine-start]');if(run)run.disabled=!routine.enabled || !routine.actions.length;setDirty(true); }; enabledWrap.append(check, document.createTextNode(custom ? 'Rutinen er aktiv' : 'Ekstra handlinger er aktive'));
-      const execution = el('select'); options(execution, [{ id: 'sequential', label: 'I rekkefølge – venter på tilstand' }, { id: 'parallel', label: 'Parallelt – følger egne forsinkelser' }], routine.execution, null); execution.setAttribute('aria-label', `Utførelse for ${routine.name}`);
-      execution.onchange = () => { routine.execution = execution.value; setDirty(true); }; body.append(enabledWrap);
+      check.onchange = () => { routine.enabled = check.checked;headingFor(heading,routine);const run=body.querySelector('[data-routine-start]');if(run)run.disabled=!routine.enabled || !routine.actions.length;setDirty(true);onEnabledChange?.(); }; enabledWrap.append(check, document.createTextNode(custom ? 'Rutinen er aktiv' : 'Ekstra handlinger er aktive'));
+      body.append(enabledWrap);
       if(custom){body.append(el('h3','2. Slik starter du rutinen'),el('p','Trykk «Start rutine» her, eller bruk Homey-kortet House Guard → Start navngitt rutine i en Flow. Velg denne rutinens navn i kortet.','hint'),el('h3','3. Velg hva som skal skje'),el('p','Legg til én eller flere handlinger, for eksempel slå på et lys, starte en Flow eller sende et varsel. Vilkår avgjør om en handling utføres når rutinen starter.','hint'));}
-      const orderLabel=el('label','Rekkefølge på handlingene');orderLabel.append(execution);const advanced=el('details');advanced.append(el('summary','Avansert utførelse'),orderLabel);body.append(advanced);
-      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Nattalarm velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Bare den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
+      const advanced=el('details',undefined,'routine-execution');advanced.dataset.execution=routine.id;advanced.dataset.responsePart=routine.id+'-execution';advanced.open=executionOpen;
+      const executionHeading=el('summary'),executionTitle=()=>{executionHeading.textContent=routine.execution==='parallel'?'Handlingene kjøres parallelt':'Handlingene kjøres i rekkefølge';};executionTitle();
+      const executionChoices=el('fieldset',undefined,'execution-choices');executionChoices.append(el('legend','Rekkefølge på handlingene'));
+      for(const [value,label,help] of [['sequential','I rekkefølge','Følger listen og venter på eventuell tilstandsbekreftelse.'],['parallel','Parallelt','Følger hver handlings forsinkelse og eventuelle avhengigheter.']]){
+        const choice=el('label',undefined,'execution-choice'),radio=el('input'),copy=el('span');radio.type='radio';radio.name='routine-execution-'+routine.id;radio.value=value;radio.checked=routine.execution===value;
+        copy.append(el('strong',label),el('small',help));choice.append(radio,copy);executionChoices.append(choice);
+        radio.onchange=()=>{if(!radio.checked)return;routine.execution=value;executionTitle();setDirty(true);};
+      }
+      advanced.append(executionHeading,executionChoices);
+      const builtin = { away: 'Alarmen følger valgene under Alarm → Oversikt.', home: 'Alarm og opplåsing følger valgene under Alarm.', night: 'Hjemmeværende i nattutvalget kan settes sovende. Nattalarm velges under Alarm.', morning: 'Hjemmeværende i nattutvalget settes våkne. Frakobling velges under Alarm.', arming: 'Valgt lås og garasjeport følger sikkerhetsoppsettet.', nightArrival: 'Valget over bestemmer om den ankomne settes våken. Frakobling følger valget for hjemkomst under Alarm.', alarm: 'Gjentas mens alarm er bekreftet aktiv. {zone} og {reason} kommer fra lagret alarmkontekst.', alarmOff: 'Ingen lys slukkes som standard.' }[routine.id];
       if (builtin) body.append(el('p', builtin, 'hint'));
-      if(['guestActivated','guestDeactivated'].includes(routine.id))body.append(el('p',routine.id==='guestActivated'?'Kjøres én gang når gjestemodus slås på. Legg til egne handlinger, for eksempel en Flow eller en talemelding. Det vanlige gjestevarselet og frakobling av alarmen er allerede innebygd.':'Kjøres én gang når gjestemodus slås av. Legg til egne handlinger etter behov. Vanlig borterutine starter automatisk hvis alle beboerne er borte.','hint'));
-      const builtinList = el('div');
-      const showBuiltins = actions => {
-        builtinList.replaceChildren();
-        for (const a of actions.filter(a=>!a.alarmAutomation)) { const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy'); copy.append(el('small','Innebygd · følger Alarm og personvalg')); row.append(el('span','•','action-number'),copy); builtinList.append(row); }
-      };
-      showBuiltins(data.builtins?.[routine.id] || []); body.append(builtinList);
-      card.ontoggle = async () => { if (!card.open) return; try { const p = await api('POST','/preview',{ id:routine.id, config }); showBuiltins(p.actions.filter(a => a.builtin)); } catch (error) { toast(error.message); } };
-      if (!routine.actions.length) body.append(el('p',custom?'Trykk «Legg til handling» for å velge hva rutinen skal gjøre.':alarmEvent?'Varsler, lyd og lys følger valgene under Alarm. Du kan legge til egne handlinger her.':'Ingen ekstra handlinger valgt.', 'empty'));
+      const alarmRule={away:'alarm-away-delay',home:'alarm-home-rule',night:'alarm-night-rule',morning:'alarm-morning-rule',nightArrival:'alarm-home-rule',firstWake:'alarm-wake-rule'}[routine.id];
+      if(alarmRule){const link=el('button','Alarmvalg for denne hendelsen','settings-link');link.onclick=()=>navigateSettings({tab:'security',alarmTab:'overview',id:alarmRule});body.append(link);}
+      if(['home','arming'].includes(routine.id)){const link=el('button','Innstillinger for lås og port','settings-link');link.onclick=()=>navigateSettings({tab:'security',alarmTab:'doors',id:'lock-settings'});body.append(link);}
+      if(['guestActivated','guestDeactivated'].includes(routine.id))body.append(el('p',routine.id==='guestActivated'?'Kjøres én gang når gjestemodus slås på. Legg til egne handlinger, for eksempel en Flow eller en talemelding. Pushvarselet og frakobling av alarmen er allerede innebygd.':'Kjøres én gang når gjestemodus slås av. Legg til egne handlinger etter behov. Pushvarselet er innebygd. Vanlig borterutine starter automatisk hvis alle beboerne er borte.','hint'));
+      if (!routine.actions.length) body.append(el('p',custom?'Trykk «Legg til handling» for å velge hva rutinen skal gjøre.':alarmEvent?'Ingen egne handlinger valgt.':'Ingen ekstra handlinger valgt.', 'empty'));
       routine.actions.forEach((a, index) => {
         const row = el('div', undefined, 'action-row'), copy = el('div', describeAction(a), 'action-copy');
         copy.append(el('small', `${a.delaySeconds} s · ${labels[a.category]} · ${a.when || 'Rutinens vilkår'}${a.condition ? ' · med enhetsvilkår' : ''}${a.requireConfirmed ? ' · krever bekreftet avhengighet' : ''}`));
         const remove = el('button', '×', 'icon-button'); remove.setAttribute('aria-label', `Fjern ${describeAction(a)}`); remove.onclick = () => {
           if (routine.actions.some(other => other.dependsOn === a.id)) { toast('Fjern avhengige handlinger først.'); return; }
-          routine.actions.splice(index, 1); setDirty(true); renderRoutines();
+          routine.actions.splice(index, 1); setDirty(true); renderRoutineViews();
         };
         const edit = el('button', 'Rediger', 'small-button'); edit.onclick = () => openAction(routine, a);
         row.append(el('span', index + 1, 'action-number'), copy, edit, remove); body.append(row);
@@ -239,15 +254,12 @@
       if (custom) {
         const run = el('button', 'Start rutine');run.disabled=!routine.enabled || !routine.actions.length;run.dataset.routineStart=routine.id; run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
         const removeRoutine = el('button','Slett egen rutine');
-        removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutines();};body.append(removeRoutine);
+        removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutineViews();};body.append(removeRoutine);
       }
+      body.append(advanced);
       if(!custom)body.append(el('p','Fast hendelse. Krysset gjelder bare ekstrahandlingene dine.','hint'));
-      card.append(heading,body);
-      const optional=!custom&&!alarmEvent&&!routine.actions.length;
-      (alarmEvent?alarmList:optional?extraList:list).append(card);
-      if(optional&&card.open)extra.open=true;
-    }
-    if(extraList.children.length)list.append(extra);
+      if(!inline||title)card.append(heading);card.append(body);
+      return card;
   }
   function renderIntegrations() {
     renderApiKey();
@@ -304,17 +316,22 @@
     if(autosave.observe(latest.config))config=structuredClone(latest.config);
     data=latest;data.catalog=await api('GET','/catalog');renderConfig();renderStatus();
   }
-  function navigateGuide(target) {
+  function revealSettings(node) {
+    for(let parent=node;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+  }
+  function navigateSettings(target) {
     document.querySelector('[data-tab="'+target.tab+'"]').click();
     if(target.alarmTab)document.querySelector('[data-alarm-tab="'+target.alarmTab+'"]').click();
-    if(target.id){const node=$(target.id);if(node){if(node.tagName==='DETAILS')node.open=true;node.scrollIntoView({block:'start'});}}
+    if(target.id){const node=$(target.id);if(node){revealSettings(node);node.scrollIntoView({block:'start'});}}
+  }
+  function navigateGuide(target) {
+    navigateSettings(target);
     document.querySelectorAll('[data-guide-return]').forEach(node=>node.remove());
     const note=el('div',undefined,'banner row');note.dataset.guideReturn='true';note.append(el('span','Endringene lagres automatisk. Fortsett i veiviseren når du er klar.'));
     const back=el('button','Tilbake til veiviseren');back.onclick=()=>{note.remove();void openSetup(target.step);};note.append(back);$(target.tab).prepend(note);
   }
   function renderConditionalFields() {
     document.querySelectorAll('[data-show-when]').forEach(node=>{node.hidden=!get(config,node.dataset.showWhen);});
-    $('night-person-settings').hidden=!config.people.night.length && !config.night.automatic && !config.night.wakeArrival && !config.morning.scheduled && !config.morning.motion.enabled;
     const motion=$('morning-motion-settings');if(!motion.dataset.initialized){motion.open=!!config.morning.motion.enabled;motion.dataset.initialized='true';}
   }
   function renderAlarmChecklist() {
@@ -327,8 +344,7 @@
     ]){const button=el('button',undefined,'setup-shortcut');button.append(el('strong',title),el('small',copy));button.onclick=()=>{document.querySelector('[data-alarm-tab="'+tab+'"]').click();if(tab==='overview'){$('alarm-automation').open=true;$('alarm-automation').scrollIntoView({block:'start'});}};root.append(button);}
   }
   function renderAlarmResponses() {
-    for(const [id,section] of [['alarm-responses','notifications'],['alarm-audio-responses','audio']])
-      HouseGuardAlarm.render({root:$(id),section,config,data,el,options,deviceItems,changed:setDirty,api,flush,demo});
+    HouseGuardAlarm.render({root:$('alarm-responses'),config,data,el,options,deviceItems,changed:setDirty,api,flush,demo,renderRoutine:(id,onEnabledChange,executionOpen)=>renderRoutine(config.routines.find(r=>r.id===id),{inline:true,onEnabledChange,executionOpen})});
   }
   function initializeAlarmTabs() {
     const tabs=[...document.querySelectorAll('[data-alarm-tab]')];
@@ -498,8 +514,7 @@
       try { const latest = await api('GET','/state'); autosave.reset(latest.config); data = latest; config = structuredClone(latest.config); renderConfig(); renderStatus(); }
       catch(error) { toast(error.message); }
     };
-    $('add-alarm-extra').onclick = () => { let routine=config.routines.find(r=>r.id==='alarm'); if(!routine){routine={id:'alarm',name:'Utløst alarm – ekstra handlinger',enabled:true,execution:'parallel',actions:[]};config.routines.push(routine);} delete routine.hidden; openAction(routine); };
-    $('new-routine').onclick = () => { const routine={ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] };config.routines.push(routine);actionRoutine=routine;setDirty(true);renderRoutines(); };
+    $('new-routine').onclick = () => { const routine={ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] };config.routines.push(routine);setDirty(true);renderRoutines();const card=$('routine-'+routine.id);revealSettings(card);card.scrollIntoView({block:'start'}); };
     $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('action-capability').onchange=updateActionValue;$('action-value-choice').onchange=()=>{$('action-value').value=$('action-value-choice').value;};$('close-action').onclick = () => $('action-dialog').close();
     $('condition-device').onchange = () => updateConditionCapabilities();
     function saveAction(immediate = false) {
@@ -525,7 +540,7 @@
         const index = actionRoutine.actions.findIndex(item=>item.id===a.id);
         if (index >= 0) actionRoutine.actions[index] = a; else actionRoutine.actions.push(a);
         editedAction = a;
-        $('action-error-message').textContent = ''; setDirty(immediate); renderRoutines(); return true;
+        $('action-error-message').textContent = ''; setDirty(immediate); renderRoutineViews(); return true;
       } catch (error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; return false; }
     }
     $('action-form').addEventListener('input', event => { if (!['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName) || ['checkbox','select-one'].includes(event.target.type)) return; actionChanged = true; saveAction(); });

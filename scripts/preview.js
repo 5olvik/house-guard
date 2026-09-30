@@ -5,6 +5,12 @@ const Engine = require('../lib/engine');
 const { defaults } = require('../lib/config');
 const { action } = require('../lib/plans');
 const root = path.resolve(__dirname, '..');
+// Replay Homey's late stylesheet injection when checking the mobile settings layout.
+// The downloaded styles are private test artifacts, excluded from Homey packages.
+const homeyStyles = process.argv.includes('--homey-styles')
+  ? ['_homey-variables.css','_base.css','_homey-typography.css','_homey-button.css','_homey-form.css','_homey-icon.css']
+    .map(name => fs.readFileSync(path.join(root,'artifacts','homey-webview','css',name),'utf8')).join('\n')
+  : null;
 let offset = 0;
 const clock = () => Date.now() + offset;
 const config = defaults();
@@ -51,6 +57,9 @@ async function start() {
         body = JSON.parse(raw || '{}');
       }
       let output;
+      if (url.pathname === '/_preview/homey.css' && homeyStyles) {
+        res.setHeader('Content-Type','text/css; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(homeyStyles);return;
+      }
       if (url.pathname === '/api/state') output = { version:require('../app.json').version, controls:require('../lib/manual-controls').status(engine), sleepConnections:require('../lib/sleep-flows').selected(engine.config), intrusion:intrusion.status(), config: engine.config, status: engine.status(), catalog: catalogue, readiness:require('../lib/readiness')(engine.config,engine.snapshot,catalogue,engine.state,clock()), builtins:Object.fromEntries(engine.config.routines.map(r => [r.id,require('../lib/plans').builtins(r.id,engine.config,{},engine.facts())])) };
       else if (url.pathname === '/api/preview' && req.method === 'POST') output = require('../lib/preview')(engine,body.id,body.config,catalogue,await snapshot());
       else if (url.pathname === '/api/catalog') output = catalogue;
@@ -82,7 +91,9 @@ async function start() {
       } else {
         const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         if (!['index.html', 'ui.js', 'alarm-ui.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
-        if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end('/* Local preview: Homey bridge intentionally absent. */'); return; }
+        if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end(homeyStyles
+          ? "window.addEventListener('load',()=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/_preview/homey.css';document.head.append(link);});"
+          : '/* Local preview: Homey bridge intentionally absent. */'); return; }
         const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' }[path.extname(filename)];
         res.setHeader('Content-Type', `${mime}; charset=utf-8`); res.setHeader('Cache-Control', 'no-store');
         res.end(fs.readFileSync(path.join(root, 'settings', filename))); return;

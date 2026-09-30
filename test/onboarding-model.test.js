@@ -204,14 +204,14 @@ test('night setup and scheduled mornings need an available night selection; moti
 test('checklist targets point to settings not editable inside the guide', () => {
   const { config, data } = fixture(); config.night.automatic = true;
   assert.deepEqual(check(config, data, 'night-questions').target, { tab:'people', id:'people-selection' });
-  assert.deepEqual(check(config, data, 'night-zone').target, { tab:'routines', id:'night-morning-settings' });
+  assert.deepEqual(check(config, data, 'night-zone').target, { tab:'routines', id:'night-activation-settings' });
   addFlow(config);
   assert.equal(check(config, data, 'flow-away-flow').target, undefined);
   const action = { id:'custom-flow', kind:'flow', flowId:'missing', flowType:'normal' };
   config.routines.find(r => r.id === 'alarm').actions.push(action);
   config.routines.find(r => r.id === 'welcome').actions.push(action);
-  assert.deepEqual(check(config, data, 'flow-alarm-custom-flow').target, { tab:'security', alarmTab:'advanced', id:'alarm-routine-list' });
-  assert.deepEqual(check(config, data, 'flow-welcome-custom-flow').target, { tab:'routines', id:'routine-list' });
+  assert.deepEqual(check(config, data, 'flow-alarm-custom-flow').target, { tab:'security', alarmTab:'notifications', id:'routine-alarm' });
+  assert.deepEqual(check(config, data, 'flow-welcome-custom-flow').target, { tab:'routines', id:'routine-welcome' });
 });
 
 test('complete setup passes required checks; all exports preserve frozen input objects', () => {

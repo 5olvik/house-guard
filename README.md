@@ -4,7 +4,7 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veivi
 
 **Versjon 0.4.23 er tilgjengelig som testversjon.** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Kildekoden her er versjon **0.4.23**, med låste standardnavn og faste tilstedeværelsesregler for alarm. Den inkluderer Flow-kortene fra 0.4.21 for å aktivere og deaktivere alarmsensorer separat for bortealarm og nattalarm. Versjon **0.4.23** er publisert i Homey App Stores testkanal (bygg 9), bekreftet 29. september 2026. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Kildekoden her er versjon **0.4.28**, med innstillinger og handlinger samlet etter funksjon, separate kort for nattaktivering og deaktivering av alarm og tydelig valg av handlingsrekkefølge. Mobilmenyen beholder appens stil når Homeys stilark lastes, og Personer og Alarm har tydeligere ikoner. Gjestemodus anbefaler egen Homey-enhet, med innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Versjon **0.4.23** er publisert i Homey App Stores testkanal (bygg 9), bekreftet 29. september 2026. 0.4.28 er foreløpig en lokal oppdatering. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
@@ -12,8 +12,9 @@ Kildekoden her er versjon **0.4.23**, med låste standardnavn og faste tilstedev
 - Veiviser med funksjonsvalg, API-forbindelse, beboere og mottakere, relevante innstillinger og kontroll før aktivering. Oppsettet kan gjenopptas.
 - Forside med status for funksjonene som er satt opp og konkrete snarveier når noe mangler.
 - Rutiner ved hjemkomst, avreise, natt, morgen og alarm.
-- Faste rutiner kan ikke endre navn eller slettes; avkrysningen styrer bare ekstrahandlingene. Tomme faste rutiner er samlet under «Legg til ekstrahandlinger når …». Egne rutiner kan deaktiveres eller slettes.
-- Natt og morgen er delt etter når natten og morgenen starter, og hva som skjer med personene. Tilleggsvalg vises ved behov.
+- Faste rutiner kan ikke endre navn eller slettes; avkrysningen styrer bare ekstrahandlingene. Hver funksjon har fast plass med både innstillinger og handlinger. Egne rutiner kan deaktiveres eller slettes.
+- Velkomstlys og gjestemodus har hvert sitt samlede oppsett. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm. Tilleggsvalg vises ved behov.
+- Alarmens push, kamera, lyd, lys og egne handlinger er samlet per hendelse under Varsler og handlinger.
 - Valgfri morgenstart ved bevegelse i et valgt tidsrom: frakobler nattalarm og setter hjemmeværende våkne.
 - Gjestemodus som egen av/på-enhet i Homey: gjester holder huset hjemme og alarmen frakoblet. Vanlige hjemkomst-/borterutiner gjenbrukes, med innebygde pushvarsler.
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
@@ -76,7 +77,7 @@ npm run preview
 
 ## Status og begrensninger
 
-284 automatiserte tester, kodekontroll av 80 JavaScript-filer og lokal Homey-validering på nivå `publish` består for 0.4.22. Dette er ikke en App Store-publisering. Den nye veiviseren er kontrollert i lokal nettleserdemo ved 390 px mobilbredde og vanlig skrivebordsbredde, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Den er ennå ikke prøvd i fysisk Homey-GUI eller av en uavhengig førstegangsbruker. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
+300 automatiserte tester, kodekontroll av 82 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.28. Versjonen er installert lokalt med bevart oppsett. Veiviseren og de samlede innstillingene er kontrollert i lokal nettleserdemo, inkludert gjenopptakelse og bevarte person-, sensor- og Flow-valg. Mobilmenyen er prøvd ved 320 og 390 px med Homeys faktiske stilark. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
 
 Flow-valg er valgfritt. Lag for eksempel en Flow i Homey som slår av alle lys, og velg den i veiviseren. Direkte enhetshandlinger kan fortsatt legges til under Rutiner. Med klar API-forbindelse trenger push, Sonos og start av valgte Flows ingen hjelpeflows. Gjennomgå overlappende rutiner i House Guard og eksisterende Flows før aktivering.
 

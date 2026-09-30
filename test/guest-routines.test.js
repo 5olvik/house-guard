@@ -20,7 +20,7 @@ test('Guest on and off execute configured extras once per change without replayi
 test('Disabling guest extras preserves built-in notifications and occupied house protection',async()=>{
  const h=harness(c=>{c.people.notifications=['a'];add(c,'guestActivated',[step('on')]);add(c,'guestDeactivated',[step('off')]);for(const id of ['guestActivated','guestDeactivated'])c.routines.find(r=>r.id===id).enabled=false;});h.adapter.direct={configured:true};h.ingest();h.engine.setGuest(true);await h.engine.tick();
  assert.equal(h.calls.filter(c=>c[0]==='emit').length,1);assert(!h.calls.some(c=>c[0]==='timeline'));h.person('a',false);h.person('b',false);h.ingest();assert.equal(h.engine.state.mode,'home');assert(!h.engine.runs.some(r=>r.routineId==='away'));
- h.person('a',true);h.ingest();h.engine.setGuest(false);await h.engine.tick();assert(!h.calls.some(c=>c[0]==='timeline'));
+ h.person('a',true);h.ingest();h.engine.setGuest(false);await h.engine.tick();assert(!h.calls.some(c=>c[0]==='timeline'));const pushes=h.calls.filter(c=>c[0]==='emit');assert.equal(pushes.length,2);assert.match(pushes[1][1].text,/Gjestemodus er av/);assert.deepEqual(pushes[1][1].recipients,['a']);
 });
 
 test('Rapid opposite toggles cancel delayed guest extras; preview includes extras in the intended mode',async()=>{

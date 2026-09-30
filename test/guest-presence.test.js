@@ -19,11 +19,36 @@ test('Guests count as household presence without creating or changing a Homey pe
  assert.equal(deriveMode(presence(c,people,100,false)).mode,'night');
 });
 
-test('Guest activation with a resident home sends one push and leaves lights, locks and existing home actions alone',async()=>{
+test('Guest on and off with a resident home each send one push and leave lights, locks and existing home actions alone',async()=>{
  const h=setup(c=>{c.security.lockDeviceId='lock';c.security.autoUnlock=true;c.guest.unlockOnEnable=true;c.guest.disarmOnEnable=true;});h.device('light','onoff',true);h.device('lock','locked',true);h.ingest();const before=structuredClone(h.snapshot.people);
  const existing=h.engine.start('home',{},30);h.engine.setGuest(true);h.engine.setGuest(true);await h.engine.tick();
  assert.equal(notices(h).length,1);assert.deepEqual(notices(h)[0][1].recipients,['a','b']);assert.match(notices(h)[0][1].text,/Gjestemodus er på/);assert.equal(h.calls.length,1);assert(!existing.cancelled);assert.deepEqual(h.snapshot.people,before);
- h.engine.setGuest(false);await h.engine.tick();assert.equal(h.calls.length,1);assert.equal(h.engine.state.mode,'home');
+ h.engine.setGuest(false);h.engine.setGuest(false);await h.engine.tick();assert.equal(h.calls.length,2);assert.equal(notices(h).length,2);assert.deepEqual(notices(h)[1][1].recipients,['a','b']);assert.match(notices(h)[1][1].text,/Gjestemodus er av/);assert.equal(h.engine.state.mode,'home');assert(!existing.cancelled);assert.deepEqual(h.snapshot.people,before);
+});
+
+test('Guest off in an empty house notifies recipients once and still runs the ordinary away routine',async()=>{
+ const h=setup(()=>{},{guest:true});h.person('a',false);h.person('b',false);h.ingest();const before=structuredClone(h.snapshot.people);
+ h.engine.setGuest(false);h.engine.setGuest(false);await h.engine.tick();await h.engine.tick();
+ assert.equal(notices(h).length,1);assert.deepEqual(notices(h)[0][1].recipients,['a','b']);assert.equal(notices(h)[0][1].notificationType,'normal');assert.match(notices(h)[0][1].text,/Gjestemodus er av/);assert.equal(h.engine.state.mode,'away');assert.deepEqual(h.calls.filter(c=>c[0]==='timeline'),[['timeline','usual-away']]);assert.deepEqual(h.snapshot.people,before);
+});
+
+test('Rapid opposite guest toggles send only the notification for the latest state',async()=>{
+ for(const latest of [true,false]){
+  const h=setup(()=>{},{guest:latest});h.ingest();h.engine.setGuest(!latest);h.engine.setGuest(latest);await h.engine.tick();await h.engine.tick();
+  assert.equal(notices(h).length,1);assert.match(notices(h)[0][1].text,latest?/Gjestemodus er på/:/Gjestemodus er av/);
+ }
+});
+
+test('Failed guest off push is not retried and does not block ordinary departure actions',async()=>{
+ const h=setup(()=>{},{guest:true});h.person('a',false);h.person('b',false);h.ingest();let attempts=0;
+ h.adapter.emit=async data=>{attempts++;assert.match(data.text,/Gjestemodus er av/);throw Error('Delivery failed');};
+ h.engine.setGuest(false);await h.engine.tick();await h.engine.tick();assert.equal(attempts,1);assert(h.calls.some(c=>c[1]==='usual-away'));assert.equal(h.engine.state.guest,false);
+});
+
+test('Completed guest off push and departure are not replayed after restart or reconnect',async()=>{
+ const h=setup(()=>{},{guest:true});h.person('a',false);h.person('b',false);h.ingest();h.engine.setGuest(false);await h.engine.tick();assert.equal(notices(h).length,1);
+ const restored=setup(()=>{},h.saved());restored.person('a',false);restored.person('b',false);restored.ingest();await restored.engine.tick();restored.ingest({reconnect:true});await restored.engine.tick();
+ assert.equal(restored.engine.state.guest,false);assert.equal(restored.engine.state.mode,'away');assert.deepEqual(restored.calls,[]);
 });
 
 test('Last resident leaving with guests sends one reminder without away actions; returning does not repeat first-home',async()=>{

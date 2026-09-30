@@ -1,17 +1,15 @@
 # Alarmoppsett
 
-House Guard har egen alarmmotor og seks underfaner under Alarm:
+House Guard har egen alarmmotor og fire underfaner under Alarm:
 
 - **Oversikt:** alarmstatus, manuell betjening og automatisk tilkobling/frakobling.
 - **Sensorer:** sensorer for borte og natt, samt inn- og utgangsforsinkelse.
-- **Varsler:** vanlig eller kritisk push, kamera, tidslinje og testvarsler.
-- **Lyd og lys:** Sonos-lyd/tale og lys som skal slås på ved alarmhendelser.
+- **Varsler og handlinger:** ett kort per alarmhendelse med push, kamera, tidslinje, lyd, lys og egne handlinger. Gjentakelse ligger under utløst alarm. Testvarsler ligger nederst.
 - **Lås og port:** direkte styring og sikkerhetsvalg for dørlås og garasjeport.
-- **Avansert:** ekstra alarmhandlinger.
 
 Endringer lagres automatisk. Fra 0.4.22 begynner nye brukere med **Hjem → Start oppsettet**. Veiviseren viser funksjonsvalg, direkte forbindelse, beboere og varselmottakere, og deretter relevante steg for alarm, Flows og natt. Siste steg viser det som mangler og lar deg teste varsler før du tar appen i bruk. Du kan stoppe og gjenoppta oppsettet. Eksisterende innstillinger beholdes når veiviseren åpnes igjen.
 
-Lyslisten følger enhetstypen du har valgt i Homey. Fra 0.4.9 vises også dimmere og stikkontakter som er satt til lys. Velg lys under **Lyd og lys → Når alarmen utløses → Legg til lys** og angi eventuelt når lyset skal slås på.
+Lyslisten følger enhetstypen du har valgt i Homey. Fra 0.4.9 vises også dimmere og stikkontakter som er satt til lys. Velg lys under **Varsler og handlinger → Når alarmen utløses → Lyd og lys → Legg til lys** og angi eventuelt når lyset skal slås på.
 
 **Innstillinger**, tidligere Mer, samler grunnoppsett, API-nøkkel, systemstatus, sikkerhetskopi og hendelseslogg. Hjem viser status for funksjonene du har satt opp; ukonfigurert dør og garasje skjules. Manglende oppsett får en konkret beskjed og snarvei. Veiviseren vises på Hjem til grunnoppsettet er fullført, og kan alltid åpnes igjen under **Innstillinger → Endre grunnoppsett**.
 
@@ -21,23 +19,23 @@ Under **Oversikt → Når skal alarmen være på?** velges nattalarm ved nattmod
 
 Personene velges under Personer. Skallsikring bruker sensorer merket Natt. Bekreftelsestiden for borte/hjemkomst gjelder også ekstra rutinehandlinger; alarmens inn-/utgangsforsinkelse velges separat under Sensorer. Endrede automatikkvalg gjelder neste hendelse og endrer ikke alarmmodus umiddelbart.
 
-Fra 0.4.23 er full bortealarm en fast regel når House Guard-alarmen er valgt: alle beboere bekreftet borte og gjestemodus av. Det tidligere av/på-valget for bortealarm fjernes. Vanlige forsinkelser gjelder også etter omstart og etter avstilling i et fortsatt tomt hus. Oppstart spiller ikke av gamle rutineekstrahandlinger. Eldre enkle varsel-, lyd- og lyshandlinger flyttes til alarmoppsettet. Avanserte handlinger med egne avhengigheter, forsinkelser eller vilkår beholdes under Avansert.
+Fra 0.4.23 er full bortealarm en fast regel når House Guard-alarmen er valgt: alle beboere bekreftet borte og gjestemodus av. Det tidligere av/på-valget for bortealarm fjernes. Vanlige forsinkelser gjelder også etter omstart og etter avstilling i et fortsatt tomt hus. Oppstart spiller ikke av gamle rutineekstrahandlinger. Eldre enkle varsel-, lyd- og lyshandlinger flyttes til alarmoppsettet. Avanserte handlinger med egne avhengigheter, forsinkelser eller vilkår beholdes som Egne handlinger under den enkelte alarmhendelsen.
 
 ## Push og kamera
 
-Velg **Motta pushvarsler** per mottaker under Personer. Under **Alarm → Varsler → Når alarmen utløses** velges kritisk push og opptil tre kameraer med **Legg til kamera**. Pushmeldingen forsøkes først, deretter sendes ett bildevarsel per kamera til hver valgt mottaker. Kameranavn og utløsende sensor (når tilgjengelig) står i bildevarselet. En kamerafeil stopper ikke øvrige bilder. Kritiske varsler må være tillatt for Homey på telefonen. En valgfri tidslinjekopi erstatter ikke push.
+Velg **Motta pushvarsler** per mottaker under Personer. Under **Alarm → Varsler og handlinger → Når alarmen utløses** velges kritisk push og opptil tre kameraer med **Legg til kamera**. Pushmeldingen forsøkes først, deretter sendes ett bildevarsel per kamera til hver valgt mottaker. Kameranavn og utløsende sensor (når tilgjengelig) står i bildevarselet. En kamerafeil stopper ikke øvrige bilder. Kritiske varsler må være tillatt for Homey på telefonen. En valgfri tidslinjekopi erstatter ikke push.
 
 Kamerabilder gjentas ikke automatisk mens alarmen går. Slå eventuelt på **Send bilder også ved gjentatt alarm**. Eksisterende tekst-, lyd- og lysvalg beholdes. Et eldre enkeltkameravalg blir automatisk første kamera i listen. Hver alarmhendelse kan ha egne kameraer; obligatorisk varsel om forbikoblede sensorer er fortsatt ett vanlig tekstvarsel.
 
 **Test kameravarsler** tester kameraene under «Når alarmen utløses». Før sending vises kameraer × mottakere og samlet antall varsler. Resultatet viser akseptert eller feil/ukjent utfall per kamera; det bekrefter ikke telefonmottak. En test kan ikke gjentas før etter ett minutt.
 
-Legg inn en [API-nøkkel](API-KEY.md) i veiviseren eller under **Innstillinger → API-nøkkel**. Testknappene i veiviseren og under Varsler sender faste testmeldinger til valgte mottakere uten å utløse alarmen. Normal, kritisk og bilde-testpush kan også sendes før grunnoppsettet er fullført. API-, mottaker- og kamerakontrollene gjelder fortsatt. Testen aktiverer ingen rutiner eller annen fysisk styring. Kontroller faktisk mottak og bilde på telefonen; et akseptert Homey-kall bekrefter ikke telefonmottak.
+Legg inn en [API-nøkkel](API-KEY.md) i veiviseren eller under **Innstillinger → API-nøkkel**. Testknappene i veiviseren og under Varsler og handlinger sender faste testmeldinger til valgte mottakere uten å utløse alarmen. Normal, kritisk og bilde-testpush kan også sendes før grunnoppsettet er fullført. API-, mottaker- og kamerakontrollene gjelder fortsatt. Testen aktiverer ingen rutiner eller annen fysisk styring. Kontroller faktisk mottak og bilde på telefonen; et akseptert Homey-kall bekrefter ikke telefonmottak.
 
 ## Sensorer og prøving
 
 En kjent aktiv sensor ved tilkobling holdes midlertidig utenfor, mens øvrige sensorer overvåkes. House Guard sender vanlig push om dette til valgte mottakere. Sensoren tas automatisk med når den blir inaktiv. Ukjente eller utilgjengelige sensorer hindrer tilkobling.
 
-Testmodus og aktiv styring er fjernet som brukervalg. Nytt og importert oppsett venter på fullføring av veiviseren; eldre oppsett som var satt på pause må også fullføres eksplisitt. Sensorprøveknappene er fjernet. Test varsling under Varsler og kontroller det fysiske alarmforløpet. Se [teststatus og begrensninger](TEST-REPORT.md).
+Testmodus og aktiv styring er fjernet som brukervalg. Nytt og importert oppsett venter på fullføring av veiviseren; eldre oppsett som var satt på pause må også fullføres eksplisitt. Sensorprøveknappene er fjernet. Test varsling under Varsler og handlinger og kontroller det fysiske alarmforløpet. Se [teststatus og begrensninger](TEST-REPORT.md).
 
 ## Automatisk lukking av garasjeport
 
@@ -45,7 +43,7 @@ Under **Alarm → Lås og port → Garasjeport** kan «Tillat automatisk lukking
 
 ## Morgen og egne Flows
 
-Under **Rutiner → Aktivering - Deaktivering av nattalarm** finner du tre grupper: **Når starter natten?**, **Når starter morgenen?** og **Hva skjer med personene?**. Innstillinger for automatisk nattspørsmål vises når funksjonen velges. Bevegelsesmorgen har en egen sammenleggbar del, der sensor og tidsrom velges før funksjonen slås på. Valgene og den eksisterende oppførselen er bevart.
+Under **Rutiner → Aktivering av natt** finner du nattspørsmål, sovestatus og nattens ekstrahandlinger. **Rutiner → Deaktivering av alarm** samler morgenstart, nattankomst og første oppvåkning. Personvalgene og ekstrahandlingene ligger ved den tilhørende hendelsen. Innstillinger for automatisk nattspørsmål vises når funksjonen velges. Bevegelsesmorgen har en egen sammenleggbar del, der sensor og tidsrom velges før funksjonen slås på. De to kortene starter sammenfoldet. Valgene og den eksisterende oppførselen er bevart.
 
 Fast morgentid starter morgenrutinen og setter hjemmeværende i nattutvalget våkne i Homey. Det er en statusendring; lys, musikk eller annen fysisk vekking legges til som handlinger. Frakobling følger valget under Alarm.
 
@@ -65,7 +63,7 @@ Knappene endrer tilstedeværelse, mens Start morgen og natt styrer sovestatus. A
 
 ## Morgen ved bevegelse
 
-Åpne **Rutiner → Aktivering - Deaktivering av nattalarm → Start morgen ved bevegelse**. Velg for eksempel kjøkkensensoren, sett tidsrommet 06:00–12:00 og slå på «Start morgen ved ny bevegelse i tidsrommet». Alt lagres automatisk. Funksjonen er avslått ved oppgradering. Eksisterende rutiner, personutvalg og innstillinger endres ikke.
+Åpne **Rutiner → Deaktivering av alarm → Start morgen ved bevegelse**. Velg for eksempel kjøkkensensoren, sett tidsrommet 06:00–12:00 og slå på «Start morgen ved ny bevegelse i tidsrommet». Alt lagres automatisk. Funksjonen er avslått ved oppgradering. Eksisterende rutiner, personutvalg og innstillinger endres ikke.
 
 Huset må være i nattmodus med bekreftet hjemmeværende, og sensoren må gå fra rolig til aktiv innenfor tidsrommet (fra er inkludert, til er ekskludert, i Homeys tidssone). Funksjonen frakobler nattalarmen før den samme bevegelsen vurderes som alarm, og setter alle hjemmeværende i tilstedeværelsesutvalget våkne. Dette gjelder også personer utenfor nattutvalget. Egne handlinger i Morgen-rutinen kjører som før hvis rutinen er aktivert. Den nye funksjonens frakobling og vekking er innebygd og gjelder også når ekstra morgenhandlinger er deaktivert. Vanlig manuell/planlagt morgen beholder de tidligere person- og alarmvalgene.
 
@@ -75,15 +73,17 @@ Fast morgentid er et uavhengig valg. Slå den av selv hvis bare bevegelse skal s
 
 ## Faste og egne rutiner
 
-Faste rutiner kan verken endre navn eller slettes. Tidligere endrede standardnavn gjenopprettes; handlingene og avkrysningene beholdes. Krysset **Ekstra handlinger er aktive** slår bare egne tillegg av eller på, uten å fjerne dem. Innebygde alarm-, lås-, port- og personhandlinger følger fortsatt innstillingene under Alarm og Aktivering - Deaktivering av nattalarm. Gjestemodus holder huset hjemme og alarmen frakoblet. Tomme faste rutiner er samlet under **Legg til ekstrahandlinger når …**; de finnes fortsatt og kan utvides. Rutiner med egne handlinger vises i hovedlisten. Lagrede handlinger og avkrysninger beholdes, bortsett fra de gamle gjesterutinene som er erstattet av modellen nedenfor. Alarmhendelsenes ekstrahandlinger ligger under Alarm → Avansert.
+Faste rutiner kan verken endre navn eller slettes. Tidligere endrede standardnavn gjenopprettes; handlingene og avkrysningene beholdes. Krysset **Ekstra handlinger er aktive** slår bare egne tillegg av eller på, uten å fjerne dem. Innebygde alarm-, lås-, port- og personhandlinger følger fortsatt sine innstillinger. Fra 0.4.24 har hver funksjon fast plass uansett hvor mange handlinger den har. Velkomstlys samler dørkontakt, lysmåler, vilkår og handlinger i ett kort. Natt/morgen har sine handlinger ved oppsettet for den enkelte hendelsen. Gjestemodus på/av ligger samlet under Gjestemodus. Borte og hjemkomst er faste kort med direkte lenker til relevante alarm- og låsevalg. Alarmhendelsenes ekstrahandlinger ligger i samme hendelse som push, kamera, lyd og lys under **Alarm → Varsler og handlinger → [hendelse] → Egne handlinger**. Omorganiseringen endrer ingen lagrede handlinger eller innstillinger.
 
 Velg **+ Egen rutine**, gi rutinen et navn og legg til handlinger. Velg for eksempel et lys og **På/Av**, eller en person og **Våken/Sovende**. **Vilkår og avanserte valg** samler begrensninger, avhengigheter og feilregler. Endringer lagres automatisk. Egne rutiner kan deaktiveres med krysset eller fjernes med **Slett egen rutine**.
 
-Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Aktivering - Deaktivering av nattalarm som beskrevet ovenfor.
+Under hver rutines handlinger viser **Handlingene kjøres i rekkefølge/parallelt** det lagrede utførelsesvalget. Åpne delen for å velge **I rekkefølge** eller **Parallelt**. Valget lagres automatisk. Delen holder seg åpen når handlinger legges til, redigeres eller fjernes.
+
+Egne rutiner starter med **Start rutine**, eller fra en Homey Flow med House Guard-kortet **Start navngitt rutine**. Vilkår i en handling kontrolleres når rutinen starter; de starter ikke rutinen automatisk. Morgen ved bevegelse konfigureres direkte under Deaktivering av alarm som beskrevet ovenfor.
 
 ## Gjestemodus – gjester teller som hjemme
 
-Slå på **Gjestemodus** på Hjem, med House Guards gjesteenhet eller med Flow-kortet **Sett gjestemodus**. Det opprettes ingen ekstra Homey-bruker, og beboernes GPS- og sovestatus endres ikke.
+**Anbefalt:** Legg til enheten **Gjestemodus** i Homey med **Legg til enhet → House Guard → Gjestemodus**. Enheten har en av/på-bryter som følger appens gjestestatus. Du kan også bruke bryteren på Hjem eller Flow-kortet **Sett gjestemodus**. Det opprettes ingen ekstra Homey-bruker, og beboernes GPS- og sovestatus endres ikke.
 
 | Hendelse | Hva House Guard gjør |
 | --- | --- |
@@ -91,14 +91,14 @@ Slå på **Gjestemodus** på Hjem, med House Guards gjesteenhet eller med Flow-k
 | Siste beboer drar med gjestemodus på | Sender push om at gjestene er alene. Huset forblir hjemme; borterutinen slukker ikke lys og kobler ikke til alarm. |
 | Gjestemodus på mens alle beboere er borte | Frakobler alarmen og bruker vanlig hjemkomst, inkludert valgte handlinger og eventuell automatisk opplåsing. Vanlige forsinkelser og vilkår for lys gjelder. |
 | En beboer kommer tilbake til gjestene | Starter ikke første-hjemkomst på nytt. Individuell ankomst og valgt automatisk opplåsing følger det vanlige oppsettet. |
-| Gjestemodus av mens en beboer er hjemme | Gjestenes tilstedeværelse fjernes. Ingen ekstra hjemkomst eller borterutine. Dersom alle hjemme sover, kan vanlig nattmodus starte. |
-| Gjestemodus av mens alle beboere er borte | Starter vanlig borterutine med valgte forsinkelser, lys, lås og alarm. |
+| Gjestemodus av mens en beboer er hjemme | Sender push og fjerner gjestenes tilstedeværelse. Ingen ekstra hjemkomst eller borterutine. Dersom alle hjemme sover, kan vanlig nattmodus starte. |
+| Gjestemodus av mens alle beboere er borte | Sender push og starter vanlig borterutine med valgte forsinkelser, lys, lås og alarm. |
 
-Push sendes automatisk til alle med **Motta pushvarsler** under Personer. Ingen gjesterutine eller hjelpeflow må lages. Feilet sending logges uten automatisk gjentakelse. Ved ukjent beboerstatus aktiveres gjestemodus uten å starte hjemkomst eller låse opp. Opplåsing krever fortsatt at vanlig automatisk opplåsing er valgt, alarmen er bekreftet frakoblet, og ankomsten fortsatt er gyldig.
+Push ved gjestemodus **på**, **av** og når **gjestene blir alene** sendes automatisk til telefonene til alle med **Motta pushvarsler** under Personer. Ingen gjesterutine, varselhandling eller hjelpeflow må lages. Gjentatt av/på-kommando med samme verdi gir ikke nytt varsel. Ventende varsler avbrytes hvis gjestemodus endres igjen. Feilet sending logges uten automatisk gjentakelse. Ved ukjent beboerstatus aktiveres gjestemodus uten å starte hjemkomst eller låse opp. Opplåsing krever fortsatt at vanlig automatisk opplåsing er valgt, alarmen er bekreftet frakoblet, og ankomsten fortsatt er gyldig.
 
 Gjestemodus blokkerer både automatisk og manuell tilkobling av House Guard-alarmen. Nattmodus venter til gjestemodus er slått av. **Slå av gjestemodus når gjestene drar.**
 
-Under **Rutiner → Gjestemodus på** og **Gjestemodus av** kan du legge til valgfrie ekstrahandlinger, for eksempel en Flow eller talemelding. De kjøres én gang når gjestemodus faktisk endres. Avkrysningen slår bare av ekstrahandlingene; vanlig tilstedeværelse, alarmbeskyttelse og gjestevarsler gjelder fortsatt. Rutiner som venter avbrytes hvis gjestemodus skifter igjen. Rutinenavn og handlinger kan endres, men de to faste rutinene kan ikke slettes.
+Under **Rutiner → Gjestemodus** kan du legge til valgfrie ekstrahandlinger for **Gjestemodus på** og **Gjestemodus av**, for eksempel en Flow eller talemelding. De kjøres én gang når gjestemodus faktisk endres. Avkrysningen slår bare av ekstrahandlingene; vanlig tilstedeværelse, alarmbeskyttelse og gjestevarsler gjelder fortsatt. Rutiner som venter avbrytes hvis gjestemodus skifter igjen. Handlingene kan endres; navnene er faste, og de to standardrutinene kan ikke slettes.
 
 De gamle gjestekategoriene og tidligere gjestehandlinger forblir inaktive og skjult. Nye gjesterutiner begynner tomme, slik at tidligere lys-, lyd- eller dørhandlinger ikke aktiveres utilsiktet. Vanlige hjemkomst-, borte- og andre rutiner beholdes.
 

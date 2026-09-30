@@ -2,7 +2,7 @@
 // The guide edits the same settings as the normal pages. Guide preferences never
 // enable/disable a feature, and opening or navigating it never writes config.
 window.HouseGuardWizard = (() => {
-  const titles={features:'Hva vil du bruke House Guard til?',connection:'API-nøkkel',people:'Beboere og varsler',alarm:'Sett opp alarmen',routines:'Lys og ekstra handlinger',night:'Aktivering - Deaktivering av nattalarm',finish:'Fullfør oppsettet'};
+  const titles={features:'Hva vil du bruke House Guard til?',connection:'API-nøkkel',people:'Beboere og varsler',alarm:'Sett opp alarmen',routines:'Lys og ekstra handlinger',night:'Natt og morgen',finish:'Fullfør oppsettet'};
   function create(ctx) {
     const {el,api,flush,demo}=ctx,$=id=>document.getElementById(id);
     let features,step='features',storageKey,busy=false,testMessage='';
@@ -32,7 +32,7 @@ window.HouseGuardWizard = (() => {
       $('setup-back').hidden=step==='features';$('setup-next').hidden=step==='finish';$('setup-next').textContent='Neste';$('setup-error').textContent='';body.replaceChildren();
       if(step==='features'){
         body.append(el('p','Velg hva du vil ha hjelp til å sette opp. Du kan legge til mer senere.','hint'));
-        for(const [id,title,copy]of [['alarm','Alarm','Overvåk huset når dere er borte eller sover.'],['routines','Lys og rutiner','Start Homey-Flows ved borte, hjemkomst og natt.'],['night','Aktivering - Deaktivering av nattalarm','La huset følge hvem som sover og hvem som er våken.']]){
+        for(const [id,title,copy]of [['alarm','Alarm','Overvåk huset når dere er borte eller sover.'],['routines','Lys og rutiner','Start Homey-Flows ved borte, hjemkomst og natt.'],['night','Natt og morgen','La huset følge hvem som sover og hvem som er våken.']]){
           const card=el('div',undefined,'setup-choice');choice(card,title,features[id],value=>{features[id]=value;remember();render();});card.append(el('p',copy,'hint'));body.append(card);
         }
         body.append(el('p','Valgene tilpasser veiviseren. Funksjoner du allerede bruker fortsetter som før. Du kan også bruke bare tilstedeværelse og gjestemodus.','hint'));
@@ -102,8 +102,8 @@ window.HouseGuardWizard = (() => {
         body.append(el('h3','Hva skal skje?'));
         choice(body,'Sett disse personene sovende når nattmodus starter',config.night.markAsleep,value=>update(c=>{c.night.markAsleep=value;},false));
         choice(body,'Ved nattankomst: sett bare den som kommer hjem våken',config.night.wakeArrival,value=>update(c=>{c.night.wakeArrival=value;},false));
-        body.append(el('p','Aktivering - Deaktivering av nattalarm kan startes fra Hjem eller egne Homey-Flows. Fast morgentid, bevegelse og nattspørsmål settes opp under Rutiner → Aktivering - Deaktivering av nattalarm.','hint'));
-        button(body,'Åpne natt- og morgeninnstillinger',()=>{remember();$('setup-dialog').close();ctx.navigate({tab:'routines',id:'night-morning-settings',step:'night'});});
+        body.append(el('p','Natt og morgen kan startes fra Hjem eller egne Homey-Flows. Under Rutiner setter du opp nattspørsmål i Aktivering av natt, og morgenstart, bevegelse og oppvåkning i Deaktivering av alarm.','hint'));
+        for(const [title,id] of [['Aktivering av natt','night-activation-settings'],['Deaktivering av alarm','alarm-deactivation-settings']])button(body,'Åpne '+title,()=>{remember();$('setup-dialog').close();ctx.navigate({tab:'routines',id,step:'night'});});
       }else renderFinish(body,config,data);
     }
     function renderSensors(body,config,data){

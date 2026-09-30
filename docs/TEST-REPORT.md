@@ -1,3 +1,47 @@
+# Gjestemodus og varsler 0.4.28 – installert lokalt
+
+Kontrollert 30. september 2026. **300 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.28 er bygget og installert lokalt på Solviks Homey.** Bygde GUI-filer og gjestevarselkode er identiske med kontrollert kildekode. Fersk før/etter-kontroll bekrefter identisk konfigurasjon med revisjon 129, uendrede Flow-ID-er og sensorunntak. Bortemodus, tilkoblet full alarm og gjestestatus er bevart. API-forbindelsen er klar. Git og App Store er fortsatt **0.4.23, bygg 9**.
+
+Av/på-snarveien under **Rutiner → Gjestemodus** er fjernet. Kortet anbefaler **Legg til enhet → House Guard → Gjestemodus** og forklarer at ekstrahandlinger er valgfrie. Hjem-bryteren, gjesteenheten og Flow-kortet beholdes. Varsler for påslag og gjester alene var allerede innebygd; av-varselet er nå lagt inn på samme direkte telefonpush-kanal. Alle gjestevarsler bruker mottakerne med **Motta pushvarsler** under Personer, også når ekstrahandlingene er deaktivert. Av-varselet beskriver tilbakegang til vanlig beboertilstedeværelse uten å love en bestemt alarm- eller lystilstand.
+
+Tester bekrefter én push per faktisk på/av-endring, valgte mottakere, vanlige handlinger ved avslag i tomt hus, bevarte enheter/personer når noen er hjemme, avbrudd ved raske motsatte endringer, ingen automatisk gjentakelse ved feil og ingen avspilling av ferdige varsler etter omstart/reconnect. Observasjon har fortsatt ingen sideeffekter. Ingen rutinehandlinger eller konfigurasjonsfelt er migrert eller slettet.
+
+Lokal nettleserdemo med Homeys faktiske, sent lastede CSS er kontrollert ved 320 og 390 pikslers bredde. Ingen horisontal overflyt, alle menyknapper er innenfor rammen, anbefalingen er synlig og den gamle snarveien mangler. Av-rutinen forklarer det innebygde varselet. Komplett skjermbilde: `artifacts/gui-0428-guest-overview.png`. Ingen fysisk gjeste-, alarm-, lys-, lås-, Flow-, person- eller pushhandling er utløst på Homey under denne kontrollen. Nytt av-varsel er testet automatisk; faktisk telefonmottak av dette nye varselet er ikke prøvd.
+
+# Mobilmeny og ikoner 0.4.27 – installert lokalt
+
+Kontrollert 30. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.27 ble bygget og installert lokalt på Solviks Homey.** Bygd HTML og CSS var identiske med kontrollert kildekode. Før/etter-kontroll bekreftet identisk konfigurasjon med revisjon 129, uendrede Flow-ID-er og sensorunntak, bevart bortemodus, tilkoblet full alarm og gjestestatus. API-forbindelsen var klar. Ingen Git- eller App Store-publisering.
+
+Brukerens nye skjermbilde viste at rettingen i 0.4.26 ikke var tilstrekkelig. Homeys runtime legger inn `_base.css` etter appens eget stilark. En mer spesifikk eldre knappregel tvang `flex-shrink:0`, større padding og marginer, som ga overflyt. Bare de fem egne menyknappene er fritatt fra denne regelen med Homeys `hy-nostyle`-klasse. Personer har et SVG-ikon med to personer, og Alarm har et sireneikon. Ingen kopiering av Homeys stilark inn i appen.
+
+Overflyten ble gjenskapt med faktisk Homey-CSS før rettingen og kontrollert etterpå ved 320 og 390 piksler og vanlig skrivebordsbredde. Alle knapper og etiketter er innenfor rammen uten ordbrudd eller horisontal overflyt. Alle fem menyer åpner riktig panel. Skjermbilder: `artifacts/gui-0427-homey-css-before.png` og `artifacts/gui-0427-homey-css-after.png`. Brukerens iPhone-visning må fortsatt bekreftes på telefonen. Ingen fysisk alarm-, person-, lys-, Flow- eller pushprøve ble kjørt under installasjonskontrollen.
+
+# Mobilmeny og tidssone 0.4.26 – installert lokalt
+
+Kontrollert 30. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.26 er bygget og installert lokalt på Solviks Homey.** De bygde HTML-, CSS- og UI-filene er identiske med kildefilene som ble kontrollert i mobilvisning. Før/etter-kontroll bekrefter identisk konfigurasjon med revisjon 129, uendrede Flow-ID-er og sensorunntak. Bortemodus, tilkoblet full alarm og gjestestatus er bevart. API-forbindelsen er klar. Ingen Git- eller App Store-publisering er utført.
+
+Menyknappene fordeler plassen etter tekstlengden, og ikon og etikett har separate stiler. Alle etiketter, også «Innstillinger», er innenfor knappen ved 320 og 390 pikslers bredde uten horisontal overflyt. Alle fem menyvalg åpner riktig panel. Tidssonen er flyttet inn under Systemstatus med kortere forklaring. Dette er kontrollert i lokal nettleserdemo; den nye visningen i Homeys iPhone-app må fortsatt prøves av brukeren. Ingen fysisk alarm-, person-, lys-, Flow- eller pushprøve er kjørt under installasjonskontrollen.
+
+# Nattoppsett og utførelsesvalg 0.4.25 – installert lokalt
+
+Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.25 er installert lokalt på Solviks Homey.** Før/etter-kontroll bekrefter identisk konfigurasjon, inkludert revisjon 126, rutinehandlinger og innstillinger. Hjemmemodus, frakoblet alarm, gjestestatus, Flow-ID-er og sensorunntak er bevart. API-forbindelsen er klar. Git og App Store er fortsatt **0.4.23, bygg 9**.
+
+Det tidligere samlede natt-/morgenoppsettet er delt i **Aktivering av natt** og **Deaktivering av alarm**. Første kort samler nattspørsmål, sovestatus og nattens ekstrahandlinger. Andre kort samler morgenstart, nattankomst og første oppvåkning med tilhørende ekstrahandlinger. Veiviser, alarmsnarveier og oppsettspåminnelser peker til riktig kort. Rutine-ID-er, konfigurasjonsfelt, alarmregler og øvrig backend er uendret.
+
+Brukerens tomme «Avansert utførelse» kunne ikke gjenskapes i lokal demo; den tidligere nedtrekkslisten viste gyldige alternativer, og lagrede verdier var gyldige. Den er erstattet med radiovalg for **I rekkefølge** og **Parallelt**, forklaring av begge og valgt verdi i overskriften. Lokal nettleserkontroll bekrefter automatisk lagring og bevart valg etter gjenåpning. Utførelsesdelen holder seg åpen ved tillegg/fjerning av en Flow og ved oppdatering av kameraoppsettet under en alarmhendelse. Ingen plattformspesifikk årsak til det opprinnelige tomme feltet er bekreftet.
+
+Begge rutinekort begynner sammenfoldet etter gjenåpning, og alarmsnarveiene åpner riktig kort. Mobilvisning ved 390 × 844 og vanlig skrivebordsbredde er kontrollert uten horisontal overflyt. Ingen doble element-ID-er, manglende snarveimål eller nettleserfeil ble funnet. Etter at demoprøvene ble tilbakestilt, var hele demooppsettet identisk med utgangspunktet bortsett fra revisjonen. Ingen fysisk alarm, push, personstatus, lys eller Flow ble startet på Homey under kontrollen. Visningen i Homeys mobilapp må fortsatt prøves av brukeren.
+
+# Samlet funksjonsoppsett 0.4.24 – installert lokalt
+
+Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.24 er installert lokalt på Solviks Homey.** Før/etter-kontroll bekrefter identisk konfigurasjon, inkludert revisjon 125, rutinehandlinger, avkrysninger og sensorvalg. Hjemmemodus, frakoblet alarm, gjestestatus, Flow-ID-er og sensorunntak er bevart. API-forbindelsen er klar. Git og Homey App Stores testkanal er fortsatt **0.4.23, bygg 9**.
+
+Velkomstlys samler innstillinger og handlinger i ett kort. Natt/morgen har personvalg og ekstrahandlinger ved tilhørende hendelse, og gjestemodus samler på/av-handlingene. Tomme rutiner har samme plass som konfigurerte rutiner. Alarmens push, kamera, lyd, lys, gjentakelser og egne handlinger er samlet per hendelse. Delte alarm-/låsevalg har direkte snarveier. Ingen backend eller alarmregler er endret.
+
+Lokal nettleserkontroll med eksisterende og helt tomt syntetisk oppsett bekrefter sammenfoldet rutineoversikt, samlet Velkomstlys, nattankomst, gjestemodus og alarmhendelser. Mobilvisning med viewport 390 × 844 og vanlig skrivebordsbredde er kontrollert; ingen horisontal overflyt. Alle statiske innstillingsfelt finnes fortsatt nøyaktig én gang; gjentakelsesfeltene er flyttet til alarmhendelsen og prøvd separat. Ingen doble element-ID-er eller manglende snarveimål.
+
+Lagring er kontrollert for kamera, kritisk push, downlights, gjentakelsesintervall, ekstra Flow og velkomstvilkår. Bare tilsiktede felt ble endret. Etter fjerning av demovalgene var hele originaloppsettet identisk bortsett fra revisjonen. Egen rutine kunne opprettes, endre navn, deaktiveres og slettes. Faste rutiner har fortsatt låste navn og ingen sletteknapp; pausing gjelder bare ekstrahandlinger. Åpning av et nytt oppsett endret ingen innstillinger. Ingen fysiske alarm-, lys-, Flow- eller pushprøver er kjørt mot huset i denne GUI-runden. Faktisk mobilvisning i Homey må fortsatt prøves av brukeren.
+
 # Navn og alarmregler 0.4.23 – publisert testversjon
 
 Kontrollert 29. september 2026. **296 tester består**, kodekontroll av **82 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. **0.4.23 er installert på Solviks Homey og publisert på GitHub og i Homey App Stores testkanal (bygg 9).** Etterkontrollen bekrefter revisjon115: bare de tidligere tilpassede standardnavnene for natt og morgen er gjenopprettet. Handlinger, avkrysninger, øvrige innstillinger, Flow-ID-er, sensorunntak, gjestestatus og tilkoblet full alarm er bevart. API-forbindelsen er klar.
