@@ -1,10 +1,12 @@
-# Nattspørsmål og fast sovestatus 0.4.31 – installert lokalt
+# Nattspørsmål og fast sovestatus 0.4.31 – publisert som test
 
-Kontrollert 30. september 2026. **0.4.31 er bygget og installert på Solviks Homey** uten `--clean` (5.48 MB, 718 filer). Etterkontroll bekrefter versjon, forbindelse og klar API-forbindelse. Konfigureringen er helt uendret, inkludert revisjon 131 og eksisterende nattregel. Hjemmemodus, frakoblet alarm, gjestemodus av, sensorunntak og normale/Advanced Flow-ID-er er bevart. Ingen Git-/App Store-publisering; siste publiserte versjon er **0.4.29, bygg 11**.
+Kontrollert 30. september 2026. **0.4.31 er bygget og installert på Solviks Homey** uten `--clean` (5.48 MB, 718 filer). Etterkontroll bekrefter versjon, forbindelse og klar API-forbindelse. Konfigureringen er helt uendret, inkludert revisjon 131 og eksisterende nattregel. Hjemmemodus, frakoblet alarm, gjestemodus av, sensorunntak og normale/Advanced Flow-ID-er er bevart. **0.4.31 er publisert på GitHub og i Homey App Stores testkanal (bygg 12)**. App Store-API bekrefter versjon 0.4.31 og tilstand `test` etter opplasting og kanalbytte. Testpakken inneholder også rutineendringene fra 0.4.30. Ingen ordinær utgivelse.
 
 Nytt valg «Ja eller ingen svar ved fristen» starter ved fristen hvis minst én svarer ja eller alle spørsmål forblir ubesvart. Ett nei avbryter, teknisk sendefeil alene gir ikke automatisk start, og ferske hjemme- og nattvilkår kontrolleres før start. Hjemmeværende i nattutvalget settes alltid sovende; den tidligere avkrysningen fjernes og eldre av-valg normaliseres til på uten å endre øvrig oppsett.
 
 **339 tester består**, kodekontroll av **85 JavaScript-filer** og Homey-validering på nivå `publish` er godkjent. Regresjonstester dekker frist, veto, sendefeil, bekreftet hjemme/borte/ukjent status, gjester, tilkobling, endret oppsett under begge ferske avlesninger, omstart og gammel konfigurering/import. Start morgen og ny tilkobling avbryter også en allerede avgjort nattbeslutning som fortsatt kontrolleres. Morgenstart avbryter et ventende spørsmål selv om morgen ble startet tidligere samme dato.
+
+Publiseringskontrollen bekrefter de samme 339 testene, 85 JS-filer og godkjent publish-validering. 115 offentlige kildefiler er skannet uten funn eller private oppsett/logger/arbeidsnotater. Opplastet pakke: 5.48 MB, 718 filer. Kildeversjoner og lock samsvarer med 0.4.31.
 
 Isolert demovisning ved 320/390 px med Homeys faktiske stilark viser alle tre nattregler, kort forklaring, ingen sovestatus-avkrysning og ingen horisontal overflyt. Nytt valg bevares etter automatisk lagring og omlasting. Skjermbilde: `artifacts/night-0431-choice.png`. Ingen levende nattspørsmål, personsoving, alarm, lys, lås/port, Flow eller push ble utløst for testing. Fysisk telefonvisning og nattforløp må bekreftes kontrollert i eget oppsett.
 
