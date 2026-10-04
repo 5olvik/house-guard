@@ -127,6 +127,14 @@
     "no": "Innstillinger og handlinger er samlet per funksjon. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm, med tydelig valg av handlingsrekkefølge. Alarmens varsler, kamera, lyd, lys og egne handlinger er samlet per hendelse. Mobilmenyen er rettet for Homeys stilark, med nye personer- og alarmikoner. Gjestemodus anbefaler egen Homey-enhet og har innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Eksisterende oppsett beholdes.",
     "en": "Settings and actions are grouped by function. Night activation and alarm deactivation have separate sections with explicit action order choices. Alarm notifications, cameras, sound, lights and custom actions are grouped by event. Fixed mobile menu overflow caused by Homey's stylesheet and added people and siren icons. Guest mode recommends a Homey device and includes built-in push notices when enabled, disabled and when guests are left alone. Existing settings are preserved."
   },
+  "0.4.34": {
+    "no": "Nattvalget Automatisk etter svarfrist starter nå med en gang ved ett ja. Hvis ingen svarer, starter nattmodus ved svarfristen. Spørsmålet sendes først etter valgt roperiode og bare til våkne hjemmeværende mottakere. Oppsett og øvrige svarregler beholdes.",
+    "en": "The automatic deadline option now starts night mode immediately on one yes. If nobody replies, night mode starts at the reply deadline. Questions are sent after the configured quiet period and only to awake recipients at home. Settings and other reply rules are preserved."
+  },
+  "0.4.33": {
+    "no": "Nattspørsmål sendes bare til valgte mottakere som er hjemme og våkne. En som allerede sover, trenger ikke svare. Nattstart, svarregler og oppsett beholdes.",
+    "en": "Night questions are sent only to selected recipients who are home and awake. Residents already asleep do not need to reply. Night activation, reply rules and settings are preserved."
+  },
   "0.4.32": {
     "no": "En beboer som allerede sover, hindrer ikke nattstart for resten. Nattvalget heter nå Automatisk etter svarfrist. Området må fortsatt være rolig ved fristen; aktivitet avbryter og gir ny roperiode før neste spørsmål. Ett nei avbryter fortsatt. Eksisterende valg og oppsett beholdes.",
     "en": "A resident already asleep no longer blocks night mode for the others. Renamed the automatic deadline option. The selected area must remain quiet until the deadline; activity cancels the attempt and a new quiet period precedes the next question. Any no still cancels. Existing rules and settings are preserved."

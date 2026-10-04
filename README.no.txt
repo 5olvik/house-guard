@@ -10,7 +10,7 @@ Aktiver eller deaktiver valgte alarmsensorer fra Flow, separat for full alarm og
 
 Hver funksjon samler innstillinger og handlinger på ett sted. Natt og morgen er delt i Aktivering av Nattmodus og Deaktivering av Nattmodus. Handlingene har tydelige valg for rekkefølge eller parallellkjøring. Mobilmenyen har personer- og sireneikon og er tilpasset smale skjermer.
 
-Med «Automatisk etter svarfrist» starter nattmodus ved fristen hvis noen fortsatt er hjemme og valgt område har vært rolig hele ventetiden. Ett nei avbryter. Aktivitet starter en ny roperiode før neste spørsmål. En som setter seg manuelt sovende, hindrer ikke nattstart for resten. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter.
+Nattspørsmålet sendes etter valgt roperiode, bare til valgte mottakere som er hjemme og våkne. Med «Automatisk etter svarfrist» starter ett ja nattmodus med en gang. Hvis ingen svarer, starter den ved svarfristen. Området må fortsatt være rolig og noen hjemme ved start. Et nei avbryter et ventende spørsmål. Aktivitet starter en ny roperiode før neste spørsmål. En som allerede sover, trenger ikke svare og hindrer ikke nattstart for resten. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter.
 
 Velkomstlys kan starte ved døråpning eller bevegelse etter første hjemkomst. Velg luxmåler eller perioden fra solnedgang til soloppgang. Solnedgang bruker Homeys plassering og krever API-nøkkel, men ingen luxsensor. Ventetiden på rutinen og handlingen summeres og vises samlet; 0 betyr ingen ekstra venting i appen. Raske sensorhendelser bevares, med rask reserveavlesning hvis sanntidsmeldingen uteblir.
 

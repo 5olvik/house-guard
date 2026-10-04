@@ -26,6 +26,48 @@ async function request(h) {
 }
 async function finish(h,ticks=6) {for(let i=0;i<ticks;i++)await h.engine.tick();}
 
+test('The quiet period precedes the question and an early yes starts night without waiting for the reply deadline',async()=>{
+  for(const manualSleeper of [false,true]){
+    const h=setup(c=>{c.people.presence=['a','b','c'];c.people.night=['a','b','c'];c.night.idleMinutes=30;c.night.answerSeconds=900;});
+    h.person('a',true,manualSleeper);h.person('c',false);h.zone(false,h.now()-29*60000);h.ingest();await confirmPeople(h);
+    await h.engine.tick();assert.equal(h.engine.state.question,null);assert.equal(h.calls.length,0);
+    h.advance(60000);h.ingest();await h.engine.tick();const q=h.engine.state.question;
+    assert(q);assert.deepEqual(q.recipients,manualSleeper?['b']:['a','b']);assert.equal(q.deadline,h.now()+900000);
+    h.advance(7000);h.engine.answer(q.id,'b','yes');await finish(h);
+    assert(h.now()<q.deadline);assert.equal(q.decided,'yes');assert.equal(nights(h).length,1);
+    assert.deepEqual(sleeping(h),manualSleeper?[['person','b',true]]:[['person','a',true],['person','b',true]]);
+    assert.equal(h.snapshot.people.a.asleep,true);assert.equal(h.snapshot.people.b.asleep,true);assert.equal(h.snapshot.people.c.asleep,false);
+    assert.equal(h.engine.state.mode,'night');assert.equal(h.calls.filter(c=>c[0]==='set'&&c[3]==='partially_armed').length,1);
+    assert(h.engine.status().history.some(e=>e.message==='Nattmodus starter: ja-svar mottatt'));
+    assert.throws(()=>h.engine.answer(q.id,'a','no'),/utløpt/);
+    await finish(h);assert.equal(nights(h).length,1);
+  }
+});
+
+test('An unanswered quiet-period question waits the full reply deadline before marking home residents asleep',async()=>{
+  const h=setup(c=>{c.night.idleMinutes=30;c.night.answerSeconds=900;});h.zone(false,h.now()-29*60000);h.ingest();await confirmPeople(h);
+  await h.engine.tick();assert.equal(h.engine.state.question,null);h.advance(60000);h.ingest();await h.engine.tick();const q=h.engine.state.question;
+  assert(q);h.advance(899999);h.ingest();await finish(h);assert.equal(nights(h).length,0);assert.equal(sleeping(h).length,0);
+  h.advance(1);h.ingest();await finish(h);assert.equal(q.decided,'yes');assert.equal(nights(h).length,1);
+  assert.deepEqual(sleeping(h),[['person','a',true],['person','b',true]]);
+  assert(h.engine.status().history.some(e=>e.message==='Nattmodus starter: ingen svarte innen fristen'));
+});
+
+test('An early yes still rechecks fresh presence, quiet zone and alarm state before night activation',async()=>{
+  for(const scenario of ['away','unknown-sleep','disconnected','armed','movement','observation','guest','config']){
+    const h=setup(),q=await request(h);h.advance(7000);h.engine.answer(q.id,'b','yes');
+    if(scenario==='away'){h.person('a',false);h.person('b',false);}
+    if(scenario==='unknown-sleep')h.person('a',true,null);
+    if(scenario==='disconnected')h.snapshot.connected=false;
+    if(scenario==='armed')h.device(ALARM,'homealarm_state','armed');
+    if(scenario==='movement')h.zone(true);
+    if(scenario==='observation')h.engine.config.observation=true;
+    if(scenario==='guest')h.engine.setGuest(true);
+    if(scenario==='config')h.engine.updateConfig(structuredClone(h.config));
+    await finish(h);assert(h.now()<q.deadline);assert.equal(nights(h).length,0,scenario);assert.equal(sleeping(h).length,0,scenario);
+  }
+});
+
 test('No unanswered timeout starts night before its deadline, then starts once and puts only home night residents asleep',async()=>{
   const h=setup(c=>{c.people.presence=['a','b','c'];c.people.night=['a','b'];});h.person('a',true);h.person('b',false);h.person('c',true);h.ingest();
   await confirmPeople(h);const q=await request(h);
@@ -88,9 +130,9 @@ test('Fresh checks prevent a yes answer as well as a no-answer timeout from star
   }
 });
 
-test('Config, generation, question and observation changes during either fresh read invalidate timeout',async()=>{
-  for(const readNumber of [1,2])for(const scenario of ['config','generation','question','observation']) {
-    const h=setup();await request(h);h.advance(120000);
+test('Config, generation, question and observation changes during either fresh read invalidate timeout or early yes',async()=>{
+  for(const trigger of ['timeout','yes'])for(const readNumber of [1,2])for(const scenario of ['config','generation','question','observation']) {
+    const h=setup(),q=await request(h);h.advance(trigger==='yes'?7000:120000);if(trigger==='yes')h.engine.answer(q.id,'b','yes');
     let release,reads=0,entered;const original=h.adapter.snapshot,reached=new Promise(resolve=>{entered=resolve;});
     h.adapter.snapshot=async()=>{if(++reads!==readNumber)return original();return new Promise(resolve=>{release=async()=>resolve(await original());entered();});};
     const tick=h.engine.tick();await reached;assert.equal(typeof release,'function');
@@ -103,9 +145,9 @@ test('Config, generation, question and observation changes during either fresh r
   }
 });
 
-test('Manual morning and reconnection cancel a yes decision awaiting either fresh snapshot read',async()=>{
-  for(const readNumber of [1,2])for(const scenario of ['morning','reconnect']) {
-    const h=setup(),q=await request(h);h.advance(120000);
+test('Manual morning and reconnection cancel a timeout or early yes decision awaiting either fresh snapshot read',async()=>{
+  for(const trigger of ['timeout','yes'])for(const readNumber of [1,2])for(const scenario of ['morning','reconnect']) {
+    const h=setup(),q=await request(h);h.advance(trigger==='yes'?7000:120000);if(trigger==='yes')h.engine.answer(q.id,'b','yes');
     let release,reads=0,entered;const original=h.adapter.snapshot,reached=new Promise(resolve=>{entered=resolve;});
     h.adapter.snapshot=async()=>{if(++reads!==readNumber)return original();return new Promise(resolve=>{release=async()=>resolve(await original());entered();});};
     const tick=h.engine.tick();await reached;assert.equal(q.decided,'yes');
@@ -158,11 +200,50 @@ test('One manually sleeping resident does not block the remaining residents befo
     if(timing==='before'){h.person('a',true,true);h.ingest();}
     const q=await request(h);
     if(timing==='pending'){h.person('a',true,true);h.ingest();assert.equal(q.decided,null);}
-    if(rule!=='auto-no-answer'){h.engine.answer(q.id,'a','yes');h.engine.answer(q.id,'b','yes');}
+    assert.deepEqual(q.recipients,timing==='before'?['b']:['a','b']);
+    if(rule!=='auto-no-answer')for(const id of q.recipients)h.engine.answer(q.id,id,'yes');
     h.advance(120000);await finish(h);
     assert.equal(q.decided,'yes',rule+' '+timing);assert.equal(nights(h).length,1);
     assert.deepEqual(sleeping(h),[['person','b',true]]);assert.equal(h.snapshot.people.a.asleep,true);
     assert.equal(h.engine.state.mode,'night');assert.equal(h.calls.filter(c=>c[0]==='set'&&c[3]==='partially_armed').length,1);
+  }
+});
+
+test('Night questions are delivered only to selected residents who are home and awake for every reply rule',async()=>{
+  for(const rule of ['veto','all-yes','auto-no-answer']){
+    const h=setup(c=>{c.night.rule=rule;c.people.presence=['a','b','c','d'];c.people.night=['a','b','c','d'];c.people.questions=['a','b','c'];});
+    h.person('a',true,true);h.person('b',true,false);h.person('c',false,false);h.person('d',true,false);h.ingest();
+    const q=await request(h);
+    assert.deepEqual(q.recipients,['b'],rule);
+    assert.deepEqual(Object.keys(q.replyKeys),['b'],rule);
+    assert.deepEqual(h.calls.filter(c=>c[0]==='emit').map(c=>c[1].personId),['b'],rule);
+    assert.deepEqual(h.engine.state.deliveries.map(d=>d.recipients),[['b']],rule);
+    assert.throws(()=>h.engine.answer(q.id,'a','yes'),/mottakeren/,rule);
+    assert.throws(()=>h.engine.answer(q.id,'d','yes'),/mottakeren/,rule);
+    assert.deepEqual(h.engine.config.people.questions,['a','b','c'],rule);
+    await confirmPeople(h);h.engine.answer(q.id,'b','yes');h.advance(120000);await finish(h);
+    assert.equal(q.decided,'yes',rule);assert.equal(nights(h).length,1,rule);
+    assert.deepEqual(sleeping(h),[['person','b',true],['person','d',true]],rule);
+    assert.equal(h.snapshot.people.a.asleep,true);assert.equal(h.snapshot.people.c.asleep,false);
+  }
+});
+
+test('No new question or timeout is created when only sleeping residents are selected to receive it',async()=>{
+  for(const rule of ['veto','all-yes','auto-no-answer']){
+    const h=setup(c=>{c.night.rule=rule;c.people.questions=['a'];});h.person('a',true,true);h.ingest();
+    assert.equal(await h.engine.requestNight(),false,rule);h.advance(120000);await finish(h);
+    assert.equal(h.engine.state.question,null,rule);assert.equal(nights(h).length,0,rule);assert.equal(h.calls.length,0,rule);
+    assert.match(h.engine.autoNightReason(),/Ingen våkne/);
+    h.person('a',true,false);h.ingest();const q=await request(h);assert.deepEqual(q.recipients,['a']);
+  }
+});
+
+test('A no from the only awake recipient still vetoes night while another resident is already asleep',async()=>{
+  for(const rule of ['veto','all-yes','auto-no-answer']){
+    const h=setup(c=>{c.night.rule=rule;});h.person('a',true,true);h.ingest();const q=await request(h);
+    h.engine.answer(q.id,'b','no');h.advance(120000);await finish(h);
+    assert.equal(q.decided,'no',rule);assert.equal(nights(h).length,0,rule);assert.equal(sleeping(h).length,0,rule);
+    assert(h.engine.state.skipUntil>h.now(),rule);
   }
 });
 

@@ -14,7 +14,7 @@ Optional morning start on motion within a chosen time window disarms night prote
 
 Each function groups its settings and actions in one place. Night activation and alarm deactivation have separate sections, and actions have clear sequential or parallel choices. The mobile menu has people and siren icons and fits narrow screens.
 
-The automatic deadline option starts night mode if someone is still home and the selected area has stayed quiet throughout the wait. Any no cancels. Activity starts a new quiet period before the next question. A resident marking themselves asleep does not block night mode for the others. Home residents in the night selection are always marked asleep when night mode starts.
+Night questions are sent after the configured quiet period, only to selected recipients who are home and awake. The automatic deadline option starts night mode immediately on one yes. If nobody replies, it starts at the reply deadline. Someone must remain home and the selected area must stay quiet until activation. A no cancels a pending question. Activity starts a new quiet period before the next question. Residents already asleep do not need to reply and do not block night mode for the others. Home residents in the night selection are always marked asleep when night mode starts.
 
 Welcome lights can start on door opening or motion after the first arrival home. Choose a lux sensor or the period from sunset to sunrise. Sunset uses Homey's location and requires an API key, with no lux sensor needed. Routine and action delays are added and displayed together; 0 adds no waiting in the app. Short sensor events are preserved, with faster fallback checks when a real-time message is missed.
 

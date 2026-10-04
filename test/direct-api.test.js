@@ -89,6 +89,29 @@ test('Late/cancelled question replies and malformed replies cannot enable night 
   assert.equal(h.engine.state.manualNight,false);assert.equal(cancelled?q.decided:q.answers.a,cancelled?'cancelled':'error');
  }
 });
+
+test('A native phone yes starts automatic night before the deadline and marks home residents asleep without helper Flows',async()=>{
+ for(const manualSleeper of [false,true]){
+  const h=await fixture(),now=Date.now(),replies=new Map();h.engine.clock=()=>now;
+  for(const p of Object.values(h.snapshot.people))p.observedAt=now;
+  h.snapshot.people.a.asleep=manualSleeper;
+  Object.assign(h.config.night,{automatic:true,rule:'auto-no-answer',zoneId:'quiet',idleMinutes:1,answerSeconds:900,start:'00:00',end:'00:00'});
+  h.config.security.alarmDeviceId='alarm';h.config.security.automation.night=false;
+  h.snapshot.zones={quiet:{active:false,inactiveSince:now-60000,observedAt:now}};h.device('alarm','homealarm_state','disarmed',now);h.ingest();
+  h.client.flow.runFlowCardCondition=x=>{h.calls.push(['question',x]);return new Promise(resolve=>replies.set(x.args.user.id,resolve));};
+  h.client.flow.runFlowCardAction=async x=>{h.calls.push(['action',x]);assert.equal(x.id,'homey:manager:presence:set_asleep');h.snapshot.people[x.args.user.id].asleep=true;return true;};
+  assert.equal(await h.engine.requestNight(),true);const q=h.engine.state.question;
+  assert.deepEqual(h.calls.filter(c=>c[0]==='question').map(c=>c[1].args.user.id),manualSleeper?['b']:['a','b']);
+  const pending=h.adapter.pendingQuestions.get(q.id+':b').promise;replies.get('b')({result:true});await pending;
+  assert.equal(q.answers.b,'yes');assert.equal(q.decided,null);
+  for(let i=0;i<6;i++)await h.engine.tick();
+  assert(h.engine.clock()<q.deadline);assert.equal(q.decided,'yes');assert.equal(h.engine.state.mode,'night');
+  assert.equal(h.snapshot.people.a.asleep,true);assert.equal(h.snapshot.people.b.asleep,true);
+  assert.deepEqual(h.calls.filter(c=>c[0]==='action').map(c=>c[1].args.user.id),manualSleeper?['b']:['a','b']);
+  assert.equal(h.engine.runs.filter(r=>r.routineId==='night').length,1);
+  if(!manualSleeper){const late=h.adapter.pendingQuestions.get(q.id+':a').promise;replies.get('a')({result:false});await late;assert.equal(q.decided,'yes');assert.equal(h.engine.state.mode,'night');}
+ }
+});
 test('Nattmodus notification executes directly even when old bridge flags are false',async()=>{
  const h=await fixture();const run={id:'r',routineId:'custom-example',generation:h.engine.state.generation,context:{},actions:[]},a={id:'notify',kind:'notify',category:'notification',text:'Hei',status:'pending'};run.actions.push(a);h.engine.runs.push(run);await h.engine.execute(run,a);assert.equal(a.status,'accepted');assert.equal(h.calls.length,2);assert.equal(h.engine.state.deliveries.at(-1).result,'accepted');
 });
