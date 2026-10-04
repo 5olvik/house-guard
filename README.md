@@ -2,9 +2,9 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.31 er tilgjengelig som testversjon (bygg 12).** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.32 er tilgjengelig som testversjon (bygg 13).** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Versjon **0.4.31 er siste versjon publisert på GitHub og i Homey App Stores testkanal (bygg 12)**, bekreftet 30. september 2026. Den lokale kildekoden er **0.4.32**, installert på Solviks Homey 4. oktober med nattvalget «Automatisk etter svarfrist». En allerede sovende beboer hindrer ikke nattstart for resten. Valgt område må fortsatt være rolig ved fristen; aktivitet starter en ny roperiode før neste spørsmål. Ett nei avbryter. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Oppsettet og valgt regel beholdes. 0.4.32 er ikke publisert. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
+Versjon **0.4.32 er publisert på GitHub og i Homey App Stores testkanal (bygg 13)**, bekreftet 4. oktober 2026, og installert på Solviks Homey med nattvalget «Automatisk etter svarfrist». En allerede sovende beboer hindrer ikke nattstart for resten. Valgt område må fortsatt være rolig ved fristen; aktivitet starter en ny roperiode før neste spørsmål. Ett nei avbryter. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Oppsettet og valgt regel beholdes. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
