@@ -8,10 +8,12 @@ const ALARM='house-guard-internal-alarm';
 
 function setup(change=()=>{},saved={}) {
   const h=harness(c=>{
-    c.night.automatic=true;c.night.rule='auto-no-answer';c.bridges.questions=true;c.security.alarmDeviceId=ALARM;
+    c.night.automatic=true;c.night.rule='auto-no-answer';c.night.zoneId='zone';c.bridges.questions=true;c.security.alarmDeviceId=ALARM;
     add(c,'night',[step('night-extra')]);change(c);
   },saved);
-  h.device(ALARM,'homealarm_state','disarmed');h.ingest();return h;
+  h.zone=(active=false,quietSince=h.now()-3600000,observedAt=h.now())=>{h.snapshot.zones={[h.config.night.zoneId]:{active,inactiveSince:active?null:quietSince,observedAt}};};
+  const advance=h.advance;h.advance=ms=>{advance(ms);const zone=h.snapshot.zones?.[h.config.night.zoneId];if(zone)zone.observedAt=h.now();};
+  h.zone();h.device(ALARM,'homealarm_state','disarmed');h.ingest();return h;
 }
 const nights=h=>h.engine.runs.filter(r=>r.routineId==='night');
 const sleeping=h=>h.calls.filter(c=>c[0]==='person'&&c[2]===true);
@@ -58,14 +60,13 @@ test('Failed question delivery or error answers do not count as an unanswered ni
 });
 
 test('Timeout rechecks current presence, sleep, connection, alarm and guest state before starting night',async()=>{
-  for(const scenario of ['away','unknown-presence','unknown-sleep','stale-presence','sleeping','disconnected','armed','missing-alarm','guest','observation','outside-window','skipped']) {
+  for(const scenario of ['away','unknown-presence','unknown-sleep','stale-presence','disconnected','armed','missing-alarm','guest','observation','outside-window','skipped']) {
     const h=setup(),q=await request(h);h.advance(120000);
     switch(scenario) {
       case 'away':h.person('a',false);h.person('b',false);break;
       case 'unknown-presence':h.person('b',null);break;
       case 'unknown-sleep':h.person('a',true,null);break;
       case 'stale-presence':h.snapshot.people.a.observedAt=h.now()-121000;break;
-      case 'sleeping':h.person('a',true,true);break;
       case 'disconnected':h.snapshot.connected=false;break;
       case 'armed':h.device(ALARM,'homealarm_state','armed');break;
       case 'missing-alarm':h.snapshot.devices[ALARM].available=false;break;
@@ -128,8 +129,11 @@ test('Unanswered automatic timeouts do not replay after startup or reconnection'
   for(const reconnect of [false,true]) {
     const before=setup();await request(before);const saved=before.saved();
     const after=reconnect?before:setup(()=>{},saved);if(reconnect)after.ingest({reconnect:true});
-    after.advance(120000);await finish(after);assert.equal(nights(after).length,0);assert.equal(sleeping(after).length,0);
     assert.equal(after.engine.state.question.decided,'cancelled');
+    const previousQuestionId=after.engine.state.question.id;
+    after.advance(120000);await finish(after);assert.equal(nights(after).length,0);assert.equal(sleeping(after).length,0);
+    // A new, fresh question may be sent; its own deadline must pass first.
+    if(after.engine.state.question.id!==previousQuestionId)assert(after.engine.state.question.deadline>after.now());
   }
 });
 
@@ -146,6 +150,114 @@ test('Every night plan and selected sleep connection includes sleeping despite a
   const c=defaults();c.night.markAsleep=false;c.people.presence=['a','b'];c.people.night=['a','b'];
   const plan=builtins('night',c,{}, {homeIds:['a']});assert.deepEqual(plan.filter(a=>a.kind==='person').map(a=>[a.personId,a.value]),[['a',true]]);
   assert.deepEqual(require('../lib/sleep-flows').selected(c).filter(p=>p.value),[{id:'a',value:true},{id:'b',value:true}]);
+});
+
+test('One manually sleeping resident does not block the remaining residents before or during a night question',async()=>{
+  for(const rule of ['veto','all-yes','auto-no-answer'])for(const timing of ['before','pending']){
+    const h=setup(c=>{c.night.rule=rule;});await confirmPeople(h);
+    if(timing==='before'){h.person('a',true,true);h.ingest();}
+    const q=await request(h);
+    if(timing==='pending'){h.person('a',true,true);h.ingest();assert.equal(q.decided,null);}
+    if(rule!=='auto-no-answer'){h.engine.answer(q.id,'a','yes');h.engine.answer(q.id,'b','yes');}
+    h.advance(120000);await finish(h);
+    assert.equal(q.decided,'yes',rule+' '+timing);assert.equal(nights(h).length,1);
+    assert.deepEqual(sleeping(h),[['person','b',true]]);assert.equal(h.snapshot.people.a.asleep,true);
+    assert.equal(h.engine.state.mode,'night');assert.equal(h.calls.filter(c=>c[0]==='set'&&c[3]==='partially_armed').length,1);
+  }
+});
+
+test('A resident marking themselves asleep during either final read does not invalidate a quiet automatic night',async()=>{
+  for(const readNumber of [1,2]){
+    const h=setup();await confirmPeople(h);const q=await request(h);h.advance(120000);
+    let reads=0;const original=h.adapter.snapshot;
+    h.adapter.snapshot=async()=>{if(++reads===readNumber)h.person('a',true,true);return original();};
+    await finish(h);assert.equal(q.decided,'yes');assert.equal(nights(h).length,1);assert.deepEqual(sleeping(h),[['person','b',true]]);
+  }
+});
+
+test('Unknown or stale sleep and presence data still block a night question while an away sleeper does not',async()=>{
+  for(const scenario of ['unknown-sleep','unknown-presence','unavailable','stale']){
+    const h=setup();h.person('a',true,true);
+    if(scenario==='unknown-sleep')h.person('b',true,null);
+    if(scenario==='unknown-presence')h.person('b',null);
+    if(scenario==='unavailable')h.person('b',true,false,false);
+    if(scenario==='stale')h.snapshot.people.b.observedAt=h.now()-121000;
+    h.ingest();assert.equal(await h.engine.requestNight(),false,scenario);assert.equal(h.engine.state.question,null);
+  }
+  const h=setup();h.person('a',false,true);h.ingest();assert.equal(await h.engine.requestNight(),true);
+});
+
+test('All residents manually falling asleep cancel the pending question and run night only once',async()=>{
+  const h=setup(),q=await request(h);h.person('a',true,true);h.person('b',true,true);h.ingest();
+  assert.equal(q.decided,'cancelled');assert.equal(nights(h).length,1);h.advance(120000);await finish(h);
+  assert.equal(nights(h).length,1);assert.equal(sleeping(h).length,0);assert.equal(h.engine.state.mode,'night');
+});
+
+test('Automatic after deadline requires a fresh, quiet configured zone before sending any question',async()=>{
+  for(const scenario of ['active','recent','missing','stale','future','unknown','bad-inactive','future-inactive','no-zone']){
+    const h=setup(),zone=h.snapshot.zones.zone;
+    if(scenario==='active')h.zone(true);
+    if(scenario==='recent')h.zone(false,h.now()-1000);
+    if(scenario==='missing')h.snapshot.zones={};
+    if(scenario==='stale')zone.observedAt=h.now()-121000;
+    if(scenario==='future')zone.observedAt=h.now()+1;
+    if(scenario==='unknown')zone.active=null;
+    if(scenario==='bad-inactive')zone.inactiveSince=null;
+    if(scenario==='future-inactive')zone.inactiveSince=h.now()+1;
+    if(scenario==='no-zone')h.engine.config.night.zoneId='';
+    h.ingest();assert.equal(await h.engine.requestNight(),false,scenario);assert.equal(h.calls.length,0,scenario);
+  }
+});
+
+test('Movement during a pending automatic deadline cancels it and a new quiet period gets a new deadline',async()=>{
+  const h=setup(c=>{c.night.idleMinutes=1;}),q=await request(h);h.advance(30000);h.zone(true);h.ingest();
+  assert.equal(q.decided,'cancelled');assert.equal(h.engine.state.skipUntil,0);await h.engine.tick();assert.equal(nights(h).length,0);
+  h.zone(false,h.now());h.ingest();h.advance(59999);h.ingest();await h.engine.tick();assert.equal(h.engine.state.question,q);
+  h.advance(1);h.ingest();await h.engine.tick();const next=h.engine.state.question;
+  assert.notEqual(next.id,q.id);assert.equal(next.deadline,h.now()+120000);await confirmPeople(h);
+  h.advance(119999);await finish(h);assert.equal(nights(h).length,0);
+  h.advance(1);await finish(h);assert.equal(nights(h).length,1);assert.equal(next.decided,'yes');
+});
+
+test('Movement, lost zone data and short pulses between snapshots prevent automatic start in either final read',async()=>{
+  for(const readNumber of [1,2])for(const scenario of ['active','pulse','unknown','missing','stale','future']){
+    const h=setup(),q=await request(h);h.advance(120000);let reads=0;const original=h.adapter.snapshot;
+    h.adapter.snapshot=async()=>{
+      if(++reads===readNumber){
+        const zone=h.snapshot.zones.zone;
+        if(scenario==='active')h.zone(true);
+        if(scenario==='pulse')h.zone(false,h.now()-60000);
+        if(scenario==='unknown')zone.active=null;
+        if(scenario==='missing')h.snapshot.zones={};
+        if(scenario==='stale')zone.observedAt=h.now()-121000;
+        if(scenario==='future')zone.observedAt=h.now()+1;
+      }
+      return original();
+    };
+    await finish(h);assert.equal(q.decided,'cancelled',scenario+' read '+readNumber);
+    assert.equal(nights(h).length,0);assert.equal(sleeping(h).length,0);assert.equal(q.activating,false);
+  }
+});
+
+test('A yes reply in automatic mode cannot override new activity before the deadline',async()=>{
+  const h=setup(),q=await request(h);h.engine.answer(q.id,'a','yes');h.advance(120000);h.zone(false,h.now()-60000);
+  await finish(h);assert.equal(q.decided,'cancelled');assert.equal(nights(h).length,0);assert.equal(sleeping(h).length,0);
+});
+
+test('A quiet automatic night with one manual sleeper still enables motion morning for all home residents',async()=>{
+  const h=setup(c=>{c.morning.motion={enabled:true,deviceId:'kitchen',capability:'alarm_motion',start:'06:00',end:'12:00'};});
+  h.person('a',true,true);h.device('kitchen','alarm_motion',false);h.ingest();await confirmPeople(h);await request(h);
+  h.advance(120000);await finish(h);assert.equal(h.engine.state.mode,'night');assert.deepEqual(sleeping(h),[['person','b',true]]);
+  h.device(ALARM,'homealarm_state','partially_armed');h.ingest();await finish(h);
+  const morning=require('../lib/motion-morning'),app={engine:h.engine,adapter:{direct:{ready:true}},
+    intrusion:{state:{mode:'partially_armed',target:null,active:false,entryAt:0,bypassed:[]},disabledSensors:[],sensors:()=>[]},
+    disarmAlarm(){this.intrusion.state.mode='disarmed';h.device(ALARM,'homealarm_state','disarmed');}};
+  h.advance(7*3600000);h.ingest();assert.equal(morning(app,h.engine.snapshot,{reset:true}),false);
+  h.device('kitchen','alarm_motion',true);const snapshot=await h.adapter.snapshot();
+  assert.equal(morning(app,snapshot,{event:{id:'kitchen',capability:'alarm_motion',value:true}}),true);
+  await finish(h);h.ingest();assert.equal(h.snapshot.people.a.asleep,false);assert.equal(h.snapshot.people.b.asleep,false);
+  assert.equal(h.engine.state.mode,'home');assert.equal(app.intrusion.state.mode,'disarmed');
+  assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
 });
 
 function loadApp(Adapter) {

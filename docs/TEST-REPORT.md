@@ -1,4 +1,14 @@
-# Nattspørsmål og fast sovestatus 0.4.31 – publisert som test
+# Automatisk natt med blandet sovestatus 0.4.32 – installert lokalt
+
+Kontrollert 4. oktober 2026. **0.4.32 er bygget og installert på Solviks Homey** uten `--clean` (5.48 MB, 718 filer). Etterkontroll bekrefter kjørende versjon, forbindelse og klar API-forbindelse. Oppsettet er helt uendret, inkludert revisjon 140, nattområde, roperiode, svarfrist og brukerens valg av automatisk regel. Hjemmemodus, frakoblet alarm, gjestemodus av, personers hjemme-/sovestatus, sensorunntak og normale/Advanced Flow-ID-er er bevart. Ingen Git-/App Store-publisering; sist publisert **0.4.31, testbygg 12**.
+
+En manuelt sovende beboer blokkerer ikke lenger nattspørsmål eller felles nattstart for resten. Det nye navnet er **Automatisk etter svarfrist** med samme lagrede regel-ID. Området må være kjent rolig ved spørsmålet og fortsatt rolig gjennom ventetiden. Aktivitet, også en kort puls mellom avlesninger, avbryter forsøket uten å hoppe over hele natten. En ny roperiode gir et nytt spørsmål med ny svarfrist. Ett nei avbryter fortsatt; ukjente persondata, sendefeil, gjester, alarmtilstand og øvrige nattvilkår beholdes.
+
+**349 tester består**, kodekontroll av **85 JavaScript-filer**, publish-validering, diff-kontroll og skann av 115 offentlige filer er godkjent. Ti nye tester dekker blandet sovestatus før/under spørsmålet og begge sluttavlesninger, ukjente/foreldede data, alle manuelt sovende uten dobbelt nattstart, ro/aktivitet/pulser, ny roperiode og natt→bevegelsesmorgen med alle hjemmeværende våkne. Eksisterende svarregler, veto, restart, config-/morgen-/reconnect-race og migreringstester består. Tre endrede kode-/GUI-filer er identiske med installasjonspakken; manifester og lock samsvarer med 0.4.32.
+
+Ingen levende nattspørsmål, personendringer, alarm, lys, lås/port, Flow eller push ble utløst for testing. Nytt fysisk natt-/morgenforløp er ikke prøvd. Den kortere etiketten og uendret binding er statisk kontrollert; nettleseren var utilgjengelig for ny mobil-/lagringskontroll. Tidligere kontroll ved 320/390 px gjelder 0.4.31.
+
+## Nattspørsmål og fast sovestatus 0.4.31 – publisert som test
 
 Kontrollert 30. september 2026. **0.4.31 er bygget og installert på Solviks Homey** uten `--clean` (5.48 MB, 718 filer). Etterkontroll bekrefter versjon, forbindelse og klar API-forbindelse. Konfigureringen er helt uendret, inkludert revisjon 131 og eksisterende nattregel. Hjemmemodus, frakoblet alarm, gjestemodus av, sensorunntak og normale/Advanced Flow-ID-er er bevart. **0.4.31 er publisert på GitHub og i Homey App Stores testkanal (bygg 12)**. App Store-API bekrefter versjon 0.4.31 og tilstand `test` etter opplasting og kanalbytte. Testpakken inneholder også rutineendringene fra 0.4.30. Ingen ordinær utgivelse.
 

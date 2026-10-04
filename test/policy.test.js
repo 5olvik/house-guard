@@ -3,6 +3,16 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const { presence, deriveMode, nextMorning, inWindow, decideQuestion, garageDecision } = require('../lib/policy');
 const { defaults, validate } = require('../lib/config');
 
+test('Known mixed sleeping status stays known without treating unknown or stale people as awake',()=>{
+  const c=defaults();c.people.presence=['a','b'];c.people.night=['a','b'];const now=1000000;
+  const people={a:{present:true,asleep:true,observedAt:now},b:{present:true,asleep:false,observedAt:now}};
+  assert.equal(presence(c,people,now).sleepKnown,true);assert.equal(presence(c,people,now).nobodyAsleep,false);
+  people.b.asleep=null;assert.equal(presence(c,people,now).sleepKnown,false);
+  people.b.present=false;assert.equal(presence(c,people,now).sleepKnown,true);
+  people.b.observedAt=now-121000;assert.equal(presence(c,people,now).sleepKnown,false);
+  people.b.observedAt=now;people.b.present=null;assert.equal(presence(c,people,now).sleepKnown,false);
+});
+
 test('Tomt utvalg, ukjent og utilgjengelig betyr aldri borte', () => {
   const c = defaults(), now = Date.now();
   assert.equal(presence(c, {}, now).allAway, false);

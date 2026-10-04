@@ -56,11 +56,11 @@
             <label>Rolig i minst (minutter)<input type="number" min="1" max="240" data-bind="night.idleMinutes"></label>
             <label>Spør tidligst klokken<input type="time" data-bind="night.start"></label>
             <label>Spør senest klokken<input type="time" data-bind="night.end"></label>
-            <p class="hint full">Homeys soneaktivitet avgjør når huset er rolig. Velg hvem som skal få nattspørsmålet under Personer. Spørsmålet sendes bare når alarmen er frakoblet og huset er bekreftet våkent. Krever API-nøkkel under Innstillinger.</p>
+            <p class="hint full">Homeys soneaktivitet inkluderer underrom. Dør- og vinduskontakter kan også holde området aktivt. Velg mottakere under Personer. En som allerede sover, hindrer ikke nattstart for resten. Alarmen må være frakoblet. Krever API-nøkkel under Innstillinger.</p>
             <details class="full"><summary>Svar på nattspørsmålet</summary><div class="details-body form-grid">
               <label>Svar innen (sekunder)<input type="number" min="10" max="900" data-bind="night.answerSeconds"></label>
-              <label>Når skal nattmodus starte?<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option><option value="auto-no-answer">Ja eller ingen svar ved fristen</option></select></label>
-              <p class="hint full" id="night-rule-help" hidden>Automatisk start krever noen hjemme. Ett nei avbryter.</p>
+              <label>Når skal nattmodus starte?<select data-bind="night.rule"><option value="veto">Minst ett ja ved fristen; ett nei avbryter</option><option value="all-yes">Alle må svare ja innen fristen</option><option value="auto-no-answer">Automatisk etter svarfrist</option></select></label>
+              <p class="hint full" id="night-rule-help" hidden>Starter hvis området fortsatt er rolig og noen er hjemme. Ett nei avbryter.</p>
             </div></details>
           </div>
           <p class="hint">Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Nattutvalget velges under Personer.</p>
