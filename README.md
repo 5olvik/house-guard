@@ -2,11 +2,9 @@
 
 House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veiviseren hjelper deg med forbindelse, beboere og funksjonene du velger: alarm, Homey-Flows, natt og morgen.
 
-**Versjon 0.4.32 er tilgjengelig som testversjon (bygg 13).** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
+**Versjon 0.4.34 er tilgjengelig som testversjon (bygg 14).** [Installer fra Homeys testkanal](https://homey.app/a/no.husmodus/test/). Veiviseren fullføres før huset styres. Innstillingssiden er foreløpig på norsk.
 
-Versjon **0.4.32 er publisert på GitHub og i Homey App Stores testkanal (bygg 13)**, bekreftet 4. oktober 2026, og installert på Solviks Homey med nattvalget «Automatisk etter svarfrist». En allerede sovende beboer hindrer ikke nattstart for resten. Valgt område må fortsatt være rolig ved fristen; aktivitet starter en ny roperiode før neste spørsmål. Ett nei avbryter. Hjemmeværende i nattutvalget settes alltid sovende når nattmodus starter. Oppsettet og valgt regel beholdes. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
-
-Den lokale kildekoden er **0.4.34**, installert på Solviks Homey 5. oktober. Spørsmålet sendes først etter valgt roperiode, bare til valgte mottakere som er hjemme og våkne. Med «Automatisk etter svarfrist» starter ett ja nattmodus med en gang; uten svar starter den ved fristen. Hjemmeværende i nattutvalget settes sovende. Den som allerede sover, trenger ikke svare. De andre svarreglene og oppsettet beholdes. 0.4.34 er ikke publisert.
+Versjon **0.4.34 er publisert på GitHub og i Homey App Stores testkanal (bygg 14)**, bekreftet 5. oktober 2026, og installert på Solviks Homey. Spørsmålet sendes først etter valgt roperiode, bare til valgte mottakere som er hjemme og våkne. Med «Automatisk etter svarfrist» starter ett ja nattmodus med en gang; uten svar starter den ved fristen. Området må fortsatt være rolig og noen hjemme ved start. Hjemmeværende i nattutvalget settes sovende. Den som allerede sover, trenger ikke svare. De andre svarreglene og oppsettet beholdes. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
 ## Funksjoner
 
@@ -24,7 +22,7 @@ Nytt i 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med lux
 - Egen alarmmotor med dør-/vindussensorer og bevegelsessensorer, separate valg for natt og borte og inn-/utgangsforsinkelse.
 - Alarmpanel som egen Homey-enhet med status og avstilling. Ingen separat alarmapp eller alarmbroflows.
 - Direkte styring av kompatible låseenheter, inkludert Yale.
-- Nattspørsmål med svarfrist og nei-veto, med valgfri automatisk start hvis ingen svarer og noen fortsatt er hjemme.
+- Nattspørsmål til våkne hjemmeværende, med svarfrist og nei-veto. «Automatisk etter svarfrist» starter ved ett ja med en gang, eller ved fristen uten svar.
 - Direkte mobilvarsler, nattspørsmål og Sonos med Homey API-nøkkel, uten hjelpeflows.
 - Manuelle knapper som setter alle valgte brukere hjemme eller borte, også uten GPS.
 - Forhåndsvisning, konfigurasjonskontroll og import/eksport. Eksplisitte normal-, kritisk- og bildetestvarsler kan sendes før grunnoppsettet er fullført.
