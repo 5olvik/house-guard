@@ -42,3 +42,27 @@ input[type=password],input[type=search]{width:100%;min-width:0;background:var(--
 .home-state[data-state=unknown] svg,.home-state[data-state=closed] .lock-open,.home-state[data-state=closed] .gate-open,.home-state[data-state=open] .lock-closed,.home-state[data-state=open] .gate-closed{display:none}.home-state[data-state=unknown] .unknown-icon{display:block}
 @media(max-width:400px){.home-controls .home-state{gap:7px;padding:10px 8px}.home-controls .home-state strong{font-size:18px}}
 @media(max-width:560px){.header-top{padding:14px 18px}.header-top h1{font-size:25px}.header-mark{width:45px}.tab-btn{font-size:10px}.setup-shortcuts{grid-template-columns:1fr}.setup-checklist li{flex-wrap:wrap}.setup-checklist li>div{flex-basis:calc(100% - 40px)}.setup-checklist button{margin-left:32px}.setup-sensors{max-height:300px}#home-attention{flex-direction:column}.night-section{padding:13px}dialog{padding:18px}}
+
+/* Own buttons opt out of Homey's legacy grey button style, including dialogs. */
+:root{--button-accent:#b83414;--button-pressed:#91270e;--button-soft:#fff2ec}
+button.hy-nostyle{appearance:none;background:#fff;color:var(--button-accent);border:1px solid var(--button-accent);font-weight:650;opacity:1;transition:background-color .12s,color .12s,border-color .12s,transform .12s;-webkit-tap-highlight-color:rgba(184,52,20,.16)}
+button.hy-nostyle.primary{background:var(--button-accent);color:#fff;border-color:var(--button-accent)}
+@media(hover:hover){button.hy-nostyle:not(:disabled):hover{background:var(--button-soft);border-color:var(--button-accent)}button.hy-nostyle.primary:not(:disabled):hover{background:var(--button-pressed);color:#fff}}
+button.hy-nostyle:not(:disabled):active{background:var(--button-pressed);border-color:var(--button-pressed);color:#fff;transform:translateY(1px)}
+button.hy-nostyle:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+button.hy-nostyle:disabled:not([data-button-waiting]):not([aria-busy=true]){background:#eef0f3;color:#626b78;border-color:#cdd2da;opacity:1;box-shadow:none;cursor:not-allowed}
+button.hy-nostyle[data-button-waiting]{cursor:wait}
+button.hy-nostyle[aria-busy=true]{background:var(--button-accent);color:#fff;border-color:var(--button-accent);cursor:wait;opacity:1}
+button.hy-nostyle[aria-busy=true]::before{content:'';display:inline-block;width:1em;height:1em;margin-right:7px;vertical-align:-.15em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:houseguard-button-spin .8s linear infinite}
+@keyframes houseguard-button-spin{to{transform:rotate(360deg)}}
+.tab-bar .tab-btn{background:#fff;color:#3f4857;border:1px solid transparent;box-shadow:none}
+.tab-bar .tab-btn.active{background:var(--button-accent);color:#fff;border-color:var(--button-accent);box-shadow:0 2px 5px #b8341426}
+.tab-bar .tab-btn:not(:disabled):active{background:var(--button-pressed);color:#fff}
+.alarm-tabs button.hy-nostyle[aria-selected=true]{background:var(--button-accent);color:#fff;border-color:var(--button-accent)}
+@media(hover:hover){.tab-bar .tab-btn.active:not(:disabled):hover,.alarm-tabs button.hy-nostyle[aria-selected=true]:not(:disabled):hover{background:var(--button-pressed);color:#fff}}
+.setup-shortcut.hy-nostyle{background:#fff}
+.settings-link.hy-nostyle{background:none;border:0;color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+.file-button{background:#fff;color:var(--button-accent);border-color:var(--button-accent)}
+.file-button:focus-within{outline:3px solid var(--blue);outline-offset:3px}
+.file-button:active,.alarm-tabs button.hy-nostyle[aria-selected=true]:not(:disabled):active{background:var(--button-pressed);color:#fff}
+@media(prefers-reduced-motion:reduce){button.hy-nostyle{transition:none}button.hy-nostyle:not(:disabled):active{transform:none}button.hy-nostyle[aria-busy=true]::before{animation:none}}

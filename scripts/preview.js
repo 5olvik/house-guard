@@ -90,7 +90,7 @@ async function start() {
         engine.ingest(await snapshot()); await engine.tick(); output = engine.status();
       } else {
         const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        if (!['index.html', 'ui.js', 'alarm-ui.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
+        if (!['index.html', 'ui.js', 'alarm-ui.js', 'button-feedback.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
         if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end(homeyStyles
           ? "window.addEventListener('load',()=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/_preview/homey.css';document.head.append(link);});"
           : '/* Local preview: Homey bridge intentionally absent. */'); return; }

@@ -9,7 +9,7 @@ window.HouseGuardWizard = (() => {
     const read=()=>ctx.read(),steps=()=>HouseGuardOnboarding.steps(features);
     function remember(){try{localStorage.setItem(storageKey,JSON.stringify({features,step}));}catch{/* Storage may be unavailable inside Homey. */}}
     function error(e){$('setup-error').textContent=e.message || String(e);}
-    function button(parent,title,fn,primary=false){const b=el('button',title,primary?'primary':'');b.type='button';b.onclick=async()=>{if(busy)return;busy=true;b.disabled=true;try{await fn();}catch(e){error(e);}finally{busy=false;if(b.isConnected)b.disabled=false;}};parent.append(b);return b;}
+    function button(parent,title,fn,primary=false){const b=el('button',title,primary?'primary':'');b.type='button';b.onclick=()=>HouseGuardButtons.run(b,async()=>{if(busy)return;busy=true;try{await fn();}catch(e){error(e);}finally{busy=false;}});parent.append(b);return b;}
     function choice(parent,title,checked,fn){const label=el('label',undefined,'check'),input=el('input');input.type='checkbox';input.checked=checked;input.onchange=()=>{try{fn(input.checked);}catch(e){input.checked=!input.checked;error(e);}};label.append(input,document.createTextNode(title));parent.append(label);return input;}
     function update(fn,rerender=true){ctx.change(fn);if(rerender)render();}
     function detail(parent,title){const d=el('details'),s=el('summary',title);d.append(s);parent.append(d);return d;}
@@ -147,8 +147,8 @@ window.HouseGuardWizard = (() => {
         button(body,'Ferdig',async()=>{update(c=>{c.setupCompleted=true;},false);await flush();await ctx.reload();$('setup-dialog').close();remember();},true);
       }
     }
-    $('setup-back').onclick=()=>go(steps()[steps().indexOf(step)-1]);
-    $('setup-next').onclick=async()=>{if(busy)return;busy=true;$('setup-next').disabled=true;try{if(step==='people'&&!read().config.people.presence.length)throw Error('Velg minst én beboer som skal telle med.');await flush();const next=steps()[steps().indexOf(step)+1];if(next==='finish')await ctx.refresh();go(next);}catch(e){error(e);}finally{busy=false;$('setup-next').disabled=false;}};
+    $('setup-back').onclick=()=>{if(!busy)go(steps()[steps().indexOf(step)-1]);};
+    $('setup-next').onclick=()=>HouseGuardButtons.run($('setup-next'),async()=>{if(busy)return;busy=true;try{if(step==='people'&&!read().config.people.presence.length)throw Error('Velg minst én beboer som skal telle med.');await flush();const next=steps()[steps().indexOf(step)+1];if(next==='finish')await ctx.refresh();go(next);}catch(e){error(e);}finally{busy=false;}},{peers:[$('setup-back')]});
     $('close-setup').onclick=()=>{$('setup-dialog').close();remember();};
     $('setup-dialog').addEventListener('cancel',remember);
     return {open,render};

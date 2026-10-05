@@ -32,7 +32,7 @@ window.HouseGuardAlarm = (() => {
       if(items) options(input,items,object[key],null);
       else {input.type=type;if(type==='checkbox')input.checked=object[key];else input.value=object[key];}
       if(type==='number'){input.min='1';input.max='100';}
-      const update=()=>{if(!input.checkValidity())return;object[key]=type==='checkbox'?input.checked:type==='number'?Number(input.value):input.value;changed(type==='checkbox'||!!items);for(const [button,type] of testControls)button.disabled=testDisabled(type);};
+      const update=()=>{if(!input.checkValidity())return;object[key]=type==='checkbox'?input.checked:type==='number'?Number(input.value):input.value;changed(type==='checkbox'||!!items);for(const [button,type] of testControls)HouseGuardButtons.disable(button,testDisabled(type));};
       if(type==='text'||type==='number')input.oninput=update;else input.onchange=update;
       label.append(input);if(type==='checkbox')label.append(document.createTextNode(title));parent.append(label);return input;
     }
@@ -104,11 +104,11 @@ window.HouseGuardAlarm = (() => {
     const status=el('p');status.setAttribute('role','status');const buttons=el('div',undefined,'button-row');test.append(buttons,status);root.append(test);
     for(const [type,title] of [['normal','Test vanlig push'],['critical','Test kritisk push'],['image','Test kameravarsler']]) {
       const button=el('button',title);button.disabled=testDisabled(type);testControls.push([button,type]);buttons.append(button);
-      button.onclick=async()=>{if(testing)return;testing=true;[...buttons.children].forEach(b=>b.disabled=true);status.textContent='Sender test …';
+      button.onclick=()=>HouseGuardButtons.run(button,async()=>{if(testing)return;testing=true;status.textContent='Sender test …';
         try {await flush();const result=await api('POST','/direct-test',{type:'push',notificationType:type,...(type==='image'?{alarmCameras:true}:{})});status.textContent=result.results ? result.results.map(r=>r.name+': '+(r.accepted?'akseptert av Homey':'feilet eller ukjent utfall – '+r.error)).join(' · ')+' Kontroller bildene på telefonen.' : 'Homey har akseptert testvarselet. Kontroller at det kom på telefonen.';}
         catch(error){status.textContent=error.message;}
-        finally{testing=false;for(const [button,type] of testControls)button.disabled=testDisabled(type);}
-      };
+        finally{testing=false;for(const [button,type] of testControls)HouseGuardButtons.disable(button,testDisabled(type));}
+      },{peers:buttons.children,label:'Sender …'});
     }
     if(config.observation)test.append(el('p','Du kan prøve varsling før oppsettet er fullført. Disse knappene starter ingen rutiner.','hint'));
     if(!data.direct?.ready)test.append(el('p','Legg inn og kontroller API-nøkkelen under Innstillinger → API-nøkkel.','hint'));

@@ -127,6 +127,10 @@
     "no": "Innstillinger og handlinger er samlet per funksjon. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm, med tydelig valg av handlingsrekkefølge. Alarmens varsler, kamera, lyd, lys og egne handlinger er samlet per hendelse. Mobilmenyen er rettet for Homeys stilark, med nye personer- og alarmikoner. Gjestemodus anbefaler egen Homey-enhet og har innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Eksisterende oppsett beholdes.",
     "en": "Settings and actions are grouped by function. Night activation and alarm deactivation have separate sections with explicit action order choices. Alarm notifications, cameras, sound, lights and custom actions are grouped by event. Fixed mobile menu overflow caused by Homey's stylesheet and added people and siren icons. Guest mode recommends a Homey device and includes built-in push notices when enabled, disabled and when guests are left alone. Existing settings are preserved."
   },
+  "0.4.35": {
+    "no": "Tydeligere knapper med oransje ramme og markering av valgt fane. Bare knappen du trykker på viser spinner og ventetekst; andre tilgjengelige knapper tones ikke ned samtidig. Fokus, trykk og faktisk utilgjengelige knapper har egne tilstander. Eksisterende oppsett beholdes.",
+    "en": "Clearer buttons with an orange outline and highlighted selected tabs. Only the pressed button shows a spinner and progress text; other available buttons no longer fade at the same time. Distinct focus, pressed and unavailable states. Existing settings are preserved."
+  },
   "0.4.34": {
     "no": "Nattvalget Automatisk etter svarfrist starter nå med en gang ved ett ja. Hvis ingen svarer, starter nattmodus ved svarfristen. Spørsmålet sendes først etter valgt roperiode og bare til våkne hjemmeværende mottakere. Oppsett og øvrige svarregler beholdes.",
     "en": "The automatic deadline option now starts night mode immediately on one yes. If nobody replies, night mode starts at the reply deadline. Questions are sent after the configured quiet period and only to awake recipients at home. Settings and other reply rules are preserved."

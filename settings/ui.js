@@ -1,6 +1,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
+  const feedback = HouseGuardButtons;
   const labels = { alarm: 'Alarm', lights: 'Lys', av: 'Lyd og TV', ventilation: 'Ventilasjon', lock: 'Lås', garage: 'Garasjeport', notification: 'Varsler', people: 'Personstatus', other: 'Andre handlinger' };
   const kinds = { set: 'Sett enhet', flow: 'Start Flow', notify: 'Varsel', speak: 'Si tekst', sound: 'Spill lyd', timeline: 'Tidslinje', person: 'Sovestatus', garage: 'Lukk port', verify: 'Bekreft tilstand' };
   const resultNames = { planned:'Ville utført', info:'Informasjon', pending: 'Venter', checking: 'Kontrollerer', dispatching: 'Klargjør sending', sent: 'Sendt', waiting: 'Venter på tilstand', accepted: 'Akseptert', confirmed: 'Bekreftet', observed: 'Ikke utført under oppsett', skipped: 'Hoppet over', cancelled: 'Avbrutt', failed: 'Feil', unknown: 'Ukjent utfall' };
@@ -10,7 +11,7 @@
   let wizard;
   const controlBusy = new Set(), controlErrors = {};
   let apiKeyBusy=false,apiKeyMessage='';
-  function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
+  function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; if(tag==='button')e.classList.add('hy-nostyle'); return e; }
   function get(object, path) { return path.split('.').reduce((v, key) => v?.[key], object); }
   function put(object, path, value) { const parts = path.split('.'); const key = parts.pop(); get(object, parts.join('.'))[key] = value; }
   function setDirty(immediate = false) { autosave.change(config, immediate); if(data && config) renderConnectionRecipes(); }
@@ -155,7 +156,7 @@
     $('home-night-controls').hidden=!data.config.people.presence.length;
     $('night-command-help').hidden=$('home-night-controls').hidden;
     $('home-people').hidden=!data.config.people.presence.length;
-    document.querySelectorAll('[data-command="home"],[data-command="away"]').forEach(button=>{button.disabled=!!s.observation || !data.direct?.ready;button.title=button.disabled?'Koble til Homey under Innstillinger for å endre personstatus.':'';});
+    document.querySelectorAll('[data-command]').forEach(button=>{const unavailable=!!s.observation || (['home','away'].includes(button.dataset.command) && !data.direct?.ready);feedback.disable(button,unavailable);button.title=unavailable?'Koble til Homey under Innstillinger for å endre personstatus.':'';});
     $('home-lock-state').textContent=locked===true?'Låst':locked===false?'Ulåst':'Ukjent status';
     $('home-lock-status').dataset.state=locked===true?'closed':locked===false?'open':'unknown';
     $('home-garage-state').textContent=typeof port==='boolean'?(port===c.garage.openValue?'Åpen':'Lukket'):'Ukjent status';
@@ -165,7 +166,7 @@
       const current=target==='lock'?locked:typeof port==='boolean'?port===c.garage.openValue:undefined;
       document.querySelectorAll('[data-control="'+target+'"]').forEach(button=>{
         const value=button.dataset.controlValue==='true',option=control?.options[String(value)];
-        button.disabled=!!s.observation || !!pending || !option?.allowed || value===current;
+        feedback.disable(button,!!s.observation || !option?.allowed || value===current,!!pending);
         button.title=pending?'Venter på bekreftet status':option?.reason || '';
       });
       const next=typeof current==='boolean'?String(!current):'true';
@@ -251,8 +252,7 @@
         row.append(el('span', index + 1, 'action-number'), copy, edit, remove); body.append(row);
       });
       const add = el('button', '+ Legg til handling'); add.onclick = () => openAction(routine); body.append(add);
-      const preview = el('button','Hva ville skjedd nå?'); preview.onclick = async () => {
-        preview.disabled = true;
+      const preview = el('button','Hva ville skjedd nå?'); preview.onclick = () => feedback.run(preview,async () => {
         try {
           const p = await api('POST','/preview',{ id:routine.id, config });
           $('preview-title').textContent = p.name; $('preview-note').textContent = `${p.note}${dirty ? ' Noen endringer er ennå ikke lagret.' : ''}`;
@@ -260,10 +260,10 @@
           if (!p.actions.length) container.append(el('p','Ingen handlinger i denne rutinen med det valgte oppsettet.','empty'));
           for (const a of p.actions) { const row = el('div',undefined,'action-row'), copy = el('div',describeAction(a),'action-copy'); copy.append(el('small',`${a.builtin ? 'Innebygd' : 'Ekstra handling'} · ${a.delaySeconds} s · ${a.reason}`)); row.append(copy,el('span',resultNames[a.result] || a.result,`badge ${a.result === 'skipped' ? 'warn' : 'ok'}`)); container.append(row); }
           $('preview-dialog').showModal();
-        } catch (error) { toast(error.message); } finally { preview.disabled = false; }
-      }; body.append(preview);
+        } catch (error) { toast(error.message); }
+      },{label:'Henter …'}); body.append(preview);
       if (custom) {
-        const run = el('button', 'Start rutine');run.disabled=!routine.enabled || !routine.actions.length;run.dataset.routineStart=routine.id; run.onclick = async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }; body.append(run);
+        const run = el('button', 'Start rutine');run.disabled=!routine.enabled || !routine.actions.length;run.dataset.routineStart=routine.id; run.onclick = () => feedback.run(run,async () => { try { await flush(); await api('POST', '/command', { type: 'routine', id: routine.id }); await load(); toast('Rutinen er startet.'); } catch (error) { toast(error.message); } }); body.append(run);
         const removeRoutine = el('button','Slett egen rutine');
         removeRoutine.onclick = () => {config.routines.splice(config.routines.indexOf(routine),1);actionRoutine=null;setDirty(true);renderRoutineViews();};body.append(removeRoutine);
       }
@@ -306,8 +306,8 @@
     if(!panel.dataset.initialized){panel.open=!status.ready;panel.dataset.initialized='true';}
     $('direct-api-status').textContent=apiKeyMessage || (status.configured?(status.ready?'API-nøkkel er klar. Nøkkelen er lagret.':status.problem || 'Forbindelsen må kontrolleres.'):'Legg inn API-nøkkel for direkte Flow-start, push og Sonos.');
     $('direct-api-key').disabled=apiKeyBusy || demo;
-    $('direct-api-check').disabled=apiKeyBusy || demo || !status.configured;
-    $('direct-api-remove').disabled=apiKeyBusy || demo || !status.configured;
+    feedback.disable($('direct-api-check'),demo || !status.configured,apiKeyBusy);
+    feedback.disable($('direct-api-remove'),demo || !status.configured,apiKeyBusy);
   }
   async function updateApiKey(body,rethrow=false) {
     if(apiKeyBusy)return;apiKeyBusy=true;apiKeyMessage='Kontrollerer og lagrer …';renderApiKey();
@@ -401,8 +401,8 @@
     ].filter(Boolean).join(' ');
     $('home-alarm-bypassed').hidden=!s.bypassed?.length;
     $('home-alarm-bypassed').textContent=s.bypassed?.length?'Venter på inaktive sensorer: '+s.bypassed.map(sensor=>sensor.name+' ('+sensor.zone+')').join(', ')+'. Resten av alarmen er tilkoblet.':'';
-    $('home-disarm').disabled=!s.selected || (!s.active && !s.target && !s.entryAt && s.mode==='disarmed');
-    document.querySelectorAll('[data-alarm]').forEach(button=>{if(button.dataset.alarm!=='disarmed')button.disabled=!!data.config.observation;});
+    feedback.disable($('home-disarm'),!s.selected || (!s.active && !s.target && !s.entryAt && s.mode==='disarmed'));
+    document.querySelectorAll('[data-alarm]').forEach(button=>{if(button.dataset.alarm!=='disarmed')feedback.disable(button,!!data.config.observation);});
     document.querySelectorAll('[data-sensor-flow-status]').forEach(node=>{const [id,cap]=JSON.parse(node.dataset.sensorFlowStatus),items=disabled.filter(d=>d.deviceId===id && d.capability===cap);node.textContent=items.length?'Deaktivert fra Flow: '+items.map(d=>modeName(d.mode)).join(' og ')+'. Bruk «Aktiver alarmsensor» for å ta den med igjen.':'';node.hidden=!items.length;});
   }
   function renderIntrusion() {
@@ -504,7 +504,7 @@
     initializeAlarmTabs();
     wizard=HouseGuardWizard.create({el,api,flush,demo,read:()=>({config,data}),change:editConfig,replace:next=>{config=next;setDirty(true);renderConfig();},refresh:refreshSetup,reload:load,key:body=>updateApiKey(body,true),navigate:navigateGuide});
     bindEvents(); await load(true); if (homey) homey.ready();
-    $('open-setup').onclick=openSetup;$('reopen-setup').onclick=()=>openSetup('features');
+    $('open-setup').onclick=()=>feedback.run($('open-setup'),()=>openSetup(),{label:'Åpner …'});$('reopen-setup').onclick=()=>feedback.run($('reopen-setup'),()=>openSetup('features'),{label:'Åpner …'});
     $('sensor-search').oninput=renderIntrusion;
     $('show-system-status').onclick=()=>{
       const step=$('show-system-status').dataset.setupStep;
@@ -512,27 +512,26 @@
       document.querySelector('[data-tab=more]').click();$('system-status').open=true;$('system-status-heading').focus();$('system-status').scrollIntoView({block:'start'});
     };
     document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => { if(button.dataset.tab==='security')renderAlarmResponses(); document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== button.dataset.tab; }); document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b === button); if (b === button) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); });
-    document.querySelectorAll('[data-command]').forEach(button => button.onclick = async () => {
-      const buttons=[...document.querySelectorAll('[data-command]')],mode=button.dataset.command;
-      buttons.forEach(b=>b.disabled=true);
+    document.querySelectorAll('[data-command]').forEach(button => button.onclick = () => feedback.run(button,async () => {
+      const mode=button.dataset.command;
       try { await flush(); await api('POST', '/command', ['home','away'].includes(mode) ? {type:'presence',present:mode==='home'} : mode === 'skip' ? { type: 'skip' } : { type: 'mode', mode }); await load(); toast('Kommando behandlet. Se status og logg.'); }
       catch (error) { toast(error.message);await load().catch(()=>{}); }
-      finally {buttons.forEach(b=>b.disabled=false);renderHomeControls();}
-    });
-    document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}});
-    document.querySelectorAll('[data-control]').forEach(button=>button.onclick=async()=>{
+      finally {renderHomeControls();}
+    },{peers:document.querySelectorAll('[data-command]')}));
+    document.querySelectorAll('[data-alarm]').forEach(button=>button.onclick=()=>feedback.run(button,async()=>{try{if(button.dataset.alarm!=='disarmed')await flush();await api('POST','/command',{type:'alarm',mode:button.dataset.alarm});if(button.dataset.alarm==='disarmed')await flush();await load();}catch(error){toast(error.message);}},{peers:document.querySelectorAll('[data-alarm="'+button.dataset.alarm+'"]')}));
+    document.querySelectorAll('[data-control]').forEach(button=>button.onclick=()=>feedback.run(button,async()=>{
       const target=button.dataset.control,value=button.dataset.controlValue==='true';
       if(controlBusy.has(target))return;controlBusy.add(target);delete controlErrors[target];renderHomeControls();
       try{await flush();await api('POST','/command',{type:'control',target,value});await load();}
       catch(error){controlErrors[target]=error.message;}
       finally{controlBusy.delete(target);renderHomeControls();}
-    });
+    },{peers:document.querySelectorAll('[data-control="'+button.dataset.control+'"]')}));
     $('guest-toggle').onchange = async event => { const value=event.target.checked;event.target.disabled=true;try { await flush(); await api('POST', '/command', { type: 'guest', value }); await load(); } catch (error) { toast(error.message); event.target.checked = data.status.guest; } finally{event.target.disabled=false;} };
     document.querySelectorAll('[data-scenario]').forEach(button => button.onclick = async () => { try { await api('POST', '/scenario', { scenario: button.dataset.scenario }); await load(); } catch (error) { toast(error.message); } });
-    $('reload-config').onclick = async () => {
+    $('reload-config').onclick = () => feedback.run($('reload-config'),async () => {
       try { const latest = await api('GET','/state'); autosave.reset(latest.config); data = latest; config = structuredClone(latest.config); renderConfig(); renderStatus(); }
       catch(error) { toast(error.message); }
-    };
+    },{label:'Laster …'});
     $('new-routine').onclick = () => { const routine={ id: `custom-${crypto.randomUUID()}`, name: `Egen rutine ${config.routines.filter(r => r.id.startsWith('custom')).length + 1}`, enabled: true, execution: 'sequential', actions: [] };config.routines.push(routine);setDirty(true);renderRoutines();const card=$('routine-'+routine.id);revealSettings(card);card.scrollIntoView({block:'start'}); };
     $('action-kind').onchange = updateActionFields; $('action-device').onchange = updateCapabilities; $('action-capability').onchange=updateActionValue;$('action-value-choice').onchange=()=>{$('action-value').value=$('action-value-choice').value;};$('close-action').onclick = () => $('action-dialog').close();
     $('condition-device').onchange = () => updateConditionCapabilities();
@@ -564,13 +563,13 @@
     }
     $('action-form').addEventListener('input', event => { if (!['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName) || ['checkbox','select-one'].includes(event.target.type)) return; actionChanged = true; saveAction(); });
     $('action-form').addEventListener('change', () => { actionChanged = true; saveAction(true); });
-    $('action-form').onsubmit = async event => { event.preventDefault(); if (actionChanged && !saveAction(true)) return; try { await flush(); $('action-dialog').close(); } catch(error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; } };
+    $('action-form').onsubmit = event => { event.preventDefault(); if (actionChanged && !saveAction(true)) return; return feedback.run($('action-form').querySelector('[type="submit"]'),async()=>{try { await flush(); $('action-dialog').close(); } catch(error) { $('action-error-message').textContent = `Ikke lagret: ${error.message}`; }},{label:'Lagrer …'}); };
     $('log-filter').onchange = renderStatus;
-    $('refresh-catalog').onclick = async () => { try { data.catalog = await api('GET', '/catalog'); renderConfig(); toast('Personer og enheter oppdatert.'); } catch (error) { toast(error.message); } };
+    $('refresh-catalog').onclick = () => feedback.run($('refresh-catalog'),async () => { try { data.catalog = await api('GET', '/catalog'); renderConfig(); toast('Personer og enheter oppdatert.'); } catch (error) { toast(error.message); } },{label:'Oppdaterer …'});
     $('direct-api-key').onchange=()=>{const token=$('direct-api-key').value.trim();if(token)void updateApiKey({token});};
     $('direct-api-key').onpaste=()=>setTimeout(()=>{const token=$('direct-api-key').value.trim();if(token)void updateApiKey({token});},0);
-    $('direct-api-check').onclick=()=>updateApiKey({check:true});
-    $('direct-api-remove').onclick=()=>updateApiKey({token:''});
+    $('direct-api-check').onclick=()=>feedback.run($('direct-api-check'),()=>updateApiKey({check:true}),{peers:[$('direct-api-remove')],label:'Kontrollerer …'});
+    $('direct-api-remove').onclick=()=>feedback.run($('direct-api-remove'),()=>updateApiKey({token:''}),{peers:[$('direct-api-check')],label:'Fjerner …'});
     $('export-config').onclick = () => download('house-guard-oppsett.json', config);
     $('export-log').onclick = () => download('house-guard-logg.json', data.status.history);
     $('import-config').onchange = async event => {
