@@ -55,13 +55,26 @@ Når nattmodus starter, settes hjemmeværende i nattutvalget alltid sovende i Ho
 
 Fast morgentid starter morgenrutinen og setter hjemmeværende i nattutvalget våkne i Homey. Det er en statusendring; lys, musikk eller annen fysisk vekking legges til som handlinger. Frakobling følger valget under Alarm.
 
+House Guard skriver automatisk **«House Guard: Huset har våknet. Nattmodus er avsluttet.»** i Homeys tidslinje ved bekreftet oppvåkning fra nattmodus. Dette gjelder manuell morgen, fast morgentid, bevegelsesmorgen og sovestatus endret fra Homey eller Flow. Meldingen krever ingen egen rutinehandling, Flow, pushmottaker eller API-nøkkel, og fungerer også når ekstrahandlingene er avslått. Én melding sendes ved første faktiske oppvåkning som avslutter nattmodus; oppstart, ny tilkobling og en morgenkommando uten bekreftet vekking gir ingen melding. Tidslinjemeldingen endrer ingen alarm- eller personinnstillinger.
+
 **Morgentid** bestemmer også når «Hopp over natt i natt» utløper. Klokkeslettet starter ikke morgenrutinen når **Start morgen til fast tid** er av. Morgen krever alltid at en beboer er hjemme, også ved manuell start eller fra Flow. Dette er en fast regel uten avkrysning. Nattalarm krever at noen er hjemme og bekreftet sovende. Når ingen hjemmeværende lenger sover, avsluttes nattalarm og eventuell ventende nattaktivering. En allerede utløst alarm eller inngangsforsinkelse beholdes til avstilling; ukjente persondata brukes ikke til å frakoble etablert dekning eller koble til full alarm.
 
 En Flow eller Advanced Flow kan starte hele morgenrutinen med **House Guard → Sett modus i House Guard → Morgen** (kan brukes på nytt etter en ny natt samme dag; automatisk morgen kjøres maksimalt én gang per dato). For individuell vekking bruker du Homeys tilstedeværelseskort til å sette én person våken. House Guard kan da frakoble ved første oppvåkning uten å vekke de andre. Slå av fast morgentid hvis egne Flows styrer tidspunktet. Morgenrutinen kan også starte en valgt eksisterende Flow.
 
+## Nattmodus som egen enhet
+
+Fra 0.4.38 kan du legge til en egen **Nattmodus**-bryter med **Legg til enhet → House Guard → Nattmodus**. Enheten har et månesymbol og kan brukes på Homeys forside eller med vanlige Flow-kort for på/av.
+
+- **På:** samme nattstart som i appen. Hjemmeværende i nattutvalget settes sovende, og alarm og ekstrahandlinger følger innstillingene dine.
+- **Av:** samme morgenstart som i appen. Hjemmeværende i nattutvalget settes våkne; frakobling følger alarmvalget ditt.
+
+Bryteren følger House Guards faktiske nattmodus ved automatisk natt, oppvåkning, appknapper og Flows. Den styrer husets modus gjennom appen og har ingen egen alarmtilstand. En på/av-kommando for en status som allerede gjelder, kjører ikke rutinene om igjen. Tomt hus og gjestemodus hindrer nattaktivering. Ukjent personstatus, manglende Homey-forbindelse og uferdig grunnoppsett vises som utilgjengelighet. Paring, omstart og sletting av enheten starter verken natt eller morgen.
+
 ## Alarmpanel i Homey
 
-Enheten viser Frakoblet, Nattalarm tilkoblet, Bortealarm tilkoblet, forsinkelser og utløst alarm med sensorårsak. Den har bare **Avstill alarm**, som frakobler og stopper alarmresponsen. Knappen endrer ikke tilstedeværelse eller sovestatus. Natt- og borterutiner styres av House Guard. Den gamle modusvelgeren fjernes automatisk også fra eksisterende paneler; alarmstatus-taggen og utløst-alarm-status beholdes.
+Enheten viser **Frakoblet**, **Delvis** (nattalarm), **Tilkoblet** (full bortealarm), forsinkelser og utløst alarm med sensorårsak. De samme korte statusnavnene vises på Hjem og under Alarm. Den har bare **Avstill alarm**, som frakobler og stopper alarmresponsen. Knappen endrer ikke tilstedeværelse eller sovestatus. Natt- og borterutiner styres av House Guard. Den gamle modusvelgeren fjernes automatisk også fra eksisterende paneler; alarmstatus-taggen og utløst-alarm-status beholdes.
+
+**Alarmstatus**-taggen bruker også de korte navnene. Eksisterende Flows som sammenligner tekstene «Nattalarm tilkoblet» eller «Bortealarm tilkoblet», må endres til «Delvis» eller «Tilkoblet». Kort for **Utløst alarm** og valgene **Full alarm (borte)** / **Delvis alarm (natt)** for sensorstyring følger samme funksjoner som før.
 
 ## Manuell tilstedeværelse uten GPS
 

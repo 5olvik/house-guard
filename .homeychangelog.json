@@ -127,6 +127,18 @@
     "no": "Innstillinger og handlinger er samlet per funksjon. Natt og morgen er delt i Aktivering av natt og Deaktivering av alarm, med tydelig valg av handlingsrekkefølge. Alarmens varsler, kamera, lyd, lys og egne handlinger er samlet per hendelse. Mobilmenyen er rettet for Homeys stilark, med nye personer- og alarmikoner. Gjestemodus anbefaler egen Homey-enhet og har innebygde pushvarsler ved påslag, avslag og når gjestene blir alene. Eksisterende oppsett beholdes.",
     "en": "Settings and actions are grouped by function. Night activation and alarm deactivation have separate sections with explicit action order choices. Alarm notifications, cameras, sound, lights and custom actions are grouped by event. Fixed mobile menu overflow caused by Homey's stylesheet and added people and siren icons. Guest mode recommends a Homey device and includes built-in push notices when enabled, disabled and when guests are left alone. Existing settings are preserved."
   },
+  "0.4.38": {
+    "no": "Ny Nattmodus-enhet med av/på-bryter. Egen Brann og vann-fane med sensorvalg, vanlige og kritiske pushvarsler, kameraer og valgte handlinger. Innebygd kontroll av valgte vannsensorers rapportering med 24 timer som standard. Kortere alarmstatuser og automatisk tidslinjemelding når huset våkner. Ny overvåking er av inntil brukeren setter den opp; eksisterende innstillinger og Flows beholdes.",
+    "en": "New Night mode device with an on/off switch. Separate Fire and water settings with sensor selection, normal and critical push notifications, cameras and optional actions. Built-in reporting checks for selected water sensors, with a 24-hour default. Shorter alarm status labels and an automatic timeline entry when the house wakes. New monitoring remains disabled until configured; existing settings and Flows are preserved."
+  },
+  "0.4.37": {
+    "no": "House Guard skriver automatisk én melding i Homeys tidslinje når huset våkner fra nattmodus. Meldingen følger bekreftet oppvåkning ved manuell morgen, fast morgentid, bevegelse eller sovestatus fra Flow. Ingen ekstra handling eller Flow er nødvendig. Gamle oppvåkninger spilles ikke av etter omstart, og feil i tidslinjen stopper ikke morgenfunksjonene.",
+    "en": "House Guard automatically writes one Homey timeline entry when the house wakes from night mode. The message follows confirmed waking through manual morning, scheduled time, motion or sleep status changed by a Flow. No extra action or Flow is needed. Old wake-ups are not replayed after restart, and timeline failures do not stop morning behavior."
+  },
+  "0.4.36": {
+    "no": "Kortere alarmstatuser: Frakoblet, Delvis for nattalarm og Tilkoblet for full bortealarm. Navnene er like i alarmpanelet, Alarmstatus-taggen og appens statusvisning. Funksjoner og oppsett beholdes. Flows med tekstvilkår for gamle statusnavn må bruke de nye navnene.",
+    "en": "Shorter alarm statuses: Disarmed, Partially armed for night alarm and Armed for full away alarm. Matching names in the alarm panel, Alarm status tag and app status view. Behavior and settings are preserved. Flows comparing the previous status text must use the new names."
+  },
   "0.4.35": {
     "no": "Tydeligere knapper med oransje ramme og markering av valgt fane. Bare knappen du trykker på viser spinner og ventetekst; andre tilgjengelige knapper tones ikke ned samtidig. Fokus, trykk og faktisk utilgjengelige knapper har egne tilstander. Eksisterende oppsett beholdes.",
     "en": "Clearer buttons with an orange outline and highlighted selected tabs. Only the pressed button shows a spinner and progress text; other available buttons no longer fade at the same time. Distinct focus, pressed and unavailable states. Existing settings are preserved."

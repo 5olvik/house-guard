@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.4.35",
+  "version": "0.4.38",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [
@@ -72,6 +72,51 @@
         "small": "/drivers/guest-mode/assets/images/small.png",
         "large": "/drivers/guest-mode/assets/images/large.png",
         "xlarge": "/drivers/guest-mode/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
+    },
+    {
+      "id": "night-mode",
+      "name": {
+        "no": "Nattmodus",
+        "en": "Night mode"
+      },
+      "class": "other",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [
+        "onoff"
+      ],
+      "capabilitiesOptions": {
+        "onoff": {
+          "title": {
+            "no": "Nattmodus",
+            "en": "Night mode"
+          },
+          "preventInsights": true,
+          "zoneActivity": false
+        }
+      },
+      "images": {
+        "small": "/drivers/night-mode/assets/images/small.png",
+        "large": "/drivers/night-mode/assets/images/large.png",
+        "xlarge": "/drivers/night-mode/assets/images/xlarge.png"
       },
       "pair": [
         {
@@ -614,6 +659,47 @@
           "no": "Aktiver alarmsensor: [[sensor]] · [[mode]]",
           "en": "Enable alarm sensor: [[sensor]] · [[mode]]"
         }
+      },
+      {
+        "id": "environment_acknowledge",
+        "title": {
+          "no": "Kvitter brann- eller vannvarselet",
+          "en": "Acknowledge the fire or water notification"
+        },
+        "args": [
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            },
+            "values": [
+              {
+                "id": "fire",
+                "title": {
+                  "no": "Brann",
+                  "en": "Fire"
+                }
+              },
+              {
+                "id": "water",
+                "title": {
+                  "no": "Vann",
+                  "en": "Water"
+                }
+              }
+            ]
+          }
+        ],
+        "hint": {
+          "no": "Stopper gjentatte House Guard-varsler. Sensoralarm og fysiske røykvarslere avstilles ikke.",
+          "en": "Stops repeated House Guard notifications. Does not silence sensors or physical smoke alarms."
+        },
+        "titleFormatted": {
+          "no": "Kvitter brann- eller vannvarselet: [[type]]",
+          "en": "Acknowledge the fire or water notification: [[type]]"
+        }
       }
     ],
     "conditions": [
@@ -733,6 +819,43 @@
         "titleFormatted": {
           "no": "Leveringen er gyldig og passer denne koblingen: [[delivery_id]] · [[kind]] · [[person_id]] · [[target_id]] · [[notification_type]] · [[camera_id]] · [[text]] · [[expected_kind]] · [[expected_person]] · [[expected_target]] · [[expected_type]] · [[expected_camera]] · [[expected_text]]",
           "en": "The delivery is valid and matches this connection: [[delivery_id]] · [[kind]] · [[person_id]] · [[target_id]] · [[notification_type]] · [[camera_id]] · [[text]] · [[expected_kind]] · [[expected_person]] · [[expected_target]] · [[expected_type]] · [[expected_camera]] · [[expected_text]]"
+        }
+      },
+      {
+        "id": "environment_alarm_active",
+        "title": {
+          "no": "Brann- eller vannalarm er aktiv",
+          "en": "A fire or water alarm is active"
+        },
+        "args": [
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            },
+            "values": [
+              {
+                "id": "fire",
+                "title": {
+                  "no": "Brann",
+                  "en": "Fire"
+                }
+              },
+              {
+                "id": "water",
+                "title": {
+                  "no": "Vann",
+                  "en": "Water"
+                }
+              }
+            ]
+          }
+        ],
+        "titleFormatted": {
+          "no": "Brann- eller vannalarm er aktiv: [[type]]",
+          "en": "A fire or water alarm is active: [[type]]"
         }
       }
     ],
@@ -1162,6 +1285,168 @@
             ]
           }
         ]
+      },
+      {
+        "id": "environment_alarm_started",
+        "title": {
+          "no": "Brann- eller vannalarm starter",
+          "en": "A fire or water alarm starts"
+        },
+        "titleFormatted": {
+          "no": "[[type]]alarm starter",
+          "en": "A [[type]] alarm starts"
+        },
+        "args": [
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            },
+            "values": [
+              {
+                "id": "fire",
+                "title": {
+                  "no": "Brann",
+                  "en": "Fire"
+                }
+              },
+              {
+                "id": "water",
+                "title": {
+                  "no": "Vann",
+                  "en": "Water"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "incident_id",
+            "type": "string",
+            "title": {
+              "no": "Hendelse",
+              "en": "Incident"
+            }
+          },
+          {
+            "name": "type",
+            "type": "string",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            }
+          },
+          {
+            "name": "zone",
+            "type": "string",
+            "title": {
+              "no": "Rom",
+              "en": "Room"
+            }
+          },
+          {
+            "name": "sensor",
+            "type": "string",
+            "title": {
+              "no": "Sensor",
+              "en": "Sensor"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "no": "Alarm",
+              "en": "Alarm"
+            }
+          }
+        ],
+        "hint": {
+          "no": "Én gang per hendelse. Ekstra sensorer legges til den samme hendelsen.",
+          "en": "Once per incident. Additional sensors join the same incident."
+        }
+      },
+      {
+        "id": "environment_alarm_cleared",
+        "title": {
+          "no": "Sensorene melder ikke lenger brann- eller vannalarm",
+          "en": "Sensors no longer report a fire or water alarm"
+        },
+        "args": [
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            },
+            "values": [
+              {
+                "id": "fire",
+                "title": {
+                  "no": "Brann",
+                  "en": "Fire"
+                }
+              },
+              {
+                "id": "water",
+                "title": {
+                  "no": "Vann",
+                  "en": "Water"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "incident_id",
+            "type": "string",
+            "title": {
+              "no": "Hendelse",
+              "en": "Incident"
+            }
+          },
+          {
+            "name": "type",
+            "type": "string",
+            "title": {
+              "no": "Alarmtype",
+              "en": "Alarm type"
+            }
+          },
+          {
+            "name": "zone",
+            "type": "string",
+            "title": {
+              "no": "Rom",
+              "en": "Room"
+            }
+          },
+          {
+            "name": "sensor",
+            "type": "string",
+            "title": {
+              "no": "Sensor",
+              "en": "Sensor"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "no": "Alarm",
+              "en": "Alarm"
+            }
+          }
+        ],
+        "titleFormatted": {
+          "no": "Sensorene melder ikke lenger [[type]]alarm",
+          "en": "Sensors no longer report a [[type]] alarm"
+        }
       }
     ]
   }

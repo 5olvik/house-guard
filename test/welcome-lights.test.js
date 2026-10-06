@@ -172,9 +172,9 @@ test('Solar selection does not read an unused lux sensor, and preview uses the s
 });
 test('Capability subscriptions wait for a real connection and expose failures instead of silently losing events',async()=>{
   const c=defaults();c.welcome.doorDeviceId='sensor';const errors=[],events=[];let release,listener,created=0,refreshed=0;
-  const d={capabilities:['alarm_contact'],connect:()=>new Promise(resolve=>{release=resolve;}),makeCapabilityInstance:(id,fn)=>{created++;listener=fn;return {destroy(){}};}};
+  const d={id:'sensor',name:'Kontakt',zone:'Entré',capabilities:['alarm_contact'],capabilitiesObj:{alarm_contact:{value:false,type:'boolean',setable:false}},connect:()=>new Promise(resolve=>{release=resolve;}),makeCapabilityInstance:(id,fn)=>{created++;listener=fn;return {destroy(){}};}};
   const adapter=new HomeyAdapter({app:{error:text=>errors.push(text)}},()=>c);adapter.api={devices:{getDevice:async()=>d}};adapter.onSensor=(...args)=>events.push(args);adapter.onChange=()=>refreshed++;
   const subscribing=adapter.subscribe();await new Promise(resolve=>setImmediate(resolve));assert.equal(created,0);
-  release();await subscribing;listener(true);assert.deepEqual(events,[['sensor','alarm_contact',true]]);assert.equal(refreshed,1);
+  release();await subscribing;listener(true);assert.deepEqual(events[0].slice(0,3),['sensor','alarm_contact',true]);assert.equal(events[0][3].name,'Kontakt');assert.equal(events[0][3].available,true);assert.equal(refreshed,1);
   d.connect=async()=>{throw Error('connection failed');};await adapter.subscribe();assert.equal(adapter.instances.length,0);assert.equal(errors.length,1);assert.equal(created,1);
 });

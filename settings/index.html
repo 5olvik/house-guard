@@ -5,12 +5,15 @@
   <title>House Guard</title>
   <script src="/homey.js" data-origin="settings"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="environment.css">
   <script src="setup-model.js" defer></script>
   <script src="onboarding-model.js" defer></script>
   <script src="button-feedback.js" defer></script>
   <script src="setup-ui.js" defer></script>
   <script src="autosave.js" defer></script>
   <script src="alarm-ui.js" defer></script>
+  <script src="environment-model.js" defer></script>
+  <script src="environment-ui.js" defer></script>
   <script src="ui.js" defer></script>
 </head>
 <body>
@@ -26,10 +29,12 @@
     <button class="tab-btn hy-nostyle" data-tab="routines"><span class="tab-icon" aria-hidden="true">↻</span><span class="tab-label">Rutiner</span></button>
     <button class="tab-btn hy-nostyle" data-tab="security"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 17v-5a5 5 0 0 1 10 0v5M5 17h14v4H5zM12 2v2M3 5l2 2m16-2-2 2"/></svg></span><span class="tab-label">Alarm</span></button>
     <button class="tab-btn hy-nostyle" data-tab="people"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="8" cy="7" r="3"/><path d="M2 21v-2a6 6 0 0 1 12 0v2"/><circle cx="17" cy="8" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5v2"/></svg></span><span class="tab-label">Personer</span></button>
+    <button class="tab-btn hy-nostyle" data-tab="environment"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M9 2c1 5-5 6-5 11a6 6 0 0 0 10 4c2-4-1-7-2-9 0 3-2 3-2 3 1-4 0-6-1-9zM19 11c-1 3-3 4-3 7a3 3 0 0 0 6 0c0-3-2-4-3-7z"/></svg></span><span class="tab-label">Brann og vann</span></button>
     <button class="tab-btn hy-nostyle" data-tab="more"><span class="tab-icon" aria-hidden="true">•••</span><span class="tab-label">Innstillinger</span></button>
   </nav>
   <main>
     <section id="home" class="panel">
+      <div id="home-environment-alerts" hidden></div>
       <div id="setup-intro" class="card setup-intro" hidden><h2>Velkommen til House Guard</h2><p>Vi hjelper deg med beboere, alarm og rutinene du ønsker. Du kan stoppe underveis og fortsette senere.</p><div class="button-row"><button id="open-setup" class="hy-nostyle primary">Start oppsettet</button></div><p class="hint">Valgene dine lagres automatisk.</p></div>
       <div class="card hero" id="home-overview"><div class="section-heading"><span class="eyebrow">HUSET AKKURAT NÅ</span><span id="mode-badge" class="badge">Venter</span></div><div class="mode-line"><span id="mode-icon" aria-hidden="true">⌂</span><h2 id="mode-title">Ukjent</h2></div><p id="mode-reason">Venter på bekreftet tilstedeværelse.</p><div class="divider"></div><div class="row" id="guest-controls"><div><strong>Gjestemodus</strong><p class="hint">Gjester teller som hjemme. Alarmen holdes frakoblet, og borterutinen venter.</p></div><label class="switch"><input id="guest-toggle" type="checkbox" aria-label="Gjestemodus"><span></span></label></div><details><summary>Slik fungerer gjestemodus</summary><p class="hint">Er noen av dere hjemme, beholdes lysene som de er. Når dere drar, regnes huset fortsatt som bebodd. Slår du på gjestemodus mens alle er borte, brukes vanlig hjemkomst med valgte lys og automatisk opplåsing. Alarmen frakobles alltid.</p><p class="hint">Alle med «Motta pushvarsler» får beskjed når gjestemodus slås på eller av, og når siste beboer drar. Nattmodus venter mens gjestene er hjemme. Slå av gjestemodus når gjestene drar; er ingen andre hjemme, starter vanlig borterutine.</p></details></div>
       <div id="home-people" class="person-strip"></div>
@@ -49,6 +54,7 @@
       <div class="intro"><div><h2>Rutiner som passer huset</h2><p>Åpne en funksjon for å se innstillingene og velge hva som skal skje.</p></div></div>
       <div id="presence-routines" data-routine-list></div>
       <details class="card routine-settings" id="night-activation-settings"><summary>Aktivering av Nattmodus</summary><div class="details-body">
+        <p class="hint">Nattmodus kan også styres med en egen enhet i Homey: Legg til enhet → House Guard → Nattmodus. På starter nattmodus, av starter morgen. Bryteren følger husets status automatisk.</p>
         <fieldset><legend>Når starter natten?</legend>
           <p class="hint">Du kan alltid starte nattmodus fra Hjem eller en egen Flow.</p>
           <label class="check"><input type="checkbox" data-bind="night.automatic">Spør om nattmodus når huset er rolig</label>
@@ -175,6 +181,17 @@
       </div></details>
 
       </div>
+    </section>
+    <section id="environment" class="panel" hidden>
+      <div class="intro"><div><h2>Brann og vann</h2><p>Overvåking hele døgnet, også når innbruddsalarmen er av og gjester er hjemme.</p></div></div>
+      <div class="environment-tabs" role="tablist" aria-label="Brann- og vannoppsett">
+        <button class="hy-nostyle" type="button" id="environment-tab-overview" role="tab" data-environment-tab="overview" aria-controls="environment-panel-overview" aria-selected="true" tabindex="0">Oversikt</button>
+        <button class="hy-nostyle" type="button" id="environment-tab-sensors" role="tab" data-environment-tab="sensors" aria-controls="environment-panel-sensors" aria-selected="false" tabindex="-1">Sensorer</button>
+        <button class="hy-nostyle" type="button" id="environment-tab-responses" role="tab" data-environment-tab="responses" aria-controls="environment-panel-responses" aria-selected="false" tabindex="-1">Varsler og handlinger</button>
+      </div>
+      <div id="environment-panel-overview" data-environment-panel="overview" role="tabpanel" aria-labelledby="environment-tab-overview" tabindex="0"><div id="environment-overview"></div></div>
+      <div id="environment-panel-sensors" data-environment-panel="sensors" role="tabpanel" aria-labelledby="environment-tab-sensors" tabindex="0" hidden><div id="environment-sensors"></div></div>
+      <div id="environment-panel-responses" data-environment-panel="responses" role="tabpanel" aria-labelledby="environment-tab-responses" tabindex="0" hidden><div id="environment-responses"></div></div>
     </section>
     <section id="people" class="panel" hidden>
       <div class="intro"><div><h2>Hvem skal huset følge?</h2><p>Velg beboere og hvem som skal motta varsler.</p></div></div>

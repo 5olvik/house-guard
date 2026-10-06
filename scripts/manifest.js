@@ -22,13 +22,21 @@ const manifest = {
       { id: 'add_devices', template: 'add_devices' },
     ],
   },{
+    id:'night-mode',name:title('Nattmodus','Night mode'),class:'other',platforms:['local'],capabilities:['onoff'],
+    capabilitiesOptions:{onoff:{title:title('Nattmodus','Night mode'),preventInsights:true,zoneActivity:false}},
+    images:{small:'/drivers/night-mode/assets/images/small.png',large:'/drivers/night-mode/assets/images/large.png',xlarge:'/drivers/night-mode/assets/images/xlarge.png'},
+    pair:[{id:'list_devices',template:'list_devices',navigation:{next:'add_devices'},options:{singular:true}},{id:'add_devices',template:'add_devices'}],
+  },{
     id:'alarm-panel',name:title('Alarmpanel','Alarm panel'),class:'sensor',platforms:['local'],
-    capabilities:['homealarm_state','alarm_generic','alarm_status','button'],
-    capabilitiesOptions:{button:{title:title('Frakoble og avstill','Disarm and silence')},alarm_generic:{title:title('Utløst alarm','Alarm triggered'),zoneActivity:false}},
+    capabilities:['alarm_generic','alarm_status','button'],
+    capabilitiesOptions:{button:{title:title('Avstill alarm','Dismiss alarm')},alarm_generic:{title:title('Utløst alarm','Alarm triggered'),zoneActivity:false}},
     images:{small:'/drivers/alarm-panel/assets/images/small.png',large:'/drivers/alarm-panel/assets/images/large.png',xlarge:'/drivers/alarm-panel/assets/images/xlarge.png'},
     pair:[{id:'list_devices',template:'list_devices',navigation:{next:'add_devices'},options:{singular:true}},{id:'add_devices',template:'add_devices'}],
   }],
   api: {
+    alarmSounds: { method:'POST', path:'/alarm-sounds' },
+    testDirectConnection: { method:'POST', path:'/direct-test' },
+    saveApiKey: { method:'put', path:'/api-key' },
     checkIntegrationAccess: { method: 'POST', path: '/integration-access' },
     getState: { method: 'GET', path: '/state' }, getCatalog: { method: 'GET', path: '/catalog' },
     saveConfig: { method: 'PUT', path: '/config' }, validateConfig: { method: 'POST', path: '/validate' }, command: { method: 'POST', path: '/command' },
@@ -54,7 +62,9 @@ const manifest = {
   },
 };
 manifest.flow.triggers.push(...require('../lib/simple-flows').definitions());
+manifest.flow.triggers.push(require('../lib/scene-flows').definition,require('../lib/sleep-flows').definition);
 manifest.flow.actions.push(...require('../lib/sensor-flows').definitions());
+for (const [type, cards] of Object.entries(require('../lib/environment-flows').definitions())) manifest.flow[type].push(...cards);
 for (const cards of Object.values(manifest.flow)) for (const card of cards) {
   if (['integration_event','zone_idle','night_answer','delivery_result','delivery_matches','delivery_requested'].includes(card.id)) card.deprecated = true;
 }

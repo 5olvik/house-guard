@@ -12,7 +12,11 @@
     "entry": "Inngangsforsinkelse",
     "exit": "Utgangsforsinkelse",
     "disarmed": "Frakoblet",
-    "armed": "Bortealarm tilkoblet",
-    "partially_armed": "Nattalarm tilkoblet"
+    "armed": "Tilkoblet",
+    "partially_armed": "Delvis"
+  },
+  "night": {
+    "device_name": "Nattmodus",
+    "unavailable": "Venter på nattstatus fra House Guard. Prøver igjen automatisk."
   }
 }

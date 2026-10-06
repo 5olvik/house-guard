@@ -15,6 +15,16 @@ function fixture(){
  app.adapter.direct={ready:true,configured:true,call:async(fn,guard,onDispatch=()=>{})=>{guard();onDispatch();return fn(api);}};
  return {app,api,calls,store,receipts};
 }
+
+test('Brann- og vannkameratest bruker bare kameraene fra det valgte oppsettet, uten fysisk styring',async()=>{
+ const h=fixture();h.app.engine.config.observation=true;h.app.engine.config.environment.responses.water.imageDeviceIds=['water-camera','water-camera-2'];h.app.engine.config.environment.responses.fire.imageDeviceIds=['fire-camera'];
+ const result=await testDirect(h.app,'push',{notificationType:'image',environmentType:'water',imageDeviceId:'fire-camera'});
+ assert.equal(result.attemptedNotifications,4);assert.equal(h.calls.length,4);assert(h.calls.every(c=>c[0]==='push'&&/homey:device:water-camera(?:-2)?\|/.test(c[1].droptoken)));assert.equal(h.app.engine.config.observation,true);
+});
+
+test('Brann- og vanntest avviser ukjent alarmtype og tomt kamerautvalg',async()=>{
+ for(const type of ['arbitrary','fire','water']){const h=fixture();await assert.rejects(()=>testDirect(h.app,'push',{notificationType:'image',environmentType:type}));assert.equal(h.calls.length,0);}
+});
 test('Connection diagnostic invokes only the fixed no-op card',async()=>{const h=fixture();assert.deepEqual(await testDirect(h.app,'access'),{type:'access',executed:true});assert.equal(h.calls[0][1].id,'homey:app:no.husmodus:check_integration_access');await assert.rejects(()=>testDirect(h.app,'arbitrary'));});
 test('Flow diagnostic creates, starts, confirms and removes only its own temporary no-op flow',async()=>{const h=fixture();const r=await testDirect(h.app,'flow');assert(r.executed&&r.temporaryFlowRemoved);assert.deepEqual(h.calls.map(c=>c[0]),['create','trigger','delete']);assert.equal(h.calls[0][1].flow.actions.length,1);assert.equal(h.calls[0][1].flow.actions[0].id,'homey:app:no.husmodus:check_integration_access');assert.equal(h.store.get('houseguard.pending-test-flow.v1'),'');});
 test('Flow diagnostic cleans up after failed start or changed configuration',async()=>{for(const changed of [false,true]){const h=fixture();h.api.flow.triggerFlow=async()=>{throw Error('failed');};if(changed)h.api.flow.createFlow=async()=>{h.app.engine.state.generation++;return {id:'temporary-id'};};await assert.rejects(()=>testDirect(h.app,'flow'));assert.deepEqual(h.calls.at(-1),['delete',{id:'temporary-id'}]);assert(!h.app.directTestRunning);}});

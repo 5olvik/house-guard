@@ -6,6 +6,14 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veivi
 
 Versjon **0.4.35 er publisert på GitHub og i Homey App Stores testkanal (bygg 15)**, bekreftet 5. oktober 2026, og installert på Solviks Homey. Tilgjengelige knapper har tydelig oransje ramme, og valgt fane har mørk oransje bakgrunn. Knappen man trykker på viser spinner og ventetekst mens forespørselen pågår. Andre tilgjengelige knapper tones ikke ned samtidig, og utilgjengelige knapper har en egen grå stil. Eksisterende oppsett og nattfunksjoner er bevart. Se [alarmoppsett](docs/ALARM-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for hva som er verifisert.
 
+Lokalt er **0.4.38 installert på Solviks Homey**, bekreftet 6. oktober 2026. Etterkontroll bekrefter kjørende app, klar API-forbindelse og bevart oppsett, Flows, enheter og personstatus. Nye overvåkingsvalg er lagt til deaktivert. House Guard skriver automatisk én melding i Homeys tidslinje ved bekreftet oppvåkning fra nattmodus. Alarmstatusene heter **Frakoblet**, **Delvis** (nattalarm) og **Tilkoblet** (full bortealarm). Disse oppdateringene er foreløpig lokale; siste publiserte testversjon er fortsatt 0.4.35, bygg 15.
+
+En egen **Nattmodus-enhet med av/på-bryter** inngår i den lokale 0.4.38-installasjonen. Legg den til i Homey med **Legg til enhet → House Guard → Nattmodus**. På bruker vanlig nattstart, av bruker vanlig morgenstart, og status følger også automatikk og eksisterende Flows. Ingen enhet pares automatisk. Se [alarmoppsett](docs/ALARM-SETUP.md) for bruk og [teststatus](docs/TEST-REPORT.md) for kontrollene.
+
+En egen **Brann og vann-fane** inngår også i den lokale 0.4.38-installasjonen. Den har automatisk sensoroversikt, egen overvåking hele døgnet, vanlige/kritiske pushvarsler, kameraer og valgte handlinger, uavhengig av innbruddsalarm og husmodus. Oppsettet er av inntil brukeren velger sensorer og aktiverer det. Se [oppsett for brann og vann](docs/FIRE-WATER-SETUP.md).
+
+Brann og vann inkluderer en egen **kontroll av vannsensorenes rapportering**, med 24 timer som standard og samlet kontrollvarsel til valgte mottakere. Funksjonen krever ikke et eget HomeyScript eller en daglig Flow. En gammel måleverdi er en indikasjon, ikke bekreftet offline-status. Eksisterende script og Flows beholdes under utprøving; avklar overgangen før begge varslingsløsningene brukes samtidig.
+
 ## Funksjoner
 
 Nytt i 0.4.29: Velkomstlys kan bruke dørkontakt eller bevegelsessensor, med luxmåler eller perioden fra solnedgang til soloppgang. Forsiden har tydeligere lås- og portstatus. Sanntidshendelser for velkomstsensoren bevares, og en rask reserveavlesning erstatter mulig 30-sekunders venting ved tapte meldinger. Se [teststatus](docs/TEST-REPORT.md).
@@ -78,6 +86,8 @@ npm run preview
 Åpne http://127.0.0.1:4781/?demo=1. Demoen bruker fiktive personer og enheter, har ingen forbindelse til Homey og lagrer endringer bare i minnet.
 
 ## Status og begrensninger
+
+Den lokale 0.4.38-koden har bestått **479 tester**, kontroll av **101 JavaScript-filer** og Homey-validering på nivå `publish`. 69 kode-/GUI-/driver-/språkressurser i installasjonspakken samsvarer med kontrollert kilde. Installasjonen er bekreftet, men de nye funksjonenes mobilvisning, varsler og fysiske tiltak er ikke prøvd på Homey ennå.
 
 364 automatiserte tester, kodekontroll av 87 JavaScript-filer og Homey-validering på nivå `publish` består for 0.4.35. Versjonen er installert lokalt med helt uendret oppsett. Åtte nye tester dekker knappetilbakemelding, gjentatte trykk, feil, tilgjengelighet som endres under venting, avstilling mens tilkobling pågår og vern mot Homeys grå standardknapper. Tidligere tester for roperiode, nattspørsmål, ja-start, ubesvart frist, manuelt sovende beboere, nei-veto, aktivitetspulser, natt→bevegelsesmorgen og oppgradering består. Nye knappestiler, kontrast, fokus og redusert bevegelse er statisk kontrollert; ventelogikken er prøvd med falske DOM-knapper. Nettleser og fysisk telefon var ikke tilgjengelige for ny visuell kontroll. Mobilvisningen og automatisk lagring ble kontrollert ved 320/390 px med Homeys stilark i 0.4.31. Veiviseren, ekstra morgenhandlinger og person-, sensor- og Flow-valg er tidligere kontrollert i lokal demo. Testerens konkrete 30-sekunders forsinkelse er ikke gjenskapt på testerens Homey; faktisk lysrespons må bekreftes i eget oppsett. En uavhengig førstegangsbruker og den nyeste iPhone-visningen er ikke prøvd. Mobilmottak, lyd, sanntidshendelser, lås og port må prøves kontrollert i eget oppsett. Se [teststatus](docs/TEST-REPORT.md).
 

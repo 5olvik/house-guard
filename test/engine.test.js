@@ -133,11 +133,11 @@ test('Morgenlys krever valgt luxvilkår med fersk måling', async () => {
     h.device('lux', 'measure_luminance', lux, h.now() - age); h.ingest(); h.engine.morning('schedule'); await h.engine.tick(); assert.equal(h.calls.length, expected);
   }
 });
-test('Første oppvåkning frakobler bare alarmen og vekker ikke andre', async () => {
+test('Første oppvåkning frakobler alarmen, skriver tidslinje og vekker ikke andre', async () => {
   const h = harness(c => { c.security.alarmDeviceId = 'alarm'; add(c, 'morning', [step('scheduled-morning')]); });
   h.person('a', true, true); h.person('b', true, true); h.device('alarm', 'homealarm_state', 'partially_armed'); h.ingest();
   h.person('a', true, false); h.ingest(); await h.engine.tick();
-  assert.deepEqual(h.calls, [['set', 'alarm', 'homealarm_state', 'disarmed']]);
+  assert.deepEqual(h.calls, [['set', 'alarm', 'homealarm_state', 'disarmed'], ['timeline', 'House Guard: Huset har våknet. Nattmodus er avsluttet.']]);
   assert.equal(h.snapshot.people.b.asleep, true); assert.equal(h.engine.state.morningKey, '');
 });
 test('Samtidig oppvåkning og morgen deler en pågående frakobling', async () => {

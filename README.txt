@@ -1,5 +1,9 @@
 House Guard for Homey Pro. Use the setup wizard to select people and Homey Flows for home, away and night. Add guest mode as a switch in Homey.
 Create a Flow such as “Turn off all lights” in Homey, then select it in the wizard. Configure a Homey API key in the app to run Flows, mobile notifications, night questions and Sonos directly without helper Flows.
+
+Night mode can also be added as an on/off device in Homey. Turning it on starts the usual night routine, turning it off starts morning, and its status follows the app and automation. The alarm panel displays Disarmed, Partially armed or Armed. House Guard writes a timeline entry when the house wakes from night mode.
+
+Fire and water has a separate section for smoke/fire and water sensors. Select sensors, recipients, normal or critical push, cameras and optional actions for lights, Sonos, Flows, water shutoff or unlocking the door during a fire. Monitoring is independent of intrusion protection and house mode and stays off until configured. Reporting checks for selected water sensors use a 24-hour default and a separate technical notice, without a HomeyScript or daily Flow. Review existing fire and water Flows before enabling the same notifications or controls in the app.
 The wizard guides you through API key setup, residents, recipients, alarm and routines. Complete setup before the house is controlled, or pause and continue later. Notification tests can be sent before setup is complete.
 Test release. Physical effects and actual delivery still require testing. The settings interface is currently in Norwegian.
 

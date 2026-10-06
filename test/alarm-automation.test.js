@@ -85,12 +85,12 @@ test('Night-arrival switches, departed arrivals and observation prevent unwanted
   assert(!h.calls.some(c=>c[0]==='set'&&c[3]==='disarmed'),scenario);
  }
 });
-test('Scheduled and Flow-started mornings wake home residents only; external individual waking only disarms',async()=>{
+test('Scheduled and Flow-started mornings wake home residents only; external individual waking disarms and reports to timeline',async()=>{
  for(const scheduled of [true,false]){
   const h=harness(c=>{c.morning.scheduled=scheduled;c.morning.time='07:00';}, {},'2026-09-22T04:59:59Z');h.person('a',true,true);h.person('b',false,true);h.ingest();
   if(scheduled)h.advance(1000);else await h.engine.manual('morning');await h.engine.tick();assert.deepEqual(h.calls,[['person','b',false],['person','a',false]]);
  }
- const h=harness(c=>{c.security.alarmDeviceId=ID;});h.person('a',true,true);h.person('b',true,true);h.device(ID,'homealarm_state','partially_armed');h.ingest();h.person('a',true,false);h.ingest();await h.engine.tick();assert.deepEqual(h.calls,[['set',ID,'homealarm_state','disarmed']]);
+ const h=harness(c=>{c.security.alarmDeviceId=ID;});h.person('a',true,true);h.person('b',true,true);h.device(ID,'homealarm_state','partially_armed');h.ingest();h.person('a',true,false);h.ingest();await h.engine.tick();assert.deepEqual(h.calls,[['set',ID,'homealarm_state','disarmed'],['timeline','House Guard: Huset har våknet. Nattmodus er avsluttet.']]);
 });
 
 test('Manual morning works again after a new night on the same date, without duplicate runs',async()=>{
@@ -103,7 +103,7 @@ test('Manual morning works again after a new night on the same date, without dup
  await h.engine.tick();assert.deepEqual(h.calls,[['person','b',false],['set',ID,'homealarm_state','disarmed']]);
  h.device(ID,'homealarm_state','disarmed');await h.engine.tick();assert.deepEqual(h.calls.at(-1),['person','a',false]);
  h.person('a',true,false);h.ingest();await h.engine.tick();assert.equal(h.engine.state.mode,'home');
- assert.equal(h.calls.filter(c=>c[0]==='timeline').length,1);assert.equal(h.calls.filter(c=>c[0]==='person'&&c[1]==='b').length,1);
+ assert.deepEqual(h.calls.filter(c=>c[0]==='timeline').map(c=>c[1]).sort(),['House Guard: Huset har våknet. Nattmodus er avsluttet.','extra'].sort());assert.equal(h.calls.filter(c=>c[0]==='person'&&c[1]==='b').length,1);
  await h.engine.manual('morning');assert.equal(h.engine.runs.filter(r=>r.routineId==='morning').length,1);
  h.person('a',true,true);h.ingest();assert.equal(h.engine.morning('external'),true);
  h.advance(31000);await h.engine.tick();assert(!h.calls.some(c=>c[0]==='set'&&c[3]==='partially_armed'));

@@ -107,6 +107,7 @@
   function renderStatus() {
     const s = data.status;
     renderIntrusionStatus();
+    HouseGuardEnvironment.renderStatus(environmentContext());
     $('connection').textContent = demo ? 'DEMO · Kun eksempeldata. Ingen tilkobling til Homey eller huset.' : !s.connected ? 'Homey-data er utilgjengelige. Handlinger krever fersk, bekreftet tilstand.' : s.observation ? 'Fullfør oppsettet for å ta House Guard i bruk.' : '';
     $('connection').hidden=!demo && s.connected && !s.observation;
     $('connection').className = `banner ${!s.connected ? 'error' : s.observation ? 'warning' : 'ready'}`;
@@ -131,7 +132,7 @@
     const pending = $('pending-list'); pending.replaceChildren();
     let count = 0;
     for (const run of s.pending || []) for (const a of run.actions.filter(a => ['pending', 'checking', 'dispatching', 'sent', 'waiting'].includes(a.status))) {
-      count++; const row = el('div', undefined, 'action-row'); const copy = el('div', `${config.routines.find(r => r.id === run.routineId)?.name || run.routineId} · ${describeAction(a)}`, 'action-copy');
+      count++; const row = el('div', undefined, 'action-row'); const copy = el('div', `${config.routines.find(r => r.id === run.routineId)?.name || (run.routineId==='wakeNotice'?'Huset våkner':run.routineId)} · ${describeAction(a)}`, 'action-copy');
       copy.append(el('small', `${resultNames[a.status]} · ${new Date(run.dueAt + a.delaySeconds * 1000).toLocaleTimeString('nb-NO', { timeZone: config.timeZone })}`)); row.append(copy); pending.append(row);
     }
     if (!count) pending.append(el('p', 'Ingen handlinger venter.', 'empty')); $('pending-count').textContent = count;$('home-pending').hidden=!count;
@@ -365,6 +366,8 @@
   function renderAlarmResponses() {
     HouseGuardAlarm.render({root:$('alarm-responses'),config,data,el,options,deviceItems,changed:setDirty,api,flush,demo,renderRoutine:(id,onEnabledChange,executionOpen)=>renderRoutine(config.routines.find(r=>r.id===id),{inline:true,onEnabledChange,executionOpen})});
   }
+  function environmentContext() { return { config, data, el, options, changed:setDirty, api, flush, load, toast, demo }; }
+  function renderEnvironment() { HouseGuardEnvironment.render(environmentContext()); }
   function initializeAlarmTabs() {
     const tabs=[...document.querySelectorAll('[data-alarm-tab]')];
     function select(tab,focus=false) {
@@ -380,10 +383,10 @@
       };
     });
   }
-  function renderConfig() { document.querySelectorAll('[data-app-version]').forEach(node=>node.textContent=data.version || ''); renderAlarmResponses(); renderSetupEntry(); fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); renderConditionalFields(); renderAlarmChecklist(); }
+  function renderConfig() { document.querySelectorAll('[data-app-version]').forEach(node=>node.textContent=data.version || ''); renderAlarmResponses(); renderEnvironment(); renderSetupEntry(); fillBindings(); renderPeople(); renderRoutines(); renderIntegrations(); renderConnectionRecipes(); renderIntrusion(); renderConditionalFields(); renderAlarmChecklist(); }
   function renderIntrusionStatus() {
     const s=data.intrusion;if(!s)return;
-    const phase=s.active?'ALARM UTLØST':s.entryAt?'Inngangsforsinkelse':s.target?'Utgangsforsinkelse':{disarmed:'Frakoblet',armed:'Bortealarm tilkoblet',partially_armed:'Nattalarm tilkoblet'}[s.mode];
+    const phase=s.active?'ALARM UTLØST':s.entryAt?'Inngangsforsinkelse':s.target?'Utgangsforsinkelse':{disarmed:'Frakoblet',armed:'Tilkoblet',partially_armed:'Delvis'}[s.mode];
     const seconds=Math.max(0,Math.ceil(((s.entryAt || s.exitAt || 0)-Date.now())/1000));
     const disabled=s.disabledSensors || [],modeName=mode=>mode==='armed'?'full alarm':'nattalarm';
     const disabledText=disabled.length?'Deaktivert fra Flow: '+disabled.map(sensor=>`${data.catalog.devices[sensor.deviceId]?.name || sensor.name} (${modeName(sensor.mode)})`).join(', ')+'.':'';
@@ -502,6 +505,7 @@
   }
   async function initialize() {
     initializeAlarmTabs();
+    HouseGuardEnvironment.initializeTabs();
     wizard=HouseGuardWizard.create({el,api,flush,demo,read:()=>({config,data}),change:editConfig,replace:next=>{config=next;setDirty(true);renderConfig();},refresh:refreshSetup,reload:load,key:body=>updateApiKey(body,true),navigate:navigateGuide});
     bindEvents(); await load(true); if (homey) homey.ready();
     $('open-setup').onclick=()=>feedback.run($('open-setup'),()=>openSetup(),{label:'Åpner …'});$('reopen-setup').onclick=()=>feedback.run($('reopen-setup'),()=>openSetup('features'),{label:'Åpner …'});

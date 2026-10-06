@@ -5,6 +5,8 @@ const Engine = require('../lib/engine');
 const { defaults } = require('../lib/config');
 const { action } = require('../lib/plans');
 const root = path.resolve(__dirname, '..');
+const port = Number(process.env.HG_PREVIEW_PORT || 4781);
+if (!Number.isInteger(port) || port < 1024 || port > 65535) throw Error('Ugyldig lokal demoport');
 // Replay Homey's late stylesheet injection when checking the mobile settings layout.
 // The downloaded styles are private test artifacts, excluded from Homey packages.
 const homeyStyles = process.argv.includes('--homey-styles')
@@ -32,6 +34,10 @@ const devices = Object.fromEntries([
   ['demo-port', 'Portstatus', 'Garasje', { alarm_contact: cap(false, 'boolean', false, 'Åpen port') }],
   ['demo-sonos', 'Sonos Arc', 'Stue', { speaker_playing: cap(false, 'boolean', true, 'Avspilling') }],
 ].map(([id, name, zone, capabilities]) => [id, { id, name, zone, available: true, capabilities }]));
+devices['demo-smoke']={id:'demo-smoke',name:'Røykvarsler',zone:'Soverom',available:true,class:'sensor',capabilities:{alarm_smoke:cap(false,'boolean',false,'Røykalarm'),test_mode:cap(false,'boolean',false,'Testmodus'),measure_temperature:cap(22,'number',false,'Temperatur'),measure_battery:cap(95,'number',false,'Batteri')}};
+devices['demo-water']={id:'demo-water',name:'Ny vannsensor',zone:'Bad',available:true,class:'sensor',capabilities:{alarm_water:cap(null,'boolean',false,'Vannalarm'),measure_temperature:cap(23,'number',false,'Temperatur'),measure_battery:cap(90,'number',false,'Batteri')}};
+devices['demo-valve']={id:'demo-valve',name:'Vannstyring',zone:'Teknisk',available:true,class:'socket',capabilities:{onoff:cap(true,'boolean',true,'Av / på')}};
+devices['demo-sonos'].driverId='homey:app:com.sonos:speaker';
 devices['demo-lights'].class = 'light';
 devices['demo-extra-light'] = require('../lib/homey-adapter').normalizedDevice({id:'demo-extra-light',name:'Downlights soverom',zone:'Soverom 2etg',class:'socket',virtualClass:'light',capabilitiesObj:{onoff:{value:false,type:'boolean',setable:true},dim:{value:0,type:'number',setable:true}}});
 for(const [id,name,zone] of [['demo-camera-1','Garasje','Garasje'],['demo-camera-2','Inngang','Entré'],['demo-camera-3','Hage','Ute']])devices[id]={id,name,zone,class:'camera',available:true,capabilities:{},images:[{id:'snapshot',type:'camera'}]};
@@ -41,16 +47,19 @@ const snapshot = async () => { if(intrusion)devices[ALARM_ID]=intrusion.device()
 const reject = async () => { throw new Error('Demomodus har ingen sideeffekter'); };
 const engine = new Engine({ config, clock, adapter: { snapshot, set: reject, setAsleep: reject, emit: reject, timeline: reject, startFlow: reject } });
 intrusion=new Intrusion({config:engine.config,clock,emit:(type,payload)=>{engine.snapshot.devices[ALARM_ID]=intrusion.device();engine.event(type,payload);}});
-const refresh=async(flags={})=>{const s=await snapshot();intrusion.update(s);s.devices[ALARM_ID]=intrusion.device();devices[ALARM_ID]=intrusion.device();engine.ingest(s,flags);};
+// All delivery methods reject in this loopback-only demo. Synthetic hazard
+// scenarios can still show the real independent incident lifecycle.
+const environment=new(require('../lib/environment'))({getConfig:()=>({...engine.config,observation:false}),clock,adapter:engine.adapter,log:(...args)=>engine.log(...args)});
+const refresh=async(flags={})=>{const s=await snapshot();intrusion.update(s);environment.update(s);s.devices[ALARM_ID]=intrusion.device();devices[ALARM_ID]=intrusion.device();engine.ingest(s,flags);};
 engine.log('Demo startet. Ingen forbindelse til huset.', { result: 'observed' });
 async function start() {
   await refresh({ initial: true });
   const server = http.createServer(async (req, res) => {
     try {
       const host = req.headers.host || '';
-      if (!['127.0.0.1:4781', 'localhost:4781'].includes(host)) throw new Error('Ugyldig vert');
-      if (req.headers.origin && !['http://127.0.0.1:4781', 'http://localhost:4781'].includes(req.headers.origin)) throw new Error('Ugyldig opprinnelse');
-      const url = new URL(req.url, 'http://127.0.0.1:4781');
+      if (!['127.0.0.1:'+port, 'localhost:'+port].includes(host)) throw new Error('Ugyldig vert');
+      if (req.headers.origin && !['http://127.0.0.1:'+port, 'http://localhost:'+port].includes(req.headers.origin)) throw new Error('Ugyldig opprinnelse');
+      const url = new URL(req.url, 'http://127.0.0.1:'+port);
       let body = {};
       if (['PUT', 'POST'].includes(req.method)) {
         let raw = ''; for await (const chunk of req) { raw += chunk; if (raw.length > 1000000) throw new Error('For stor forespørsel'); }
@@ -60,18 +69,20 @@ async function start() {
       if (url.pathname === '/_preview/homey.css' && homeyStyles) {
         res.setHeader('Content-Type','text/css; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(homeyStyles);return;
       }
-      if (url.pathname === '/api/state') output = { version:require('../app.json').version, controls:require('../lib/manual-controls').status(engine), sleepConnections:require('../lib/sleep-flows').selected(engine.config), intrusion:intrusion.status(), config: engine.config, status: engine.status(), catalog: catalogue, readiness:require('../lib/readiness')(engine.config,engine.snapshot,catalogue,engine.state,clock()), builtins:Object.fromEntries(engine.config.routines.map(r => [r.id,require('../lib/plans').builtins(r.id,engine.config,{},engine.facts())])) };
+      if (url.pathname === '/api/state') output = { version:require('../app.json').version, environment:environment.status(), controls:require('../lib/manual-controls').status(engine), sleepConnections:require('../lib/sleep-flows').selected(engine.config), intrusion:intrusion.status(), config: engine.config, status: engine.status(), catalog: catalogue, readiness:require('../lib/readiness')(engine.config,engine.snapshot,catalogue,engine.state,clock()), builtins:Object.fromEntries(engine.config.routines.map(r => [r.id,require('../lib/plans').builtins(r.id,engine.config,{},engine.facts())])) };
       else if (url.pathname === '/api/preview' && req.method === 'POST') output = require('../lib/preview')(engine,body.id,body.config,catalogue,await snapshot());
       else if (url.pathname === '/api/catalog') output = catalogue;
       else if (url.pathname === '/api/validate' && req.method === 'POST') output = require('../lib/config').validate(body);
       else if (url.pathname === '/api/config' && req.method === 'PUT') {
         if (body.revision !== engine.config.revision) throw new Error('Konfigurasjonen ble endret. Last siden på nytt.');
         if (!body.observation) throw new Error('Denne demonstrasjonen bruker alltid observasjonsmodus.');
-        intrusion.checkConfig(body); output = engine.updateConfig(body); intrusion.configure(output); await refresh({ reconnect: true });
+        intrusion.checkConfig(body); output = engine.updateConfig(body); intrusion.configure(output); environment.configure(); await refresh({ reconnect: true });
       } else if (url.pathname === '/api/command' && req.method === 'POST') {
         if(body.type==='alarm') {intrusion.mode(body.mode,await snapshot());await refresh();}
         else if(body.type==='alarm-test') {if(!intrusion.config.security.intrusion.sensors.some(s=>s.deviceId===body.deviceId && s.capability===body.capability))throw Error('Ukjent sensor');const s=await snapshot();s.devices[body.deviceId].capabilities[body.capability].value=true;intrusion.update(s);}
         else if(body.type==='control') await require('../lib/manual-controls').run(engine,body.target,body.value);
+        else if(body.type==='environment-ack') environment.acknowledge(body.id);
+        else if(body.type==='environment-health-ack') environment.waterHealth.acknowledge(body.id);
         else if (body.type === 'mode') await engine.manual(body.mode);
         else if (body.type === 'guest') engine.setGuest(body.value);
         else if (body.type === 'skip') engine.skipNight();
@@ -86,11 +97,12 @@ async function start() {
         else if (body.scenario === 'advance') offset += 60000;
         else if (body.scenario === 'alarm') { intrusion.mode('armed',await snapshot()); devices['demo-door'].capabilities.alarm_contact.value=true; }
         else if (body.scenario === 'alarmOff') { intrusion.mode('disarmed',await snapshot()); devices['demo-door'].capabilities.alarm_contact.value=false; }
+        else if (['fire','water','fireOff','waterOff'].includes(body.scenario)) {const fire=body.scenario.startsWith('fire'),id=fire?'demo-smoke':'demo-water',cap=fire?'alarm_smoke':'alarm_water';devices[id].capabilities[cap].value=!body.scenario.endsWith('Off');environment.update(await snapshot());environment.tick();}
         else throw new Error('Ukjent scenario');
         engine.ingest(await snapshot()); await engine.tick(); output = engine.status();
       } else {
         const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        if (!['index.html', 'ui.js', 'alarm-ui.js', 'button-feedback.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
+        if (!['index.html', 'ui.js', 'alarm-ui.js', 'environment-ui.js', 'environment-model.js', 'environment.css', 'button-feedback.js', 'style.css', 'setup-model.js', 'onboarding-model.js', 'setup-ui.js', 'autosave.js', 'homey.js'].includes(filename)) { res.writeHead(404); res.end(); return; }
         if (filename === 'homey.js') { res.setHeader('Content-Type', 'application/javascript'); res.end(homeyStyles
           ? "window.addEventListener('load',()=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/_preview/homey.css';document.head.append(link);});"
           : '/* Local preview: Homey bridge intentionally absent. */'); return; }
@@ -101,9 +113,9 @@ async function start() {
       res.setHeader('Content-Type', 'application/json'); res.setHeader('Cache-Control', 'no-store'); res.end(JSON.stringify(output));
     } catch (error) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: error.message })); }
   });
-  server.listen(4781, '127.0.0.1', () => console.log('Demo: http://127.0.0.1:4781/?demo=1'));
+  server.listen(port, '127.0.0.1', () => console.log('Demo: http://127.0.0.1:'+port+'/?demo=1'));
   const tick = setInterval(async () => {await refresh();await engine.tick();}, 1000);
-  const stop = () => { clearInterval(tick); server.close(); };
+  const stop = () => { environment.close(); clearInterval(tick); server.close(); };
   process.on('SIGTERM', stop); process.on('SIGINT', stop);
 }
 start().catch(error => { console.error(error); process.exitCode = 1; });

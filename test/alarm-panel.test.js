@@ -25,13 +25,13 @@ function setup(){
 }
 test('Existing alarm panels migrate to status and dismiss only without sending mode commands',async()=>{
  const s=setup();await s.device.onInit();assert.deepEqual(s.device.removed,['homealarm_state']);assert.deepEqual(Object.keys(s.device.listeners),['button']);assert.deepEqual(s.calls,[]);
- assert.equal(s.device.values.alarm_status,'Nattalarm tilkoblet');assert.equal(s.device.options.button.title.no,'Avstill alarm');
+ assert.equal(s.device.values.alarm_status,'Delvis');assert.equal(s.device.options.button.title.no,'Avstill alarm');
  const driver=manifest.drivers.find(d=>d.id==='alarm-panel');assert.deepEqual([...s.device.capabilities],driver.capabilities);assert.equal(manifest.capabilities.alarm_status.setable,false);
  s.device.onUninit();await s.device.onInit();assert.equal(s.device.removed.length,1);assert.deepEqual(s.calls,[]);
 });
 test('Panel keeps live mode, delay, triggering sensor and fault status without exposing arming',async()=>{
  const s=setup();await s.device.onInit();
- for(const [change,text]of [[{mode:'armed'},'Bortealarm tilkoblet'],[{mode:'disarmed',target:'armed'},'Utgangsforsinkelse'],[{target:null,entryAt:123},'Inngangsforsinkelse'],[{entryAt:null,active:true,context:{reason:'Ytterdør åpnet'}},'Alarm utløst · Ytterdør åpnet']]){
+ for(const [change,text]of [[{mode:'armed'},'Tilkoblet'],[{mode:'disarmed',target:'armed'},'Utgangsforsinkelse'],[{target:null,entryAt:123},'Inngangsforsinkelse'],[{entryAt:null,active:true,context:{reason:'Ytterdør åpnet'}},'Alarm utløst · Ytterdør åpnet']]){
   Object.assign(s.state,change);s.app.emit('intrusion_changed');await s.device.queue;assert.equal(s.device.values.alarm_status,text);
  }
  s.state.faults=['Sensor utilgjengelig'];await s.device.sync();assert.match(s.device.values.alarm_status,/Sensor utilgjengelig/);assert.equal(s.device.values.alarm_generic,true);assert.deepEqual(s.calls,[]);

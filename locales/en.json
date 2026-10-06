@@ -12,7 +12,11 @@
     "entry": "Entry delay",
     "exit": "Exit delay",
     "disarmed": "Disarmed",
-    "armed": "Away alarm armed",
-    "partially_armed": "Night alarm armed"
+    "armed": "Armed",
+    "partially_armed": "Partially armed"
+  },
+  "night": {
+    "device_name": "Night mode",
+    "unavailable": "Waiting for night mode from House Guard. Retrying automatically."
   }
 }

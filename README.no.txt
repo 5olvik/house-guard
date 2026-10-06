@@ -1,5 +1,9 @@
 House Guard for Homey Pro. Bruk veiviseren til å velge personer og Homey-flows for hjemme, borte og natt. Gjestemodus kan legges til som en bryter i Homey.
 Lag for eksempel «Slå av alle lys» i Homey og velg den i veiviseren. Legg inn en Homey API-nøkkel i appen for å kjøre flows, mobilvarsler, nattspørsmål og Sonos direkte uten hjelpeflows.
+
+Nattmodus kan også legges til som en av/på-enhet i Homey. På starter vanlig nattmodus, av starter morgen, og status følger appen og automatikk. Alarmpanelet viser Frakoblet, Delvis eller Tilkoblet. House Guard skriver en tidslinjemelding når huset våkner fra nattmodus.
+
+Brann og vann har en egen fane for røyk-/brannvarslere og vannsensorer. Velg sensorer, mottakere, vanlig eller kritisk push, kameraer og eventuelle handlinger for lys, Sonos, Flows, vannstenging eller døropplåsing ved brann. Overvåkingen er uavhengig av innbruddsalarm og husmodus og er av til du setter den opp. Valgte vannsensorers rapportering kan kontrolleres med 24 timer som standard og eget kontrollvarsel, uten HomeyScript eller daglig Flow. Gjennomgå gamle brann- og vannflows før samme varsling eller styring tas i bruk i appen.
 Veiviseren hjelper deg med API-nøkkel, beboere, mottakere, alarm og rutiner. Fullfør oppsettet før huset styres; du kan stoppe underveis og fortsette senere. Varsler kan prøves før oppsettet er ferdig.
 Testversjon. Fysisk virkning og faktisk levering må fortsatt testes på Homey.
 

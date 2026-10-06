@@ -1,0 +1,13 @@
+/* A sixth section keeps full button labels readable on narrow Homey webviews. */
+.tab-bar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.environment-tabs{display:grid;grid-template-columns:1fr 1fr 1.8fr;gap:6px;margin-bottom:18px}
+.environment-tabs button{min-width:0;padding:10px 5px;font-size:12px;white-space:normal}
+.environment-tabs button[aria-selected=true]{background:var(--brand-soft);color:var(--brand);border-color:var(--brand)}
+[data-environment-panel]:focus-visible{outline:2px solid var(--brand);outline-offset:4px;border-radius:var(--radius)}
+.environment-sensor{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--border-light);font-weight:400}
+.environment-sensor>div{min-width:0;overflow-wrap:anywhere}.environment-sensor input{margin:2px 0 0}.environment-sensor small{display:block;margin-top:5px;font-size:12px;line-height:1.6}
+.environment-incident{border:2px solid var(--error);background:#fff3f1}.environment-incident h2{color:var(--error)}.environment-incident p{overflow-wrap:anywhere}
+.environment-maintenance{border:1px solid #efdfc5;background:#fff5e8}.environment-maintenance h2{color:var(--warning)}.water-health-settings{margin-top:18px;padding-top:14px;border-top:1px solid var(--border-light)}.water-health-settings>.form-grid{margin-top:14px}
+#environment-responses .response-part{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light)}
+#environment-responses .response-part>summary{font-size:13px;margin-bottom:12px}#environment-responses .form-grid{margin:12px 0}#environment-responses .row{margin:10px 0;flex-wrap:wrap}
+@media(max-width:620px){.tab-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.tab-bar .tab-label{font-size:12px;overflow-wrap:normal}.environment-tabs{grid-template-columns:1fr 1fr}.environment-tabs button:last-child{grid-column:1/-1}}

@@ -10,6 +10,6 @@ for (const file of files) {
 const { defaults, validate } = require('../lib/config'); validate(defaults());
 const manifest = JSON.parse(fs.readFileSync('app.json')), api = require('../api');
 for (const method of Object.keys(manifest.api)) if (typeof api[method] !== 'function') throw new Error(`Mangler API-handler: ${method}`);
-if (manifest.id === 'no.powerguard' || manifest.drivers?.some(driver => !['guest-mode','alarm-panel'].includes(driver.id)) || manifest.widgets) throw new Error('Gammel app-identitet eller aktive energikomponenter');
+if (manifest.id === 'no.powerguard' || manifest.drivers?.some(driver => !['guest-mode','alarm-panel','night-mode'].includes(driver.id)) || manifest.widgets) throw new Error('Gammel app-identitet eller aktive energikomponenter');
 if (manifest.version !== require('../package.json').version) throw new Error('App- og pakkeversjon er ulike');
 console.log(`${files.length} JavaScript-filer, standardoppsett og API-koblinger kontrollert.`);
