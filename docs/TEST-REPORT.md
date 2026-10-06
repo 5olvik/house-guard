@@ -1,10 +1,12 @@
-# Lokal installasjon 0.4.38 – bekreftet
+# House Guard 0.4.38 – installasjon og testpublisering bekreftet
+
+**0.4.38 er publisert på GitHub main og i Homey App Stores testkanal som bygg 16**, bekreftet 6. oktober 2026. Kildecommit 226bafb inkluderer alle endringer fra 0.4.36–38. Én opplasting fullførte med exit 0; App Store-API bekreftet draft → test kl. 13:52 norsk tid. Ingen ordinær utgivelse eller ny innsendelse til vurdering. [Installer fra testkanalen](https://homey.app/a/no.husmodus/test/). Publiseringsfasen endret bare butikkbeskrivelse, endringslogg og dokumentasjon; den installerte runtime-koden er bevart.
 
 Kontrollert 6. oktober 2026 etter brukerens installasjonsbestilling. **House Guard 0.4.38 er bygget og installert på Solviks Homey uten --clean** (5.65 MB, 732 filer). Homey publish-validering, kodekontroll av 101 JavaScript-filer, diff-kontroll og skann av 137 offentlige filer uten funn består. 69 pakkede kilde-/GUI-/driver-/språkressurser samsvarer med kontrollert kilde. Den siste fullstendige testkjøringen bestod **479/479 tester**; installasjonsfasen endret bare versjonsmetadata og dokumentasjon.
 
 Fersk før-/etterkontroll bekrefter kjørende 0.4.38, forbindelse og klar API. Konfigurasjonen tilsvarer nøyaktig forventet migrering: revisjon 146 til 147 med nye deaktiverte Brann og vann-valg. Alle tidligere innstillinger, 22 komplette standardflows, 31 komplette Advanced Flows, to paringer, personstatus, sensorunntak, bortemodus, full tilkoblet alarm og gjester av er bevart. Kildehash/navn/versjon for eksisterende Vannsensor24t-script er uendret. Ingen miljøalarm, kontrollvarsel eller handlingsbatch ble opprettet. Ingen gammel morgenmelding ble spilt av.
 
-Nattmodus-driveren er med og kan legges til av brukeren; ingen ny enhet er automatisk paret. Brann og vann må settes opp og aktiveres av brukeren. Ingen fysisk sensor-/enhets-/Flow-/telefonprøve er sendt under installasjonen. Mobil/webview, nye varsler og fysiske tiltak gjenstår å prøve kontrollert. **GitHub og App Store er ikke oppdatert; siste publiserte testversjon er fortsatt 0.4.35/bygg 15.** De følgende avsnittene beskriver de tidligere kodefasene og deres tester.
+Nattmodus-driveren er med og kan legges til av brukeren; ingen ny enhet er automatisk paret. Brann og vann må settes opp og aktiveres av brukeren. Ingen fysisk sensor-/enhets-/Flow-/telefonprøve er sendt under installasjon eller publisering. Mobil/webview, nye varsler og fysiske tiltak gjenstår å prøve kontrollert. De følgende avsnittene beskriver de tidligere kodefasene og deres tester.
 
 ## Kontroll av vannsensorer – kodefasen før 0.4.38
 
@@ -26,7 +28,7 @@ Overvåkingen har egen hendelsesmotor og sanntidsinngang, uavhengig av husmodus,
 
 Ingen nettleser er tilgjengelig i denne økten for visuell mobilkontroll. Menyen bruker tre kolonner på smale skjermer, og underfanene har tastatur-/ARIA-styring som er funksjonstestet. DOM-testene bekrefter ikke faktiske piksler, Homeys webview eller fysiske alarm-/telefon-/kamera-/enhetsfunksjoner. Dette må kontrolleres ved en senere bestilt installasjon. Ingen faktiske meldinger, sensortester, lås-/lys-/lyd-/vannkommandoer eller Flow-handlinger er sendt på Homey i dette arbeidet.
 
-Etter brukerens føring ble denne fasen avsluttet med **kun lokale kildekodeendringer**, sammen med Nattmodus-enheten, med versjon 0.4.37. Begge inngår nå i den bestilte lokale installasjonen av 0.4.38. GitHub/App Store er fortsatt 0.4.35/bygg 15. Se [oppsettet](FIRE-WATER-SETUP.md).
+Etter brukerens føring ble denne fasen avsluttet med **kun lokale kildekodeendringer**, sammen med Nattmodus-enheten, med versjon 0.4.37. Begge inngår nå i installert og testpublisert 0.4.38/bygg 16. Se [oppsettet](FIRE-WATER-SETUP.md).
 
 ## Nattmodus-enhet – klargjort i kode
 
