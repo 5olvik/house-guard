@@ -1,6 +1,6 @@
 {
   "id": "no.husmodus",
-  "version": "0.4.38",
+  "version": "0.4.39",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "platforms": [

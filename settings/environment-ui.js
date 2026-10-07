@@ -3,6 +3,27 @@ window.HouseGuardEnvironment = (() => {
   const model = HouseGuardEnvironmentModel, types = { fire: 'Brann', water: 'Vann' }, sounds = new Map(), acknowledging = new Set();
   let testing = false;
   const $ = id => document.getElementById(id);
+  function sensorGroups(sensors) {
+    const groups = new Map();
+    for (const sensor of sensors) {
+      const id = JSON.stringify([sensor.deviceId, sensor.kind]);
+      if (!groups.has(id)) groups.set(id, { ...sensor, id, members: [] });
+      groups.get(id).members.push(sensor);
+    }
+    return [...groups.values()].map(group => {
+      const selected = group.members.filter(sensor => sensor.selected).length;
+      return { ...group, selected: selected === group.members.length, partial: selected > 0 && selected < group.members.length };
+    });
+  }
+  function sensorStatus(group) {
+    const active = group.members.filter(sensor => sensor.value === true);
+    if (active.length) return { text: [...new Set(active.map(sensor => model.reason(sensor.capability)))].join(' · '), className: 'error' };
+    if (group.members.some(sensor => sensor.available === false)) return {
+      text: group.members.every(sensor => sensor.available === false) ? 'Utilgjengelig' : 'Én eller flere alarmtyper er utilgjengelige', className: 'missing',
+    };
+    if (group.members.every(sensor => sensor.value === false)) return { text: 'Ingen alarm', className: '' };
+    return { text: group.members.some(sensor => sensor.value === false) ? 'Ukjent status for én eller flere alarmtyper' : model.label(group.members[0]), className: '' };
+  }
   function jump(part) { document.querySelector('[data-tab="environment"]').click(); document.querySelector('[data-environment-tab="' + part + '"]').click(); }
   function initializeTabs() {
     const tabs = [...document.querySelectorAll('[data-environment-tab]')];
@@ -21,8 +42,18 @@ window.HouseGuardEnvironment = (() => {
   }
   function render(ctx) {
     const { config, data, el, options, changed, api, flush, load, toast, demo } = ctx, c = config.environment;
-    const choices = () => model.discover(data.catalog, c.sensors, data.environment?.sensors || []);
+    const groups = sensorGroups(model.discover(data.catalog, c.sensors, data.environment?.sensors || []));
     const rerender = () => render(ctx);
+    const selectSensors = sensors => {
+      const selected = new Set(c.sensors.map(model.key)), missing = [];
+      for (const sensor of sensors) if (!selected.has(model.key(sensor))) {
+        selected.add(model.key(sensor)); missing.push({ deviceId: sensor.deviceId, capability: sensor.capability });
+      }
+      if (c.sensors.length + missing.length > 100) {
+        toast('Du kan velge høyst 100 alarmtyper. Velg færre sensorer før du legger til denne gruppen.'); return false;
+      }
+      c.sensors.push(...missing); return true;
+    };
     const devices = Object.values(data.catalog.devices || {});
     const speakers = devices.filter(d => d.driverId?.includes('sonos')).map(d => ({ id: d.id, label: d.name + ' · ' + d.zone }));
     const lights = devices.filter(d => d.class === 'light' && d.capabilities?.onoff?.setable && ![config.security.lockDeviceId, config.security.garage.commandDeviceId].includes(d.id));
@@ -62,18 +93,23 @@ window.HouseGuardEnvironment = (() => {
     const sensors = $('environment-sensors'); sensors.replaceChildren();
     const introduction = el('div', undefined, 'card'); introduction.append(el('h2', 'Velg sensorer'), el('p', 'Kompatible sensorer finnes automatisk. Temperatur og batteri vises som informasjon. Røyk-, brann-, varme- og vannalarm er det som utløser varsler.', 'hint')); sensors.append(introduction);
     for (const type of Object.keys(types)) {
-      const card = el('div', undefined, 'card'), items = choices().filter(s => s.kind === type); sensors.append(card);
+      const card = el('div', undefined, 'card'), items = groups.filter(s => s.kind === type); sensors.append(card);
       card.append(el('h2', type === 'fire' ? 'Røyk og brann' : 'Vannlekkasje'));
+      if (type === 'fire') card.append(el('p', 'Hver enhet vises én gang. Når du velger enheten, overvåkes alle alarmtypene den støtter.', 'hint'));
+      if (items.some(sensor => sensor.partial)) card.append(el('p', 'Noen alarmtyper er valgt fra før. Kryss av enheten for å overvåke alle.', 'hint'));
       const selectAll = el('button', 'Velg alle i denne gruppen'); selectAll.disabled = !items.length;
-      selectAll.onclick = () => { for (const sensor of items) if (!c.sensors.some(s => model.key(s) === model.key(sensor)) && c.sensors.length < 100) c.sensors.push({ deviceId: sensor.deviceId, capability: sensor.capability }); changed(true); rerender(); }; card.append(selectAll);
+      selectAll.onclick = () => { if (selectSensors(items.flatMap(sensor => sensor.members))) changed(true); rerender(); }; card.append(selectAll);
       for (const sensor of items) {
-        const row = el('label', undefined, 'environment-sensor'), check = el('input'), copy = el('div'); check.type = 'checkbox'; check.checked = sensor.selected;
+        const row = el('label', undefined, 'environment-sensor'), check = el('input'), copy = el('div'); check.type = 'checkbox'; check.checked = sensor.selected; check.indeterminate = sensor.partial;
         copy.append(el('strong', sensor.name + ' · ' + sensor.zone));
-        const status = el('small'); status.dataset.environmentSensor = model.key(sensor); copy.append(status); row.append(check, copy); card.append(row);
+        const status = el('small'); status.dataset.environmentSensor = sensor.id; copy.append(status); row.append(check, copy); card.append(row);
         check.onchange = () => {
-          const index = c.sensors.findIndex(s => model.key(s) === model.key(sensor));
-          if (check.checked && index < 0 && c.sensors.length < 100) c.sensors.push({ deviceId: sensor.deviceId, capability: sensor.capability });
-          else if (!check.checked && index >= 0) c.sensors.splice(index, 1);
+          if (check.checked) {
+            if (!selectSensors(sensor.members)) { rerender(); return; }
+          } else {
+            const keys = new Set(sensor.members.map(model.key));
+            for (let i = c.sensors.length - 1; i >= 0; i--) if (keys.has(model.key(c.sensors[i]))) c.sensors.splice(i, 1);
+          }
           if (!c.sensors.length) c.enabled = false;
           changed(true); rerender();
         };
@@ -169,12 +205,15 @@ window.HouseGuardEnvironment = (() => {
   function renderStatus(ctx) {
     const { data, config, el, api, flush, load, toast } = ctx, status = data.environment || { incidents: [], batches: [], sensors: [] };
     const selected = model.discover(data.catalog, config.environment.sensors, status.sensors || []), byKey = new Map(selected.map(s => [model.key(s), s]));
+    const grouped = new Map(sensorGroups(selected).map(sensor => [sensor.id, sensor]));
+    const sensorCount = new Set(config.environment.sensors.map(sensor => sensor.deviceId)).size;
     const text = $('environment-monitoring-state');
-    if (text) text.textContent = !config.environment.enabled ? 'Overvåkingen er av. ' + config.environment.sensors.length + ' sensorfunksjoner valgt.' : status.observing ? 'Sensorene er valgt. Fullfør grunnoppsettet før varsler og handlinger aktiveres.' : 'Overvåker ' + config.environment.sensors.length + ' sensorfunksjoner hele døgnet.';
+    if (text) text.textContent = !config.environment.enabled ? 'Overvåkingen er av. ' + sensorCount + ' sensorer valgt.' : status.observing ? 'Sensorene er valgt. Fullfør grunnoppsettet før varsler og handlinger aktiveres.' : 'Overvåker ' + sensorCount + ' sensorer hele døgnet.';
     for (const node of document.querySelectorAll('[data-environment-sensor]')) {
-      const sensor = byKey.get(node.dataset.environmentSensor); if (!sensor) continue;
-      node.textContent = [model.label(sensor), typeof sensor.temperature === 'number' ? sensor.temperature + ' °C' : '', typeof sensor.battery === 'number' ? 'Batteri ' + sensor.battery + ' %' : ''].filter(Boolean).join(' · ');
-      node.className = sensor.value === true ? 'error' : sensor.available === false ? 'missing' : '';
+      const sensor = grouped.get(node.dataset.environmentSensor); if (!sensor) continue;
+      const state = sensorStatus(sensor), temperature = sensor.members.find(member => typeof member.temperature === 'number')?.temperature, battery = sensor.members.find(member => typeof member.battery === 'number')?.battery;
+      node.textContent = [state.text, typeof temperature === 'number' ? temperature + ' °C' : '', typeof battery === 'number' ? 'Batteri ' + battery + ' %' : ''].filter(Boolean).join(' · ');
+      node.className = state.className;
     }
     const root = $('environment-incidents'); if (!root) return; root.replaceChildren();
     const active = (status.incidents || []).filter(i => i.active), home = $('home-environment-alerts'); home.replaceChildren(); home.hidden = !active.length;

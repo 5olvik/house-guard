@@ -1,4 +1,8 @@
 {
+  "0.4.39": {
+    "no": "Brann- og røykvarslere vises én gang per fysisk enhet. Når enheten velges, overvåkes alle alarmtypene. Eksisterende valg beholdes, og ukjent eller utilgjengelig alarmstatus vises tydelig.",
+    "en": "Fire and smoke alarms are listed once per physical device. Selecting a device monitors all its alarm types. Existing selections are preserved, and unknown or unavailable alarm status remains visible."
+  },
   "0.4.10": {
     "no": "Velg opptil tre kameraer per alarmhendelse. Alarmmeldingen forsøkes før kamerabildene, hvert bilde merkes med kameranavn og sensor, og kamerafeil stopper ikke øvrige bilder. Bilder ved gjentatt alarm er valgfritt og av som standard. Samlet kameratest med resultat per kamera.",
     "en": "Select up to three cameras per alarm event. The alarm message is attempted before camera notifications, each image identifies its camera and triggering sensor, and camera failures do not stop other images. Repeated alarm images are optional and off by default. Batch camera test with per-camera results."

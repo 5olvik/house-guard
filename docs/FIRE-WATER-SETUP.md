@@ -12,6 +12,8 @@ Brann og vann har eget oppsett i House Guard. Valgte sensorer overvåkes hele d�
 
 Endringene lagres automatisk. Overvåkingen er av i eksisterende oppsett til sensorer er valgt og funksjonen slås på. Se over eventuelle gamle brann- og vannflows før du aktiverer de samme handlingene i House Guard; appen endrer eller sletter ikke disse.
 
+Fra 0.4.39 vises hver brannvarsler én gang i sensorlisten, selv om den har både røyk-, varme- og brannalarm. Når du krysser av enheten, velges alle alarmtypene. Tidligere delvise valg beholdes og vises med en strek i krysset; kryss av enheten for å velge alle. Samlet status viser en aktiv alarm fra alle typene og opplyser om ukjent eller utilgjengelig status.
+
 ## Meldinger, kamera og gjentakelse
 
 Alarmmeldingen inneholder sensor og rom. Velg kritisk push dersom alarmen skal sendes som kritisk varsel; Homey må også ha tillatelse til kritiske varsler på telefonen. Tidslinjen er et eget valg og erstatter ikke push til telefonen.

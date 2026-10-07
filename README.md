@@ -6,7 +6,9 @@ House Guard er en Homey Pro-app for hjemme-, borte-, natt- og gjestemodus. Veivi
 
 Versjon **0.4.38 er publisert på GitHub og i Homey App Stores testkanal (bygg 16)**, bekreftet 6. oktober 2026. Den inkluderer Nattmodus-enhet, egen Brann og vann-fane og kontroll av vannsensorenes rapportering, kortere alarmstatuser og automatisk morgenmelding i tidslinjen. Nye overvåkingsvalg er av til brukeren setter dem opp. Se [alarmoppsett](docs/ALARM-SETUP.md), [brann og vann](docs/FIRE-WATER-SETUP.md) og [teststatus](docs/TEST-REPORT.md) for bruk og kontroller.
 
-Lokalt er **0.4.38 installert på Solviks Homey**, bekreftet 6. oktober 2026. Etterkontroll bekrefter kjørende app, klar API-forbindelse og bevart oppsett, Flows, enheter og personstatus. Nye overvåkingsvalg er lagt til deaktivert. House Guard skriver automatisk én melding i Homeys tidslinje ved bekreftet oppvåkning fra nattmodus. Alarmstatusene heter **Frakoblet**, **Delvis** (nattalarm) og **Tilkoblet** (full bortealarm).
+Lokalt er **0.4.39 installert på Solviks Homey**, bekreftet 7. oktober 2026. Etterkontroll bekrefter kjørende app, klar API-forbindelse og helt uendret oppsett, Flows, enheter, sensorvalg og personstatus. House Guard skriver automatisk én melding i Homeys tidslinje ved bekreftet oppvåkning fra nattmodus. Alarmstatusene heter **Frakoblet**, **Delvis** (nattalarm) og **Tilkoblet** (full bortealarm).
+
+**Nytt i 0.4.39:** Brannvarslere har én rad per enhet i sensorlisten, med felles valg for alle alarmtypene og samlet status. Tidligere delvise valg beholdes. 487 tester, kodekontroll av 101 JavaScript-filer og Homey publish-validering består. Testkanalen er foreløpig 0.4.38/bygg 16.
 
 En egen **Nattmodus-enhet med av/på-bryter** inngår i den lokale 0.4.38-installasjonen. Legg den til i Homey med **Legg til enhet → House Guard → Nattmodus**. På bruker vanlig nattstart, av bruker vanlig morgenstart, og status følger også automatikk og eksisterende Flows. Ingen enhet pares automatisk. Se [alarmoppsett](docs/ALARM-SETUP.md) for bruk og [teststatus](docs/TEST-REPORT.md) for kontrollene.
 

@@ -1,4 +1,14 @@
-# House Guard 0.4.38 – installasjon og testpublisering bekreftet
+# House Guard 0.4.39 – doble brannsensorrader rettet og installert lokalt
+
+Kontrollert 7. oktober 2026. Brannvarslernes alarmtyper samles i én rad per fysisk enhet og alarmgruppe. Ett kryss velger alle kompatible alarmtyper; avkrysning fjerner bare denne enhetens valg. Motoren beholder separate alarmfunksjoner og er uendret. Delvise eksisterende valg beholdes uten lagring på visning og vises med strek i krysset. «Velg alle» oppretter ikke duplikater, og oversikten teller fysiske sensorer. Gruppevalg ved 100-grensen avvises samlet uten å etterlate et stille delvis valg.
+
+Samlet status viser aktive sekundære alarmtyper og endringer fra sanntidsdata. En ukjent eller utilgjengelig sekundær alarmtype kan ikke få «Ingen alarm» fordi den første er rolig. Individuelle alarmtyper leses fortsatt separat i aktive hendelser, slik at manglende status eller fjernede valg vises riktig. Temperatur og batteri vises samlet.
+
+**487/487 tester består**, inkludert åtte nye GUI-regresjonstester, og kodekontroll av **101 JavaScript-filer**, standardoppsett/API-ruter, diff og skann av **137 offentlige filer uten funn/private filer** består. Versjonen er 0.4.39 i app/package/lock med norsk/engelsk endringslogg. GUI-handlerne er prøvd med lokal DOM-testdobbel; ny mobil/webview-visning er ikke fysisk kontrollert.
+
+Etter brukerens bestilling 7. oktober 2026 er **0.4.39 bygget og installert på Solviks Homey uten --clean** (5.65 MB, 732 filer). Homey publish-validering består, og 69 pakkede kilde-/GUI-/driver-/språkressurser samsvarer med kontrollert kilde. Fersk før-/etterkontroll bekrefter kjørende versjon, forbindelse, klar API og helt uendret konfigurering/revisjon, inkludert tidligere delvise sensorvalg. Komplette standard-/Advanced Flows, paringer, personstatus, sensorunntak og eksisterende Vannsensor24t-script er bevart. Ingen fysisk alarm-/enhets-/person-/Flow-/telefonprøve er sendt. Testkanalen er foreløpig **0.4.38/bygg 16**.
+
+## House Guard 0.4.38 – installasjon og testpublisering bekreftet
 
 **0.4.38 er publisert på GitHub main og i Homey App Stores testkanal som bygg 16**, bekreftet 6. oktober 2026. Kildecommit 226bafb inkluderer alle endringer fra 0.4.36–38. Én opplasting fullførte med exit 0; App Store-API bekreftet draft → test kl. 13:52 norsk tid. Ingen ordinær utgivelse eller ny innsendelse til vurdering. [Installer fra testkanalen](https://homey.app/a/no.husmodus/test/). Publiseringsfasen endret bare butikkbeskrivelse, endringslogg og dokumentasjon; den installerte runtime-koden er bevart.
 

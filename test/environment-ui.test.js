@@ -63,6 +63,16 @@ function fixture() {
   const button=(text,root=document)=>root.querySelectorAll('button').find(n=>n.textContent===text);
   return {document,config,data,ctx,changes,requests,navigation,ui,label,button,render:()=>ui.render(ctx)};
 }
+function multiAlarmFixture() {
+  const h=fixture(),caps=h.data.catalog.devices.smoke.capabilities;
+  caps.alarm_heat={value:false,type:'boolean',getable:true};caps.alarm_fire={value:false,type:'boolean',getable:true};
+  h.render();return h;
+}
+function sensorRow(h,deviceId,type='fire') {
+  return h.document.getElementById('environment-sensors').querySelectorAll('label').find(row=>row.className==='environment-sensor'&&row.querySelector('[data-environment-sensor]')?.dataset.environmentSensor===JSON.stringify([deviceId,type]));
+}
+const sensorCheck=(h,deviceId,type='fire')=>sensorRow(h,deviceId,type).children.find(node=>node.tag==='input');
+const sensorStatus=(h,deviceId,type='fire')=>sensorRow(h,deviceId,type).querySelector('[data-environment-sensor]');
 
 test('Ny GUI finner vann- og røykvarslere og viser temperatur ved manglende første vannalarmverdi',()=>{
   const h=fixture(),text=h.document.getElementById('environment-sensors').textContent;
@@ -110,4 +120,80 @@ test('Teknisk kontrollvarsel vises separat fra lekkasje og kvitterer bare kontro
   const h=fixture();h.config.environment.enabled=true;h.config.environment.sensors=[{deviceId:'water',capability:'alarm_water'}];h.data.environment.waterHealth={sensors:[{deviceId:'water',name:'Ny vannsensor',zone:'Bad',status:'stale',lastSignalAt:Date.now()-25*3600000,label:'temperatur',value:23,unit:'°C'}],warning:{id:'health-id',active:true,names:['Ny vannsensor'],zones:['Bad'],acknowledgedAt:null}};h.render();
   assert.equal(h.document.getElementById('home-environment-alerts').hidden,false);assert.match(h.document.getElementById('environment-incidents').textContent,/Ingen aktive alarmhendelser/);assert.match(h.document.getElementById('environment-incidents').textContent,/Vannsensorer trenger kontroll/);assert.match(h.document.getElementById('water-health-status').textContent,/Sist registrert temperatur/);
   await h.button('Kvitter kontrollvarsel').click();assert.deepEqual(h.requests,[{method:'POST',path:'/command',body:{type:'environment-health-ack',id:'health-id'}}]);
+});
+
+test('Én rad per fysisk brannvarsler, også med flere alarmtyper og enheter med samme navn',()=>{
+  const h=multiAlarmFixture();
+  h.data.catalog.devices.smoke2={...h.data.catalog.devices.smoke,id:'smoke2'};
+  h.render();
+  let rows=h.document.getElementById('environment-sensors').querySelectorAll('label').filter(row=>row.className==='environment-sensor');
+  assert.equal(rows.length,3);assert(sensorRow(h,'smoke'));assert(sensorRow(h,'smoke2'));assert(sensorRow(h,'water','water'));assert.equal(h.changes.length,0);assert.deepEqual(h.requests,[]);
+  // A combined device still belongs to both relevant sections; its water alarm
+  // must not get lost when its fire capabilities are grouped.
+  h.data.catalog.devices.smoke.capabilities={...h.data.catalog.devices.smoke.capabilities,alarm_water:{value:null,type:'boolean',getable:true}};h.render();
+  rows=h.document.getElementById('environment-sensors').querySelectorAll('label').filter(row=>row.className==='environment-sensor');
+  assert.equal(rows.length,4);assert(sensorRow(h,'smoke','water'));
+});
+
+test('Felles avkrysning velger alle brannalarmtyper og fjerner bare denne enhetens valg',async()=>{
+  const h=multiAlarmFixture(),responses=structuredClone(h.config.environment.responses);
+  let check=sensorCheck(h,'smoke');check.checked=true;await check.fire('change');
+  assert.deepEqual(structuredClone(h.config.environment.sensors),[{deviceId:'smoke',capability:'alarm_smoke'},{deviceId:'smoke',capability:'alarm_heat'},{deviceId:'smoke',capability:'alarm_fire'}]);
+  assert.equal(h.changes.length,1);assert.equal(sensorCheck(h,'smoke').checked,true);assert.equal(sensorCheck(h,'smoke').indeterminate,false);validate(h.config);
+  h.config.environment.sensors.push({deviceId:'water',capability:'alarm_water'});h.config.environment.enabled=true;h.render();
+  check=sensorCheck(h,'smoke');check.checked=false;await check.fire('change');
+  assert.deepEqual(structuredClone(h.config.environment.sensors),[{deviceId:'water',capability:'alarm_water'}]);assert.equal(h.config.environment.enabled,true);
+  check=sensorCheck(h,'water','water');check.checked=false;await check.fire('change');assert.equal(h.config.environment.enabled,false);assert.equal(h.config.environment.sensors.length,0);
+  assert.deepEqual(h.config.environment.responses,responses);assert.deepEqual(h.requests,[]);validate(h.config);
+});
+
+test('Eksisterende delvise valg vises med strek og beholdes uten lagring til brukeren velger alle',async()=>{
+  const h=multiAlarmFixture();h.config.environment.sensors=[{deviceId:'smoke',capability:'alarm_heat'},{deviceId:'water',capability:'alarm_water'}];h.config.environment.enabled=true;
+  const before=structuredClone(h.config);h.render();const check=sensorCheck(h,'smoke');
+  assert.equal(check.checked,false);assert.equal(check.indeterminate,true);assert.deepEqual(h.config,before);assert.equal(h.changes.length,0);assert.match(h.document.getElementById('environment-sensors').textContent,/Noen alarmtyper er valgt fra før/);
+  check.checked=true;await check.fire('change');
+  assert.deepEqual(structuredClone(h.config.environment.sensors),[{deviceId:'smoke',capability:'alarm_heat'},{deviceId:'water',capability:'alarm_water'},{deviceId:'smoke',capability:'alarm_smoke'},{deviceId:'smoke',capability:'alarm_fire'}]);
+  assert.equal(sensorCheck(h,'smoke').indeterminate,false);assert.equal(sensorCheck(h,'smoke').checked,true);assert.equal(h.changes.length,1);assert.deepEqual(h.requests,[]);validate(h.config);
+});
+
+test('Velg alle tar med alle alarmtyper uten duplikater og oversikten teller fysiske sensorer',async()=>{
+  const h=multiAlarmFixture();h.data.catalog.devices.smoke2={id:'smoke2',name:'Røykvarsler 2',zone:'Kjøkken',available:true,capabilities:{alarm_smoke:{value:false,type:'boolean',getable:true},'alarm_heat.1':{value:false,type:'boolean',getable:true}}};
+  h.config.environment.sensors=[{deviceId:'smoke',capability:'alarm_heat'},{deviceId:'water',capability:'alarm_water'}];h.config.environment.enabled=true;h.render();
+  const fireGroup=()=>h.document.getElementById('environment-sensors').children.find(card=>card.querySelector('h2')?.textContent==='Røyk og brann');
+  await h.button('Velg alle i denne gruppen',fireGroup()).click();await h.button('Velg alle i denne gruppen',fireGroup()).click();
+  assert.equal(h.config.environment.sensors.length,6);assert.equal(new Set(h.config.environment.sensors.map(s=>s.deviceId+':'+s.capability)).size,6);
+  assert.equal(sensorCheck(h,'smoke').checked,true);assert.equal(sensorCheck(h,'smoke2').checked,true);assert.match(h.document.getElementById('environment-monitoring-state').textContent,/Overvåker 3 sensorer hele døgnet/);assert.deepEqual(h.requests,[]);validate(h.config);
+});
+
+test('Alarm fra sekundære alarmtyper vises samlet i én rad og oppdateres ved ny status',()=>{
+  const h=multiAlarmFixture();h.data.catalog.devices.smoke.capabilities['alarm_fire.2']={value:false,type:'boolean',getable:true};
+  h.data.environment.sensors=[{deviceId:'smoke',capability:'alarm_heat',available:true,value:true},{deviceId:'smoke',capability:'alarm_fire',available:true,value:true},{deviceId:'smoke',capability:'alarm_fire.2',available:true,value:true}];h.render();
+  let status=sensorStatus(h,'smoke');assert.equal(status.className,'error');assert.match(status.textContent,/Varmealarm/);assert.match(status.textContent,/Brannalarm/);assert.equal(status.textContent.match(/Brannalarm/g).length,1);assert.match(status.textContent,/22 °C/);
+  for(const sensor of h.data.environment.sensors)sensor.value=false;h.ui.renderStatus(h.ctx);status=sensorStatus(h,'smoke');assert.equal(status.className,'');assert.match(status.textContent,/Ingen alarm/);assert.deepEqual(h.requests,[]);
+});
+
+test('Ukjent eller utilgjengelig sekundær alarmtype kan ikke få samlet Ingen alarm-status',()=>{
+  const h=multiAlarmFixture();h.data.catalog.devices.smoke.capabilities.alarm_heat.value=null;h.ui.renderStatus(h.ctx);
+  let status=sensorStatus(h,'smoke');assert.match(status.textContent,/Ukjent status/);assert.doesNotMatch(status.textContent,/Ingen alarm/);
+  h.data.environment.sensors=[{deviceId:'smoke',capability:'alarm_heat',available:false,value:false}];h.ui.renderStatus(h.ctx);
+  status=sensorStatus(h,'smoke');assert.equal(status.className,'missing');assert.match(status.textContent,/alarmtyper er utilgjengelige/);assert.doesNotMatch(status.textContent,/Ingen alarm/);
+  h.data.environment.sensors=[];h.data.catalog.devices.smoke.capabilities.alarm_heat.value=false;h.ui.renderStatus(h.ctx);assert.match(sensorStatus(h,'smoke').textContent,/Ingen alarm/);
+});
+
+test('Grensen for alarmtyper avviser hele gruppevalget og bevarer tidligere oppsett',async()=>{
+  const h=multiAlarmFixture(),messages=[];h.ctx.toast=text=>messages.push(text);
+  h.config.environment.sensors=Array.from({length:99},(_,i)=>({deviceId:'existing-water-'+i,capability:'alarm_water'}));h.config.environment.enabled=true;h.render();
+  const before=JSON.stringify(h.config);let check=sensorCheck(h,'smoke');check.checked=true;await check.fire('change');
+  assert.equal(JSON.stringify(h.config),before);assert.equal(sensorCheck(h,'smoke').checked,false);assert.equal(sensorCheck(h,'smoke').indeterminate,false);
+  const fireGroup=h.document.getElementById('environment-sensors').children.find(card=>card.querySelector('h2')?.textContent==='Røyk og brann');await h.button('Velg alle i denne gruppen',fireGroup).click();
+  assert.equal(JSON.stringify(h.config),before);assert.equal(h.changes.length,0);assert.equal(messages.length,2);assert(messages.every(text=>text.includes('100 alarmtyper')));assert.deepEqual(h.requests,[]);validate(h.config);
+});
+
+test('Aktive hendelser beholder status per alarmtype etter at sensorradene er samlet',()=>{
+  const h=multiAlarmFixture();h.config.environment.sensors=[{deviceId:'smoke',capability:'alarm_smoke'},{deviceId:'smoke',capability:'alarm_heat'}];h.config.environment.enabled=true;
+  h.data.environment.incidents=[{id:'fire-id',type:'fire',active:true,startedAt:Date.now(),sensors:[{deviceId:'smoke',capability:'alarm_heat',name:'Røykvarsler',zone:'Soverom',active:true}]}];
+  h.data.environment.sensors=[{deviceId:'smoke',capability:'alarm_heat',available:true,value:null}];h.render();
+  let text=h.document.getElementById('environment-incidents').textContent;assert.match(text,/Venter på ny alarmstatus/);assert.doesNotMatch(text,/ikke lenger valgt/);
+  h.data.environment.sensors[0].available=false;h.ui.renderStatus(h.ctx);assert.match(h.document.getElementById('environment-incidents').textContent,/Sensoren er utilgjengelig; alarmhendelsen beholdes/);
+  h.config.environment.sensors=[{deviceId:'smoke',capability:'alarm_smoke'}];h.ui.renderStatus(h.ctx);assert.match(h.document.getElementById('environment-incidents').textContent,/Sensoren er ikke lenger valgt/);assert.deepEqual(h.requests,[]);
 });
