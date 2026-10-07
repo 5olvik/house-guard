@@ -1,4 +1,6 @@
-# House Guard 0.4.39 – doble brannsensorrader rettet og installert lokalt
+# House Guard 0.4.39 – installasjon og testpublisering bekreftet
+
+**0.4.39 er publisert på GitHub main og i Homey App Stores testkanal som bygg 17**, bekreftet 7. oktober 2026. Kildecommit d0d0b44 har Finn-Cato kreditert for den opprinnelige patchen. Én opplasting fullførte med exit 0, og App Store-API bekreftet draft → test kl. 11:12 norsk tid. [Installer fra testkanalen](https://homey.app/a/no.husmodus/test/). Installasjon og publisering bruker samme kontrollerte GUI-/runtime-kode; etter testkjøringen er bare butikkbeskrivelse, dokumentasjon og arbeidslogger endret.
 
 Kontrollert 7. oktober 2026. Brannvarslernes alarmtyper samles i én rad per fysisk enhet og alarmgruppe. Ett kryss velger alle kompatible alarmtyper; avkrysning fjerner bare denne enhetens valg. Motoren beholder separate alarmfunksjoner og er uendret. Delvise eksisterende valg beholdes uten lagring på visning og vises med strek i krysset. «Velg alle» oppretter ikke duplikater, og oversikten teller fysiske sensorer. Gruppevalg ved 100-grensen avvises samlet uten å etterlate et stille delvis valg.
 
@@ -6,7 +8,7 @@ Samlet status viser aktive sekundære alarmtyper og endringer fra sanntidsdata. 
 
 **487/487 tester består**, inkludert åtte nye GUI-regresjonstester, og kodekontroll av **101 JavaScript-filer**, standardoppsett/API-ruter, diff og skann av **137 offentlige filer uten funn/private filer** består. Versjonen er 0.4.39 i app/package/lock med norsk/engelsk endringslogg. GUI-handlerne er prøvd med lokal DOM-testdobbel; ny mobil/webview-visning er ikke fysisk kontrollert.
 
-Etter brukerens bestilling 7. oktober 2026 er **0.4.39 bygget og installert på Solviks Homey uten --clean** (5.65 MB, 732 filer). Homey publish-validering består, og 69 pakkede kilde-/GUI-/driver-/språkressurser samsvarer med kontrollert kilde. Fersk før-/etterkontroll bekrefter kjørende versjon, forbindelse, klar API og helt uendret konfigurering/revisjon, inkludert tidligere delvise sensorvalg. Komplette standard-/Advanced Flows, paringer, personstatus, sensorunntak og eksisterende Vannsensor24t-script er bevart. Ingen fysisk alarm-/enhets-/person-/Flow-/telefonprøve er sendt. Testkanalen er foreløpig **0.4.38/bygg 16**.
+Etter brukerens bestilling 7. oktober 2026 er **0.4.39 bygget og installert på Solviks Homey uten --clean** (5.65 MB, 732 filer). Homey publish-validering består, og 69 pakkede kilde-/GUI-/driver-/språkressurser samsvarer med kontrollert kilde. Fersk før-/etterkontroll bekrefter kjørende versjon, forbindelse, klar API og helt uendret konfigurering/revisjon, inkludert tidligere delvise sensorvalg. Komplette standard-/Advanced Flows, paringer, personstatus, sensorunntak og eksisterende Vannsensor24t-script er bevart. Ingen fysisk alarm-/enhets-/person-/Flow-/telefonprøve er sendt.
 
 ## House Guard 0.4.38 – installasjon og testpublisering bekreftet
 
